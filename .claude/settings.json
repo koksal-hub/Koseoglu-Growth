@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(powershell.exe -NoProfile -Command \"Start-Process 'C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe'\")",
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "Bash(git push *)",
+      "Bash(git rm *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
