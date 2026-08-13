@@ -1,14 +1,93 @@
-# AI-WORKFLOW — Ekonomik ve Kaliteli Çoklu-Ajan Kod Geliştirme Anayasası
+# AI-ENGINEERING-STANDARD — Ekonomik ve Kaliteli Çoklu-Ajan Kod Geliştirme Anayasası
 
 > Proje-bağımsız ortak yöntem. Growth, MYLojistik, Ultra Finans ve diğer yazılım
-> projelerine kopyalanabilir. Amaç: **en az AI/kredi tüketimiyle en yüksek gerçek
-> kod kalitesini** üretmek.
+> projelerine kopyalanabilir. Amaç: **kabul edilen değişiklik başına minimum
+> premium/ücretli AI kredisi** (toplam token değil — bkz. Bölüm 0-EK).
+>
+> BU DOSYA HER OTURUMDA OKUNMAZ. Yalnızca yeni proje kurulumunda, faz/süreç
+> değişikliğinde veya bu standart güncellenirken okunur. Günlük çalışma kuralları
+> için bkz. `AGENTS.md` (≤60 satır, bu dosyaya pointer verir).
 >
 > Son mimari araştırma: 2026-08-13. Codex, Claude Code, GitHub Copilot ve Google
 > Antigravity'nin resmi dokümantasyonundaki güncel ajan/subagent, worktree,
 > review, instruction, permission ve maliyet prensipleri dikkate alınmıştır.
 > Ürün özellikleri ve kotalar değişebilir; araç özel ayarlar uygulanmadan önce
-> güncel resmi doküman tekrar kontrol edilir.
+> güncel resmi doküman tekrar kontrol edilir. NOT: Bu araştırmanın kaynak
+> ayrımı (resmi vs üçüncü parti) her satırda netleştirilmemiştir — bkz.
+> 2026-08-13 EK bölümü, madde D için bir örnek düzeltme.
+>
+> ================================================================
+> 2026-08-13 EK — BAĞIMSIZ DENETİMDEN GEÇMİŞ ONAYLANMIŞ DÜZELTMELER
+> ================================================================
+>
+> Bu bölümdeki içerik, taze bağlamlı bir ajan tarafından adversarial
+> denetlendi ve Köksal tarafından onaylandı. Aşağıdaki maddeler, bu
+> dosyanın geri kalanındaki karşılık gelen bölümleri GÜNCELLEr/DÜZELTİR —
+> çelişki varsa BU BÖLÜM esastır.
+>
+> **A) North Star (Bölüm 1) — teyit edildi, değişmedi:** Hedef "toplam
+> token azaltmak" değil, **kabul edilen değişiklik başına premium kredi
+> azaltmak**. [ÖNERİ — bu projede henüz ölçülmüş bir "free worker premium
+> turu azalttı" vakası yok; tek somut veri, free pool hiç yokken premium
+> ajanların ~296K token harcadığı bir gündü.]
+>
+> **B) Risk B — Escalation Gate'te yapısal açık (düzeltildi):** "Reviewer'lar
+> çelişiyor" tetikleyicisi Risk B'de yalnızca 1 reviewer olduğu için hiç
+> devreye giremiyordu. EKLENEN KURAL: Risk B denetçisi kendi bulgusundan
+> emin değilse VEYA diff schema/security/migration dosyalarına dokunuyorsa,
+> tek başına karar vermez — 2. taze denetçi otomatik tetiklenir.
+>
+> **C) Reviewer routing (ekonomik düzeltme):** Risk B akışı artık: free/local
+> taze reviewer VARSA önce o; YOKSA geçici fallback taze Claude subagent'ı;
+> free reviewer kritik/çelişkili bulgu üretirse premium/Codex escalation.
+> DÜRÜST NOT: Bu yazıldığı an itibarıyla hiçbir free/local reviewer kurulu
+> DEĞİL — yani bu politika şimdilik "her zaman taze Claude" olarak işler.
+> Taze Claude da PREMIUM kredi tüketir; bu nihai model değil, yalnız
+> AŞAMA 1 pilotu boyunca geçici varsayılandır.
+>
+> **D) Paralellik hedefi düzeltildi:** "Read-heavy paralellik sınırsız"
+> yanlış hedefi optimize ediyordu (free token azaltmak). Asıl israf edilen
+> kaynak, worker çıktısının Premium Author tarafından OKUNMASI için harcanan
+> premium dikkat/token'dır. [ÖNERİ, veriye dayanmıyor] Görev başına 2-4
+> bağımsız free/local scout ile başla; fayda ölçülürse artır, gürültü
+> artıyorsa azalt.
+>
+> **E) Aggregator kuralı netleştirildi:**
+> KANIT YOK → premium task packet'e girmez (quarantine'de tutulur, silinmez).
+> KANIT + DÜŞÜK GÜVEN → silinmez, düşük öncelikle pakete girer.
+> KANIT + REPRODUCTION/TEST → yüksek öncelik.
+>
+> **F) KPI seti (4 ana metrik, onaylandı):** `PREMIUM_REWORK_ROUNDS`,
+> `FREE_FINDINGS_ACCEPTED_RATE`, `DEFECTS_FOUND_BEFORE_MERGE`,
+> `ESCALATION_RATE`. AŞAMA 1'de her PR açıklamasına elle 4 satır olarak
+> tutulur, script gerekmez.
+>
+> **G) AŞAMA 1 pilotu (onaylandı, başladı):** 3-5 gerçek task, task başına
+> 2-4 free/local scout (ELLE çalıştırılır — script/entegrasyon yok),
+> Claude Author, CI, free/local taze reviewer (yoksa madde C'deki
+> fallback), yalnız gerektiğinde premium escalation. AI-Factory/JSON
+> router/LiteLLM bu aşamada KURULMAZ. PRATİK UYARI: Claude Code bu
+> ortamdan Ollama/Antigravity'ye otomatik bağlanamıyor — pilot, Köksal'ın
+> (veya Claude'un elle kopyala-yapıştır ile) bir free aracı manuel çağırıp
+> çıktısını Author'a aktarmasıyla yürür. En az 10 gerçek bilet + en az
+> 3-5'inde bu pilot tamamlanmadan AŞAMA 2'ye (script/Ollama entegrasyonu/
+> JSON contract) geçilmez.
+>
+> **H) Dosya konumu (bu değişiklik, Bölüm 8 ile birlikte uygulanmıştır):**
+> Bu dosya `AI-WORKFLOW.md`'den `AI-ENGINEERING-STANDARD.md`'ye yeniden
+> adlandırıldı — Bölüm 8'deki "seyrek okunan global standart" rolüne
+> taşındı. `AGENTS.md` artık ≤60 satır ve bu dosyaya pointer veriyor.
+> Ayrı bir GitHub repository'ye taşıma (`koksal-hub/ai-engineering-
+> standard`) HENÜZ YAPILMADI — yalnızca 4 proje AŞAMA 2'yi geçip gerçek
+> bir tekrar/darboğaz ortaya çıkarsa değerlendirilecek.
+>
+> **I) SSH ile GitHub push, OAuth App workflow-scope kısıtlamasını
+> gerçekten atlıyor [KANITLANDI]** — bu depoda üç ayrı push ile
+> doğrulandı, gerçek CI (install→migrate deploy→lint→typecheck→test→
+> build) yeşil oldu. Root-cause economics ilkesinin en somut kanıtı: aynı
+> hata beş-altı kez workaround'landıktan sonra kalıcı çözüldü.
+>
+> ================================================================
 
 ================================================================
 0. TEK CÜMLEYLE ANA KURAL
@@ -373,7 +452,7 @@ Amaç aynı kuralı 4 farklı ajan dosyasında kopyalamamak.
 - Sadece o aracın başka yerde ifade edilemeyen ayarı varsa.
 - Universal politika tekrar edilmez.
 
-### `AI-WORKFLOW.md`
+### `AI-ENGINEERING-STANDARD.md` (bu dosya)
 - Her session'da otomatik yüklenmek zorunda DEĞİLDİR.
 - Orkestrasyon/ekonomi politikasıdır.
 - Plancı, yeni proje kurulumu, faz geçişi veya süreç tartışmasında okur.
@@ -667,7 +746,7 @@ forward-fix stratejisi risk bazında belirlenir.
 
 Her yeni proje başında yalnız şunları yap:
 
-1. Bu `AI-WORKFLOW.md` dosyasını kopyala.
+1. Bu `AI-ENGINEERING-STANDARD.md` dosyasını kopyala.
 2. Kısa proje `AGENTS.md` oluştur.
 3. Projeye özel `MASTER_PLAN.md` oluştur.
 4. Gerekirse ince `CLAUDE.md` adaptörü oluştur.
