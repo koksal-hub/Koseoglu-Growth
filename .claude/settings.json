@@ -7,7 +7,10 @@
       "Bash(git rm *)",
       "Bash(git commit -m ' *)",
       "Bash(git branch *)",
-      "Bash(git ls-remote *)"
+      "Bash(git ls-remote *)",
+      "Bash(git pull *)",
+      "Bash(sed -n '195,212p' /tmp/ci_log.txt)",
+      "Read(//tmp/**)"
     ]
   }
 }

@@ -163,3 +163,42 @@ teknik bilgi yazılır.
   ortamlarda script sonsuza kadar asılı kalır.
 - etkisi: `test` script'i her zaman açıkça `vitest run` olmalı; interaktif
   izleme için ayrı bir `test:watch` script'i tanımlanmalı.
+
+- tarih: 2026-08-13T21:05:00+03:00
+- konu: Prisma 7 — driver adapter zorunluluğu
+- açıklama: Prisma 7, önceki sürümlerden farklı olarak `schema.prisma`
+  içindeki `datasource.url`'ü kaldırdı. Migrate/CLI artık `prisma.config.ts`
+  dosyasından URL okuyor; `PrismaClient` çalışma zamanında bir driver adapter
+  (Postgres için `@prisma/adapter-pg` + `pg`) ile kurulmak zorunda. Bu,
+  major sürüm yükseltmelerinde "sadece package.json'daki sürüm numarasına
+  bakmak yetmez" prensibinin somut bir örneği.
+- etkisi: Yeni bir Prisma projesi kurulurken (veya major sürüm
+  güncellemesinde) `prisma generate`/`validate` gerçekten çalıştırılıp
+  hata mesajları okunmalı; dokümantasyona veya eski örneklere güvenmemeli.
+
+- tarih: 2026-08-13T21:05:00+03:00
+- konu: pnpm monorepo'da CLI araçları için phantom dependency riski
+- açıklama: `@prisma/client`, yalnızca `apps/api/package.json`'da
+  tanımlıyken, proje KÖKÜNDEN çalıştırılan `prisma generate` onu
+  çözemedi ("Could not resolve @prisma/client") — çünkü pnpm'in izole
+  node_modules yapısı, bir paketin bağımlılığını başka bir workspace
+  paketinin (veya kökün) görmesine izin vermez. Bu, npm/yarn'ın "hoisted"
+  (düz, tek node_modules) davranışına alışkın geliştiriciler için şaşırtıcı
+  olabilir.
+- etkisi: Bir CLI aracı (prisma, vb.) belirli bir workspace dizininden
+  çalıştırılacaksa, o dizinin kendi package.json'ının ilgili paketi
+  (doğrudan veya devDependency olarak) içerdiğinden emin olunmalı — "npm
+  install ile bir yerlerde zaten var" varsayımı pnpm'de geçerli değil.
+
+- tarih: 2026-08-13T21:20:00+03:00
+- konu: CI'da entegrasyon testleri için gerçek DB servisi gerekir
+- açıklama: Prisma modelleri arası ilişkileri, unique constraint'leri ve
+  gerçek veri yazma/okumayı test etmek isteniyorsa (mock değil), CI
+  ortamının da gerçek bir Postgres'e erişimi olmalı. GitHub Actions'ta bu,
+  `jobs.<job>.services` altında bir `postgres:15` servisi + testlerden önce
+  `prisma migrate deploy` adımı ile sağlanır — production'da migration
+  uygulamak için kullanılan komut zaten budur, CI'da da aynısının
+  kullanılması "CI production'ı taklit eder" ilkesiyle tutarlıdır.
+- etkisi: Faz 1'den itibaren CI, `.github/workflows/ci.yml` içinde bir
+  Postgres servisi içeriyor. Gelecekteki fazlarda yeni bir dış bağımlılık
+  (Redis, vb.) gerçek entegrasyon testi gerektirirse aynı desen izlenmeli.

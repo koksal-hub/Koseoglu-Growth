@@ -48,14 +48,23 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #2 — Data Models (Phase 1) ---
 - Öncelik: HIGH
 - Sorumlu: Claude Code / Codex review
-- Durum: TODO
-- Bağımlılıklar: Issue #1 DONE olmalı
+- Durum: IN_PROGRESS (schema + entity resolution + testler lokalde PASS;
+  CI PASS doğrulanınca DONE)
+- Bağımlılıklar: Issue #1 DONE olmalı (DONE — CI PASS ile doğrulandı)
 - Acceptance criteria:
-  - Prisma şemasına çekirdek modeller eklenir: Company, Contact, Lead, Activity,
-    FollowUp, Opportunity, Source/Channel
-  - Migration çalışır ve geri alınabilir
-  - Entity Resolution için temel benzersizlik/duplicate-check kuralları var
-  - Event Store için temel tablo/şema var
+  - [x] Prisma şemasına çekirdek modeller eklendi: Company, Contact, Lead,
+    Activity, FollowUp, Opportunity, Evidence, Event (Source/Channel: ayrı
+    tablo yerine Company/Contact/Lead üzerinde SourceChannel enum alanı —
+    overengineering'den kaçınıldı)
+  - [x] Migration oluşturuldu ve uygulandı (geri alınabilir — yalnızca
+    CREATE TABLE/ADD CONSTRAINT, DROP/DELETE yok)
+  - [x] Entity Resolution: deterministik normalizasyon + öncelik sıralı
+    duplicate detection (tax number → domain → phone → email domain →
+    address → normalized name → similarity), 22 unit test ile doğrulandı
+  - [x] Event Store: Event modeli (entityType/entityId polimorfik referans,
+    metadata JSON) + Evidence modeli (Company/Lead/Event ile ilişkili)
+  - [ ] GitHub Actions CI PASS (Postgres servisiyle) — bekleniyor, bkz.
+    STATUS.md
 
 --- Issue #3 — Research / Verification / Evidence (Phase 2) ---
 - Öncelik: MEDIUM

@@ -4,7 +4,279 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// Foundation schema - no business tables yet
+// ================================================================
+// PHASE 1 — DATA FOUNDATION
+// Growth-only models. Never merge with MYLojistik data (ADR-001).
+// ================================================================
+
+enum CompanyStatus {
+  ACTIVE
+  ARCHIVED
+  MERGED
+}
+
+enum SourceChannel {
+  WEBSITE
+  GOOGLE
+  LINKEDIN
+  REFERRAL
+  COLD_RESEARCH
+  EVENT
+  OTHER
+}
+
+enum ContactVerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  INVALID
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFYING
+  QUALIFIED
+  DISQUALIFIED
+  CONVERTED
+}
+
+enum ActivityType {
+  EMAIL_DRAFT
+  EMAIL_SENT
+  EMAIL_REPLY
+  PHONE_CALL
+  NOTE
+  MEETING
+  QUOTE_REQUEST
+}
+
+enum FollowUpStatus {
+  PENDING
+  DONE
+  CANCELLED
+}
+
+enum OpportunityStage {
+  QUALIFICATION
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum EventType {
+  COMPANY_DISCOVERED
+  COMPANY_UPDATED
+  COMPANY_VERIFIED
+  CONTACT_DISCOVERED
+  LEAD_CREATED
+  LEAD_STATUS_CHANGED
+  OPPORTUNITY_CREATED
+  CUSTOMER_WON
+  CUSTOMER_LOST
+}
+
+/// A B2B company Growth has discovered, researched, or sold to.
+/// `domain`, `taxNumber` and `normalizedName` are expected to be normalized
+/// (see apps/api/src/lib/entity-resolution.ts) before being written here.
+model Company {
+  id             String         @id @default(cuid())
+  name           String
+  normalizedName String
+  taxNumber      String?
+  domain         String?
+  phone          String?
+  emailDomain    String?
+  country        String?
+  city           String?
+  address        String?
+  sector         String?
+  website        String?
+  status         CompanyStatus  @default(ACTIVE)
+  /// 0..1 — how confident Growth is that this record is accurate. Manually
+  /// entered/curated companies default to 1; Phase 2 discovery will write
+  /// lower values pending verification (see ADR-008 Confidence Gate).
+  confidence     Float          @default(1)
+  sourceChannel  SourceChannel?
+  sourceDetail   String?
+
+  /// Set when this company was identified as a duplicate and merged into
+  /// another canonical Company record (see entity-resolution.ts).
+  mergedIntoId String?
+  mergedInto   Company?  @relation("CompanyMerge", fields: [mergedIntoId], references: [id])
+  mergedFrom   Company[] @relation("CompanyMerge")
+
+  contacts      Contact[]
+  leads         Lead[]
+  opportunities Opportunity[]
+  evidences     Evidence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([taxNumber])
+  @@unique([domain])
+  @@index([normalizedName])
+  @@index([emailDomain])
+  @@index([status])
+}
+
+/// A person at a Company. Not a MYLojistik operational contact.
+model Contact {
+  id                 String                    @id @default(cuid())
+  companyId          String
+  company            Company                   @relation(fields: [companyId], references: [id])
+  fullName           String
+  jobTitle           String?
+  /// Expected lowercased/trimmed before persisting (see entity-resolution.ts).
+  email              String?
+  phone              String?
+  verificationStatus ContactVerificationStatus @default(UNVERIFIED)
+  sourceChannel      SourceChannel?
+  sourceDetail       String?
+
+  leads      Lead[]
+  activities Activity[]
+  followUps  FollowUp[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, email])
+  @@index([companyId])
+}
+
+/// A sales lead: a Company (and optionally a specific Contact) Growth is
+/// actively pursuing. Deliberately simple lifecycle — explainable ranking
+/// (Phase 3) will read from this data, not replace it.
+model Lead {
+  id            String         @id @default(cuid())
+  companyId     String
+  company       Company        @relation(fields: [companyId], references: [id])
+  contactId     String?
+  contact       Contact?       @relation(fields: [contactId], references: [id])
+  status        LeadStatus     @default(NEW)
+  sourceChannel SourceChannel?
+  sourceDetail  String?
+  notes         String?
+
+  activities    Activity[]
+  followUps     FollowUp[]
+  opportunities Opportunity[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  evidence  Evidence[]
+
+  @@index([companyId])
+  @@index([contactId])
+  @@index([status])
+}
+
+/// A single logged sales-history event (email drafted/sent, call, note...).
+/// Must reference a Lead and/or a Contact — enforced at the application
+/// layer, not the DB, since Prisma has no native "at least one of" check.
+model Activity {
+  id         String       @id @default(cuid())
+  type       ActivityType
+  leadId     String?
+  lead       Lead?        @relation(fields: [leadId], references: [id])
+  contactId  String?
+  contact    Contact?     @relation(fields: [contactId], references: [id])
+  note       String?
+  occurredAt DateTime     @default(now())
+  createdAt  DateTime     @default(now())
+
+  @@index([leadId])
+  @@index([contactId])
+  @@index([type])
+}
+
+/// A scheduled follow-up task. No queue/scheduler yet (Phase 6) — this is
+/// data only.
+model FollowUp {
+  id        String         @id @default(cuid())
+  leadId    String?
+  lead      Lead?          @relation(fields: [leadId], references: [id])
+  contactId String?
+  contact   Contact?       @relation(fields: [contactId], references: [id])
+  dueAt     DateTime
+  status    FollowUpStatus @default(PENDING)
+  reason    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([leadId])
+  @@index([dueAt])
+  @@index([status])
+}
+
+/// A Growth sales opportunity. Not a MYLojistik operational record.
+model Opportunity {
+  id             String           @id @default(cuid())
+  companyId      String
+  company        Company          @relation(fields: [companyId], references: [id])
+  leadId         String?
+  lead           Lead?            @relation(fields: [leadId], references: [id])
+  stage          OpportunityStage @default(QUALIFICATION)
+  estimatedValue Decimal?         @db.Decimal(14, 2)
+  currency       String?          @default("TRY")
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([leadId])
+  @@index([stage])
+}
+
+/// A piece of evidence backing a Company record or an Event (ADR-008).
+/// An AI guess is not Evidence — this table only holds sourced facts.
+model Evidence {
+  id          String    @id @default(cuid())
+  companyId   String?
+  company     Company?  @relation(fields: [companyId], references: [id])
+  leadId      String?
+  lead        Lead?     @relation(fields: [leadId], references: [id])
+  eventId     String?
+  event       Event?    @relation(fields: [eventId], references: [id])
+  sourceUrl   String
+  sourceName  String?
+  publishedAt DateTime?
+  accessedAt  DateTime  @default(now())
+  summary     String
+  /// 0..1 — how much this single piece of evidence should be trusted.
+  confidence  Float     @default(0.5)
+
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+  @@index([leadId])
+  @@index([eventId])
+}
+
+/// Immutable audit/event log (ADR-007). Deliberately NOT a full
+/// event-sourcing framework — a simple append-only table is enough for now.
+/// `entityType`/`entityId` is a lightweight polymorphic reference (not a DB
+/// foreign key) so new entity types don't require schema churn.
+model Event {
+  id         String    @id @default(cuid())
+  type       EventType
+  entityType String
+  entityId   String
+  /// Which worker/agent/user produced this event (e.g. "system",
+  /// "discovery-worker", a user id). Free text for now.
+  actor      String?
+  metadata   Json?
+  occurredAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  evidences Evidence[]
+
+  @@index([entityType, entityId])
+  @@index([type])
+  @@index([occurredAt])
+}

@@ -193,3 +193,54 @@ oluşturulmaz.
 - status: FIXED — GitHub Actions'ta gerçek CI run'ı ile doğrulandı:
   https://github.com/koksal-hub/Koseoglu-Growth/actions/runs/31728265957
   (commit 2caacb6, conclusion: success).
+
+---
+
+- id: prisma7-datasource-url-kaldirildi
+- tarih: 2026-08-13T21:05:00+03:00
+- yer: prisma/schema.prisma
+- kısa: Issue #2 kapsamında `prisma generate` çalıştırıldığında P1012 hatası:
+  `datasource.url` artık schema dosyasında desteklenmiyor.
+- detay: "error: The datasource property `url` is no longer supported in
+  schema files. Move connection URLs for Migrate to `prisma.config.ts` and
+  pass either `adapter` for a direct database connection or `accelerateUrl`
+  for Accelerate to the `PrismaClient` constructor."
+- root_cause: Root package.json'da `prisma: ^7.0.0` önceden belirlenmişti;
+  Prisma 7, önceki sürümlerden farklı olarak connection URL'yi schema'dan
+  ayırıp `prisma.config.ts`'e taşıdı ve client'ın çalışma zamanında bir
+  driver adapter (`@prisma/adapter-pg` + `pg`) kullanmasını zorunlu kıldı.
+- düzeltme: Kök dizine `prisma.config.ts` eklendi (`datasource.url =
+  env('DATABASE_URL')`, migrate/CLI için). `apps/api/src/lib/prisma.ts`
+  içinde `PrismaPg` adapter'ı ile `PrismaClient({ adapter })` kuruldu.
+  `@prisma/adapter-pg` + `pg` + `@types/pg` apps/api'ye, `dotenv` +
+  `@prisma/client` root'a eklendi (prisma.config.ts'in `env()` yardımcısı
+  .env dosyasını otomatik yüklemiyor; root'tan `prisma generate/migrate`
+  çalıştırılabilmesi için @prisma/client root node_modules'ta da gerekli
+  — pnpm'in izole node_modules yapısı yüzünden).
+- status: FIXED. `prisma validate`, `prisma generate`, `prisma migrate dev`,
+  `prisma migrate deploy` hepsi lokalde gerçek Postgres'e karşı doğrulandı.
+
+---
+
+- id: apps-api-tsconfig-test-disinda
+- tarih: 2026-08-13T21:18:00+03:00
+- yer: apps/api/tsconfig.json
+- kısa: `pnpm typecheck`, `apps/api/test/**` altındaki dosyaları hiç
+  kapsamıyordu (`include: ["src/**/*"]`), bu yüzden test dosyalarındaki tip
+  hataları typecheck adımından hiç geçmeden fark edilmeden kalabilirdi.
+- detay: Bu, Issue #2 için ciddi miktarda yeni test kodu (entity-resolution
+  + Prisma entegrasyon testleri) eklenirken fark edildi; health.test.ts'nin
+  de baştan beri bu boşluğun dışında kaldığı görüldü (Phase 0'dan kalma,
+  önceden fark edilmemiş).
+- root_cause: `include: ["src/**/*"]`, hem build hem typecheck için aynı
+  tsconfig.json tarafından paylaşılıyordu; test dosyalarını dahil etmek
+  `rootDir: "src"` ile çakışacağı (build sırasında "File is not under
+  rootDir" hatası) için kimse eklememiş.
+- düzeltme: `apps/api/tsconfig.json` artık `src/**/*` VE `test/**/*`
+  içeriyor, `rootDir`/`outDir` yok (yalnızca typecheck için). Yeni
+  `apps/api/tsconfig.build.json`, bunu extend edip `rootDir: "src"`,
+  `outDir: "dist"`, `include: ["src/**/*"]` ile SADECE build için kullanılıyor.
+  `apps/api/package.json` → `"build": "tsc -p tsconfig.build.json"`.
+- status: FIXED. `pnpm typecheck` artık test dosyalarını da kapsıyor,
+  `pnpm build`'in `dist/` çıktısı hâlâ yalnızca `src/`'ten üretiliyor
+  (doğrulandı: `dist/` içinde test dosyası yok).
