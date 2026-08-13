@@ -1,141 +1,743 @@
-AI-WORKFLOW — Maliyet-Etkin Çoklu-Ajan Geliştirme Yöntemi
+# AI-WORKFLOW — Ekonomik ve Kaliteli Çoklu-Ajan Kod Geliştirme Anayasası
 
-Bu dosya proje-bağımsızdır. Köseoğlu Growth'ta bugün gerçekten yaşanan
-olaylardan çıkarıldı, ama diğer projelere olduğu gibi kopyalanabilir. Amaç:
-en az AI harcamasıyla en yüksek kod kalitesini elde etmek.
-
-================================================================
-0. TEK CÜMLEYLE ÖZET
-================================================================
-
-5 hayali rol (Codex/Copilot/Gemini/Qwen) kurup hiçbirini çalıştırmamaktansa,
-2 gerçek rolü (Uygulayıcı + Taze-Bağlamlı Denetçi) her seferinde gerçekten
-çalıştırmak hem daha ucuz hem daha etkilidir. Bugünün kanıtı: aynı "marka"
-ajanın taze bir kopyası, orijinal ajanın kendi hatasını (yanlış bir teknik
-iddia, REVIEW-issue2.md madde F) gerçek kodu çalıştırarak yakaladı — farklı
-bir AI şirketinin ürününe ihtiyaç yoktu, sadece bağlamsız/taraf tutmayan bir
-ikinci bakışa ihtiyaç vardı.
+> Proje-bağımsız ortak yöntem. Growth, MYLojistik, Ultra Finans ve diğer yazılım
+> projelerine kopyalanabilir. Amaç: **en az AI/kredi tüketimiyle en yüksek gerçek
+> kod kalitesini** üretmek.
+>
+> Son mimari araştırma: 2026-08-13. Codex, Claude Code, GitHub Copilot ve Google
+> Antigravity'nin resmi dokümantasyonundaki güncel ajan/subagent, worktree,
+> review, instruction, permission ve maliyet prensipleri dikkate alınmıştır.
+> Ürün özellikleri ve kotalar değişebilir; araç özel ayarlar uygulanmadan önce
+> güncel resmi doküman tekrar kontrol edilir.
 
 ================================================================
-1. ROLLER (3'ten fazlası nadiren gerekir)
+0. TEK CÜMLEYLE ANA KURAL
 ================================================================
 
-**PLANCI**
-- Büyük hedefi, her biri bağımsız test edilebilir KÜÇÜK biletlere böler.
-- Her bilet net "acceptance criteria" içerir (bkz. TASKS.md formatı).
-- Kötü/geniş bir plan, uygulayıcının token'ını (=para) sonradan boşa
-  harcatır — planlamaya harcanan ekstra dakika, uygulamada saatler
-  kurtarır.
+**5 mantıksal rol kullan; 5 pahalı LLM'i aynı anda çalıştırma.**
 
-**UYGULAYICI (Author)**
-- Tek seferde TEK bilet üzerinde çalışır.
-- Review istemeden ÖNCE kendi lokal kalite kapısını (lint/typecheck/test/
-  build) çalıştırır. Bu, deterministik ve neredeyse ücretsizdir — AI
-  review bütçesini, bir linter'ın bedavaya yakalayacağı hatalar için
-  harcamak en büyük israf kalemidir.
+Normal işte varsayılan akış:
 
-**DENETÇİ (Reviewer) — taze bağlam, yazarlık payı yok**
-- Farklı bir "marka" ajan OLMAK ZORUNDA DEĞİL. Aynı modelin taze bir
-  session/subagent'ı yeterlidir — önemli olan, önceki konuşmayı GÖRMEMESİ
-  ve kendi ürettiği bir şeyi savunma güdüsü olmamasıdır.
-- Göreve: "iddiaları kabul etme, koda karşı çalıştır" talimatı verilir.
-- Kanıt (bugünden): Bu projede taze bir denetçi, orijinal review paketindeki
-  bir örneği (`"Köseoğlu Lojistik" vs "Köseoğlu Holding"`) bizzat kod
-  çalıştırarak yanlış bulup düzeltti. Denetçi olmasaydı, yanlış bir örnek
-  üzerinden bir mimari karar alınacaktı.
+PLANCI → UYGULAYICI → DETERMINISTIK TEST/CI → TAZE DENETÇI → MERGE
+
+Düşük riskte Denetçi bile gerekmeyebilir. Yüksek riskte ikinci bağımsız Denetçi
+ve kullanıcı onayı eklenir.
 
 ================================================================
-2. NE ZAMAN TEK AJAN, NE ZAMAN ÇOKLU AJAN (maliyet kararı)
+1. EKONOMİK NORTH STAR
 ================================================================
 
-ÖNEMLİ: İkinci bir ajan da ÜCRETSİZ DEĞİL. "Denetçi ekle" tavsiyesi maliyetsiz
-değildir — her ekstra ajan çağrısı gerçek token/kredi harcar. Aşağıdaki
-kademelendirme tam olarak bunun için var: her şeye 2 ajan değil, İŞİN
-RİSKİNE göre 0, 1 veya 2-3.
+Bu sistem aşağıdaki sırayla optimize edilir:
 
-**SIFIR ekstra ajan (yalnızca CI + Uygulayıcının kendi kontrolü) yeterli:**
-- Yazım/format/dokümantasyon düzeltmesi.
-- CI zaten kapsıyor ve test edilebilir mantık gerektirmeyen değişiklik
-  (örn. bir config değeri, bir bağımlılık sürümü).
-- Buradaki risk: bir linter/test zaten yakalar, ekstra bir AI ajanının
-  katacağı marjinal değer, maliyetinden düşüktür.
+1. Doğruluk / veri güvenliği / geri alınabilirlik.
+2. Çalışan ve test edilmiş kod.
+3. AI kredi ve token verimliliği.
+4. Geliştirme hızı.
+5. Araç bağımsızlığı.
 
-**TEK taze Denetçi yeterli:**
-- CI'ın YAKALAYAMAYACAĞI bir risk taşıyan ama tek başına yıkıcı olmayan
-  değişiklik: yeni bir fonksiyonun mantığı, bir dokümandaki teknik iddia,
-  orta ölçekli bir refactor.
-- Soru: "Bu değişiklik CI'dan geçse bile hâlâ yanlış olabilir mi?" Evetse,
-  1 denetçi. Hayırsa, 0.
+Hız uğruna kaliteyi, kalite görüntüsü uğruna da gereksiz token harcamasını kabul
+etme.
 
-**2-3 PARALEL bağımsız Denetçi (en pahalı katman, seçici kullan):**
-- Şema/mimari kararları (geri dönüşü pahalı).
-- Güvenlik-hassas kod (auth, secret, ödeme, gerçek müşteri verisi).
-- Faz/milestone sınırları (main'e merge öncesi) — sık değil, nadir.
-- Bugünkü örnek: Growth'un Faz 1→Faz 2 geçişinde 3 paralel ajan
-  kullanıldı, üçü de birbirini görmeden aynı kritik sorunları bağımsız
-  doğruladı. Bu 3 ajan (~230K token) + sonrasındaki 1 PR denetim ajanı
-  (~65K token) toplam ~296K token'a mal oldu — GERÇEK bir maliyet.
-  BUNU HER GÜN/HER BİLET İÇİN YAPMAYIN. Bu, projenin tüm "multi-agent"
-  önermesinin kurgu olduğunu ortaya çıkaran, tek seferlik bir temel
-  denetimdi (bir nevi yıllık teftiş) — rutin geliştirme temposu değil.
+Önemli ayrım:
 
-Kural: Ajan sayısını hatanın MALİYETİNE göre ölçekle, "her zaman 2" gibi
-sabit bir kurala değil. Bir README yazım hatası 0 ekstra ajan ister; bir
-şema kararı 2-3 hak eder. Aradaki her şey 1 ister.
+- **ROL** = yapılması gereken fonksiyon.
+- **AJAN** = bu fonksiyonu o anda yapan model/session.
+
+Beş rol tanımlanması, beş ücretli ajan açılması anlamına GELMEZ.
 
 ================================================================
-3. MALİYETİ DÜŞÜREN 5 SOMUT KURAL
+2. BEŞ MANTIKSAL ROL
 ================================================================
 
-1. **CI'yı ücretsiz denetçin olarak kullan.** Lint/typecheck/test/build,
-   AI review'dan ÖNCE ve HER ZAMAN çalışmalı. AI'a "bu neden bozuk"
-   sordurmak yerine, bozukluğu CI zaten bedavaya söylüyor.
+## ROL 1 — PLANCI / MİMAR
 
-2. **Aynı sorunu iki kez workaround'lamak yerine, ikinci seferde kök
-   nedeni çöz.** Bugünkü somut örnek: GitHub'ın `workflow` scope
-   kısıtlaması aynı gün içinde 5-6 kez aynı şekilde "aşıldı" (ci.yml'i
-   untrack et, push et, kullanıcıya elle ekletttir). Her tekrar, gerçek
-   ajan-turu (=para) harcadı. Bir PAT oluşturmak 5 dakikaydı; workaround'u
-   5 kez tekrarlamak muhtemelen ondan çok daha pahalıya çıktı. KURAL: bir
-   hata ikinci kez aynı şekilde tekrar ederse, üçüncü workaround'a
-   geçmeden kalıcı çözümü uygula.
+Görev:
+- Büyük hedefi küçük, bağımsız, test edilebilir biletlere böler.
+- Acceptance criteria yazar.
+- Risk sınıfını belirler.
+- Hangi dosyaların gerçekten gerekli olduğunu söyler.
+- Mimari sınırları ve geri dönüş noktalarını belirler.
 
-3. **Dokümanları küçük ve tek-amaçlı tut.** Her oturum başında ajan
-   MASTER_PLAN/AGENTS/STATUS gibi dosyaları okur — şişmiş bir dosya, HER
-   oturumda tekrar tekrar token harcatır. LEARNINGS.md'ye plan
-   ilkelerini "öğrenim" diye kopyalamak (bugün 13 madde bu şekilde
-   silindi) tipik bir örnektir: gerçek bilgi eklemeden dosyayı büyütüp
-   her gelecek oturumun okuma maliyetini artırır.
+Yapmaması gereken:
+- Uygulayıcının yapacağı bütün kodu önceden üretip token harcamak.
+- Belirsiz, devasa "projeyi bitir" görevleri vermek.
+- Her görevde tüm repository'yi yeniden analiz etmek.
 
-4. **Görevi küçük tut, ajanın bağlamı yeniden türetmesini azalt.** Bir
-   ajanın her seferinde tüm repoyu baştan taraması gerekiyorsa (çünkü bilet
-   çok geniş/belirsiz), bu maliyeti planlama aşamasında önlemek, uygulama
-   aşamasında telafi etmekten ucuzdur.
+Varsayılan araç:
+- Güçlü planlama/reasoning modeli.
+- Kullanıcı zaten bir güçlü modele abonelik ödüyorsa önce onu kullan.
 
-5. **Model gücünü karara göre eşleştir** (geri dönüşü kolay/zor prensibi):
-   - Ucuz/hızlı: format düzeltme, boilerplate, basit bug fix, komut
-     çalıştırıp çıktı yorumlama.
-   - Pahalı/derin: mimari/şema kararları, güvenlik-hassas kod, Denetçi
-     rolü (yüksek riskli değişikliklerde).
-   Her göreve en pahalı modeli kullanmak, her göreve en ucuzunu kullanmak
-   kadar maliyetsizdir görünse de aslında değildir — ucuz model yanlış bir
-   mimari karar üretirse, o kararı SONRA pahalı bir modelle düzeltmek daha
-   maliyetli olur.
+## ROL 2 — KEŞİFÇİ / CONTEXT SCOUT
+
+Görev:
+- İlgili dosyaları bulur.
+- Kod akışını çıkarır.
+- Testleri, logları, bağımlılıkları tarar.
+- Ana ajana SADECE damıtılmış sonuç döndürür.
+
+Yetki:
+- Tercihen READ-ONLY.
+- Kod değiştirme yetkisi varsayılan olarak YOK.
+
+Neden ekonomik:
+- Ana pahalı ajanın context'ini binlerce satır grep/log/dosya ile kirletmez.
+- Read-heavy iş, daha ucuz/free/local modelde yapılabilir.
+
+## ROL 3 — UYGULAYICI / AUTHOR
+
+Görev:
+- Tek bir aktif bilet üzerinde kod yazar.
+- Gereksiz refactor yapmaz.
+- İlgili testleri ekler/günceller.
+- Lokal deterministik kalite kapısını çalıştırır.
+- Branch'e commit/push eder ve PR hazırlar.
+
+Kural:
+- Kendi yazdığı işi "bağımsız review edildi" diye işaretleyemez.
+
+## ROL 4 — DENETÇİ / REVIEWER / QA
+
+Görev:
+- Yazarın uzun konuşma geçmişini görmeden mümkün olduğunca taze context ile çalışır.
+- "Yazar doğru söylüyor" varsayımı yapmaz.
+- İddiaları kod, diff, test ve gerçek komut çıktısına karşı doğrular.
+- Bug, güvenlik açığı, yanlış varsayım, veri kaybı, edge-case ve test boşluğu arar.
+
+Varsayılan yetki:
+- READ-ONLY.
+- Kod düzeltmez; bulgu yazar.
+- Düzeltme gerekiyorsa tekrar Uygulayıcıya döner.
+
+Taze context neden önemli:
+- Self-review körlüğünü azaltır.
+- Ana session'daki eski varsayımları otomatik devralmaz.
+- Review çıktısı, yazarın savunmasını değil diff'in gerçeğini merkez alır.
+
+## ROL 5 — RELEASE / VERIFIER
+
+Görev:
+- Lint, typecheck, unit/integration test, build, migration validation ve CI.
+- PR'ın gerçekten green olduğunu doğrular.
+- Gerekirse yalnızca hata logunu ilgili ajana verir.
+
+Varsayılan uygulama:
+- Script + GitHub Actions + test araçları.
+- LLM kullanımı varsayılan olarak YOK.
+
+Bu rol, en ucuz "ajan"dır: deterministik doğrulama AI kredisi tüketmez.
 
 ================================================================
-4. TEK SAYFALIK KONTROL LİSTESİ (diğer projelere kopyala)
+3. ALTIN KURAL: AI'NIN YAPMAMASI GEREKEN İŞİ AI'YA VERME
 ================================================================
 
-☐ Plancı, bileti net acceptance criteria ile küçük parçalara böldü mü?
-☐ Uygulayıcı, review istemeden önce kendi lokal kalite kapısını geçti mi?
-☐ Denetçi gerçekten TAZE bağlamda mı (önceki konuşmayı görmüyor mu)?
-☐ Denetçiye "iddiaları koda karşı çalıştır" talimatı verildi mi?
-☐ CI zaten yakalar mıydı? → yakalarsa, 0 ekstra ajan; sadece CI'a güven.
-☐ CI'dan geçse bile hâlâ yanlış olabilir mi? → evetse 1 taze denetçi.
-☐ Şema/mimari/güvenlik kararı mı? → 2-3 paralel denetçiye çıkar (nadiren).
-☐ Aynı hata ikinci kez mi tekrar ediyor? → workaround değil, kök neden.
-☐ Doküman büyüyor mu? → rotasyon/arşiv kuralını uygula, şimdi.
-☐ Branch + PR + (insan ya da taze ajan) onayı olmadan main'e merge YOK.
+Aşağıdakileri önce kod/script/CI yapsın:
 
-Bu kontrol listesi, bir sonraki projede AGENTS.md'nin başına yapıştırılıp
-o projeye özgü detaylarla (roller, branch adları, DoD) doldurulabilir.
+- format
+- lint
+- typecheck
+- unit/integration test
+- build
+- migration validate/deploy testi
+- secret/dependency kontrolleri
+- dosya var mı / branch ne / git status ne
+- deterministik regex/normalizasyon/constraint testleri
+
+AI ancak şunlarda devreye girsin:
+
+- niyet/iş kuralı yorumu
+- mimari trade-off
+- karmaşık hata kök nedeni
+- edge-case keşfi
+- güvenlik mantığı
+- kod review
+- belirsiz tasarım kararı
+
+Bir linter'ın bedavaya bulacağı hatayı güçlü modele sordurmak kredi israfıdır.
+
+================================================================
+4. RİSK ROUTER — KAÇ AJAN GEREKTİĞİNE BÖYLE KARAR VER
+================================================================
+
+## A — DÜŞÜK RİSK
+
+Örnek:
+- typo
+- README
+- basit UI metni
+- format
+- küçük config
+- açıkça testle kapsanan küçük refactor
+
+Akış:
+UYGULAYICI → CI
+
+Ekstra reviewer: 0.
+
+## B — ORTA RİSK
+
+Örnek:
+- normal feature
+- API business logic
+- veri validation
+- orta refactor
+- yeni test mantığı
+- CI'dan geçse bile mantıksal hata ihtimali olan kod
+
+Akış:
+PLANCI → UYGULAYICI → CI → 1 TAZE DENETÇI → MERGE
+
+Ekstra reviewer: 1.
+
+## C — YÜKSEK RİSK
+
+Örnek:
+- DB schema / migration
+- auth / authorization
+- secret yönetimi
+- ödeme
+- production data write/delete
+- gerçek müşteri iletişimi
+- güvenlik
+- kritik finans mantığı
+- cross-system mimari
+- geri dönüşü pahalı temel karar
+
+Akış:
+PLANCI → UYGULAYICI → CI → GÜÇLÜ DENETÇI → gerekirse 2. BAĞIMSIZ DENETÇI
+→ KULLANICI ONAYI → MERGE
+
+Ekstra reviewer: 1 veya 2; **her zaman 3 değil**.
+
+Kural:
+Ajan sayısını görevin büyüklüğüne değil, yanlış kararın MALİYETİNE göre artır.
+
+================================================================
+5. KÖKSAL İÇİN VARSAYILAN ARAÇ DAĞILIMI
+================================================================
+
+Bu dağılım araçlara kilit değildir; fiyat/kota/kalite değişirse rol başka araca
+aktarılabilir.
+
+### PLANCI / MİMAR
+- ChatGPT: plan, acceptance criteria, mimari karşılaştırma, son karar desteği.
+- Amaç: pahalı kod ajanına belirsiz görev bırakmamak.
+
+### ANA UYGULAYICI
+- Claude Code: orta/büyük kodlama görevlerinde ana Author.
+- Çoğu kodlama işinde dengeli model; en pahalı/derin modeli yalnız gerçekten
+  zor mimari veya çok aşamalı sorunlarda kullan.
+- Subagent açmak otomatik olarak ucuzluk sağlamaz; her subagent ayrı model işi
+  yaptığı için kota/token tüketir.
+
+### UCUZ/FREE KEŞİFÇİ VE RUTİN DENETÇİ
+- Google Antigravity Individual: güncel bireysel plan uygun olduğu sürece temel
+  haftalık kota ile read-heavy keşif, test-gap arama ve rutin fresh review için.
+- Otomatik ücretli overage/fallback KAPALI tutulur; kota biterse beklenir veya
+  başka mevcut araca geçilir.
+- Yerel Ollama: log özetleme, grep sonuçlarını sıkıştırma, basit boilerplate,
+  düşük riskli sınıflandırma. Kritik mimari için tek nihai hakem yapılmaz.
+
+### KRİTİK DENETÇİ
+- Codex: DB/migration, güvenlik, karmaşık mimari, çok zor bug veya yüksek riskli
+  PR review için saklanır.
+- Mümkün olduğunda dedicated review/read-only akışı kullanılır.
+- Rutin dosya taramasında Codex kotası yakılmaz.
+
+### DETERMINISTIK HAKEM
+- GitHub Actions / testler / scriptler.
+- Her zaman model review'dan önce.
+
+Not:
+- GitHub Copilot mevcutsa read-only explore/code-review/task yardımcıları rutin
+  ikinci göz olarak kullanılabilir; ancak zorunlu bağımlılık değildir.
+- Araç satın alma kararı "ajan sayısını artırmak" için değil, ölçülen darboğazı
+  çözmek için verilir.
+
+================================================================
+6. GÜNCEL CODE-AGENT MİMARİLERİNDEN ALINAN ORTAK DERSLER
+================================================================
+
+2026-08-13 resmi ürün dokümantasyonu karşılaştırmasının vendor-neutral sonucu:
+
+### Codex'ten alınan dersler
+- `AGENTS.md` kalıcı ve katmanlı proje talimatı için doğru ortak yüzeydir.
+- Subagent'lar ayrı context/thread ile read-heavy işleri ana context'ten ayırır.
+- Çoklu ajan tek ajana göre daha fazla token tüketir.
+- Paralellik önce exploration/test/triage/summarization gibi READ-HEAVY işlerde
+  kullanılmalıdır; eşzamanlı write-heavy ajanlarda conflict/koordinasyon artar.
+- Dedicated review, diff'i inceleyip çalışma ağacını değiştirmeden bulgu
+  üretebilir.
+- Git worktree, paralel yazma gerektiğinde izolasyon sağlar.
+- Permission/sandbox sınırı kaldırılmamalı; full-access/yolo varsayılan değildir.
+
+### Claude Code'dan alınan dersler
+- Subagent = ayrı context, tek odaklı iş, özetle geri dönüş.
+- Agent team = iletişim kuran bağımsız session'lar; daha fazla token ve
+  koordinasyon maliyeti. Yalnız gerçek paralel değer varsa kullan.
+- Paralel edit için worktree kullan; agent team kendi başına dosya izolasyonu
+  sağlamaz.
+- `CLAUDE.md` her session'a yüklenir; kısa ve net tutulmalıdır. Büyük/özel
+  prosedürleri path-rule veya skill'e taşı.
+- Command hook deterministik kontrol için LLM hook'tan daha ucuz ve güvenilirdir.
+- Subagent model/permission/max-turns sınırları ile maliyet ve yetki kısıtlanabilir.
+
+### GitHub Copilot'tan alınan dersler
+- `AGENTS.md`, farklı AI araçları arasında paylaşılan standing rules için uygun.
+- Explore/code-review gibi read-only ajanlar yazan ajandan ayrı tutulabilir.
+- Subagent'lar ayrı context ile ana session'ı kirletmeden çalışabilir.
+- Tool/agent profilleri mümkün olduğunca minimum yetkiyle tanımlanmalıdır.
+
+### Google Antigravity'den alınan dersler
+- Güncel bireysel katman ücretsiz bir başlangıç kotası sunar; kota ve model
+  erişimi zamanla değişebilir.
+- Kullanım `/usage`/quota ekranından izlenebilir.
+- Ücretli kredi overage otomatik açılmamalı; maliyet kontrolü için "Never"/
+  kapalı yaklaşımı kullan.
+- Gemini CLI bireysel yolunun yerini Antigravity CLI aldığı için yeni ortak
+  workflow eski Gemini CLI varsayımına bağlanmaz.
+
+================================================================
+7. CONTEXT MİMARİSİ — KREDİYİ EN ÇOK BURADA KURTAR
+================================================================
+
+En büyük gizli maliyetlerden biri aynı repo bilgisinin her ajana tekrar tekrar
+okutulmasıdır.
+
+### HER AJANA VERİLECEK MİNİMUM CONTEXT PACKET
+
+Varsayılan olarak yalnız:
+
+1. `AGENTS.md`
+2. Aktif GitHub Issue / acceptance criteria
+3. İlgili dosya veya PR diff'i
+4. Güncel CI/test sonucu
+5. Gerekliyse SADECE ilgili DECISION/architecture bölümü
+
+Şunları otomatik okutma:
+- bütün chat geçmişi
+- bütün ERRORS arşivi
+- bütün LEARNINGS arşivi
+- bütün repository
+- tüm MASTER_PLAN (rutin bugfix'te)
+- başka ajanların ham düşünce/transcript çıktıları
+
+### MASTER_PLAN NE ZAMAN OKUNUR?
+
+- yeni faz
+- mimari karar
+- scope değişikliği
+- proje yönü değişikliği
+
+Rutin test fix'inde her seferinde baştan yükleme.
+
+### STATUS NE İÇİN?
+
+Yalnız handoff/resume için kısa anlık durum.
+Günlük tarihi arşiv değildir.
+
+### TAZE REVIEWER CONTEXT'I
+
+Reviewer'a şunları ver:
+- acceptance criteria
+- PR diff
+- ilgili testler/CI
+- kritik mimari sınırlar
+
+Şunları verme:
+- Author'ın uzun savunması
+- Author'ın bütün sohbet geçmişi
+- "her şey doğru, onayla" yönlendirmesi
+
+Reviewer bulguyu önce bağımsız çıkarsın; sonra Author açıklamasıyla karşılaştır.
+
+================================================================
+8. ORTAK TALİMAT DOSYALARI — TEK KAYNAK, İNCE ADAPTÖRLER
+================================================================
+
+Amaç aynı kuralı 4 farklı ajan dosyasında kopyalamamak.
+
+### `AGENTS.md`
+- Vendor-neutral ortak çalışma kuralları.
+- Git/branch/PR/CI/approval/security sınırları.
+- Kısa tutulur.
+- Codex ve Copilot gibi destekleyen araçlar doğrudan okuyabilir.
+
+### `CLAUDE.md`
+- Claude Code için İNCE adaptör.
+- Aynı kuralları tekrar yazmaz.
+- Proje başlangıç komutları + "AGENTS.md ve aktif Issue'yu oku" gibi minimal
+  yönlendirme içerir.
+- Tercihen 200 satırın çok altında kalır.
+
+### Araç-özel agent/skill dosyaları
+- Sadece o aracın başka yerde ifade edilemeyen ayarı varsa.
+- Universal politika tekrar edilmez.
+
+### `AI-WORKFLOW.md`
+- Her session'da otomatik yüklenmek zorunda DEĞİLDİR.
+- Orkestrasyon/ekonomi politikasıdır.
+- Plancı, yeni proje kurulumu, faz geçişi veya süreç tartışmasında okur.
+
+Kural:
+**Bir talimatı bir kez yaz.** Aynı cümleyi AGENTS + CLAUDE + STATUS + prompt
++dört yerde tekrar etme.
+
+================================================================
+9. PARALELLİK KURALI
+================================================================
+
+Paralellik varsayılan değil, optimizasyondur.
+
+### PARALEL YAPILABİLİR
+- codebase exploration
+- log triage
+- test-gap analizi
+- security review
+- farklı hipotezlerle bug analizi
+- birbirinden bağımsız modüller
+
+### PARALEL YAPILMAZ
+- aynı dosyayı değiştiren iki ajan
+- birbirinin sonucuna bağımlı ardışık görevler
+- schema + consumer kodu aynı anda birbirinden habersiz değiştirmek
+- aynı branch'e iki writer
+
+### PARALEL WRITE GEREKİRSE
+
+Her writer için:
+- ayrı branch
+- tercihen Git worktree
+- net dosya sahipliği
+- ayrı PR veya kontrollü merge sırası
+
+Örnek:
+
+- `feature/issue-12-api`
+- `feature/issue-12-ui`
+- `test/issue-12-adversarial`
+
+Reviewer branch'e yazmaz; PR diff'ini okur.
+
+================================================================
+10. ÜÇ STANDART ÇALIŞMA MODU
+================================================================
+
+## MOD 1 — EKONOMİ MODU (varsayılan)
+
+Kullan:
+- günlük küçük/orta işler
+
+Akış:
+Plan → tek Author → local verify → CI → gerekirse 1 ucuz fresh reviewer → merge
+
+## MOD 2 — KALİTE MODU
+
+Kullan:
+- normal feature
+- business logic
+- orta refactor
+
+Akış:
+Plan → Author → CI → fresh reviewer → Author fix → CI → merge
+
+## MOD 3 — KRİTİK MOD
+
+Kullan:
+- schema/migration
+- auth/security
+- ödeme/finans
+- production writes
+- irreversible karar
+
+Akış:
+Plan → Author → CI → güçlü reviewer → gerekirse bağımsız ikinci reviewer
+→ fix → CI → kullanıcı onayı → merge
+
+Kritik Mod pahalıdır; sadece gerekçeyle kullan.
+
+================================================================
+11. MODEL / EFFORT ROUTING
+================================================================
+
+En güçlü model her işte kullanılmaz.
+
+### UCUZ / HIZLI MODEL
+- grep sonucu özetleme
+- dosya keşfi
+- boilerplate
+- basit test üretimi
+- log sınıflandırma
+- doküman biçimlendirme
+
+### ORTA / DENGELİ MODEL
+- çoğu feature kodu
+- normal bugfix
+- API business logic
+- refactor
+
+### GÜÇLÜ / DERİN MODEL
+- mimari
+- güvenlik
+- veri modeli
+- migration
+- zor concurrency
+- kritik reviewer
+- birkaç denemede çözülemeyen hata
+
+Kural:
+Modeli görevin PRESTİJİNE değil, gereken muhakeme derinliğine göre seç.
+
+================================================================
+12. KREDİ / TOKEN KONTROLÜ
+================================================================
+
+### Kural 1 — Multi-agent = ekstra maliyet
+
+Her subagent kendi model/tool işini yaptığı için token/kota tüketir.
+"Daha hızlı" her zaman "daha ucuz" değildir.
+
+### Kural 2 — Lean prompt
+
+Prompt yalnız şunları içersin:
+- hedef
+- gerekli context
+- hard constraints
+- approval sınırı
+- acceptance criteria
+- beklenen çıktı
+
+Aynı kuralı üç kez tekrarlama.
+İlgisiz tool ve doküman yükleme.
+
+### Kural 3 — Tur sınırı
+
+Destekleyen araçlarda:
+- subagent max-turns
+- timeout
+- concurrency limiti
+- permission limiti
+
+kullan.
+
+Ajan 20 tur aynı yerde dönüyorsa "daha çok düşün" değil, DUR → kök neden /
+insan veya güçlü reviewer escalation.
+
+### Kural 4 — Tekrar maliyeti
+
+Aynı workaround ikinci kez tekrarlanıyorsa üçüncü kez workaround yapma.
+Kalıcı root-cause bileti aç.
+
+### Kural 5 — Usage görünürlüğü
+
+Her PR/Issue için minimum kayıt:
+- rol
+- kullanılan araç/model (biliniyorsa)
+- sonuç
+- rework oldu mu
+- kota/usage bilgisi araç gösteriyorsa yaklaşık değer
+
+Mükemmel token muhasebesi için yeni sistem kurma. Önce en pahalı tekrarları gör.
+
+================================================================
+13. DETERMİNİSTİK HOOK / CI KATMANI
+================================================================
+
+Hooks ancak tekrar eden gerçek bir ihtiyaç varsa eklenir.
+
+Tercih sırası:
+1. normal script
+2. package script / pre-commit
+3. CI
+4. command hook
+5. prompt/agent hook (yalnız script karar veremiyorsa)
+
+Neden:
+- Command/script deterministiktir.
+- LLM hook ek model çağrısı ve ekstra kredi demektir.
+
+Her edit sonrası bütün suite'i çalıştırmak şart değildir; ama PR öncesi tam kalite
+kapısı ve CI zorunludur.
+
+================================================================
+14. SECURITY / CREDENTIAL KURALI
+================================================================
+
+ASLA:
+- PAT/API key'i chate yapıştırma
+- token'ı git remote URL içine gömme
+- secret'ı repo dosyasına commit etme
+- sırf ajan rahatsız olmasın diye full-access/yolo açma
+- reviewer'a gereksiz write yetkisi verme
+
+TERCİH:
+- OS/Git Credential Manager
+- SSH veya güvenli credential helper
+- secret store / GitHub Secrets
+- least privilege
+- read-only reviewer
+- workspace sınırı
+
+Açık kullanıcı onayı gerektirenler:
+- production data delete/reset/drop
+- gerçek customer send
+- payment
+- secret rotation/exposure
+- irreversible production action
+- kritik main merge (proje politikası öyle belirlenmişse)
+
+================================================================
+15. HANDOFF CONTRACT — AJANDAN AJANA HAM CHAT TAŞIMA
+================================================================
+
+Raw transcript taşıma. Aşağıdaki kısa paket yeterli:
+
+ISSUE:
+GOAL:
+BRANCH / PR:
+LAST COMMIT:
+CHANGED FILES:
+ACCEPTANCE CRITERIA:
+TEST / CI:
+KNOWN RISKS:
+OPEN BLOCKER:
+EXACT NEXT STEP:
+
+Reviewer için ayrıca:
+AUTHOR CLAIMS (opsiyonel, review bittikten sonra gösterilebilir):
+
+Handoff GitHub Issue/PR comment veya kısa STATUS üzerinden yapılır.
+Sohbet geçmişi source of truth değildir.
+
+================================================================
+16. DEFINITION OF DONE — KOD DEĞİŞİKLİĞİ
+================================================================
+
+Bir görev DONE değildir, ta ki:
+
+- Scope acceptance criteria ile uyumlu.
+- İlgisiz refactor yok.
+- İlgili testler var ve geçiyor.
+- Lint/typecheck/build geçiyor.
+- Migration varsa migration DoD geçiyor.
+- Secret sızıntısı yok.
+- Branch/PR kullanıldı (proje kuralı öyleyse).
+- CI gerçek GitHub run'ında PASS.
+- Risk sınıfının istediği bağımsız review tamamlandı.
+- Açık kritik blocker yok.
+- Main'e merge politikası sağlandı.
+
+"Ajan çalışıyor dedi" = DONE değildir.
+
+================================================================
+17. MIGRATION / DB İÇİN EK KRİTİK MOD
+================================================================
+
+Migration varsa minimum:
+- disposable temiz DB'ye deploy
+- mümkünse mevcut/verili DB üstünde upgrade path testi
+- destructive SQL taraması
+- veri kaybı riski varsa backup/restore planı
+- schema değişikliği için güçlü independent review
+
+Her migration için yapay down-migration üretmek zorunlu değildir; gerçek rollback /
+forward-fix stratejisi risk bazında belirlenir.
+
+================================================================
+18. ANTI-PATTERN — YAPMA
+================================================================
+
+- 5 pahalı ajanı her görevde paralel açmak.
+- 5 ajana repository'nin tamamını ayrı ayrı okutmak.
+- Aynı branch/dosyaya iki writer salmak.
+- Author'ın kendi kodunu "independent approved" sayması.
+- AI'ya lint/typecheck yaptırmak yerine linter çıktısını çalıştırmamak.
+- Reviewer'a Author'ın bütün konuşmasını verip aynı varsayımları bulaştırmak.
+- Ham log/transcript'i ajanlar arasında taşımak.
+- Her yeni fikir için yeni markdown dosyası üretmek.
+- Bir sorunu 3., 4., 5. kez workaround ile geçmek.
+- En güçlü modeli typo/grep için kullanmak.
+- En ucuz modeli kritik schema/security hakemi yapmak.
+- Token/API key'i prompt, repo veya remote URL'ye koymak.
+- Ücretsiz ajan kotası bitince otomatik ücretli credit fallback bırakmak.
+- Kullanılmayan MCP/tool/plugin'leri her session context'ine yüklemek.
+
+================================================================
+19. 4 PROJEYE KOPYALAMA ŞABLONU
+================================================================
+
+Her yeni proje başında yalnız şunları yap:
+
+1. Bu `AI-WORKFLOW.md` dosyasını kopyala.
+2. Kısa proje `AGENTS.md` oluştur.
+3. Projeye özel `MASTER_PLAN.md` oluştur.
+4. Gerekirse ince `CLAUDE.md` adaptörü oluştur.
+5. GitHub Issue + branch + PR + CI temelini kur.
+6. Tek bir `verify`/kalite komutu mümkünse standardize et.
+7. Risk C işlerde hangi güçlü reviewer'ın kullanılacağını belirle.
+8. Free/ucuz reviewer'ın otomatik ücretli fallback'ini kapat.
+9. İlk gerçek feature'da sistemi test et; teorik 10 ajan oluşturma.
+10. Ölçülen darboğaza göre araç ekle.
+
+Projeler birbirinin kodunu paylaşmak zorunda değildir; ortak olan yalnız geliştirme
+metodudur.
+
+================================================================
+20. İLERİ SEVİYE — ŞİMDİ KURMA, İHTİYAÇ DOĞARSA
+================================================================
+
+Aşağıdakiler gerçek tekrar/maliyet oluşmadan kurulmaz:
+
+- merkezi LLM gateway
+- LiteLLM/model router
+- otomatik model seçici
+- tam token/cost dashboard
+- 5+ sürekli çalışan agent team
+- sürekli LLM tabanlı CI review
+- karmaşık agent orchestration framework
+
+Bu katmanlar ancak şu şartla eklenir:
+"Manuel/yalın yöntemle ölçülen problem, yeni altyapının maliyetinden daha büyük."
+
+================================================================
+21. TEK SAYFALIK OPERASYON KONTROL LİSTESİ
+================================================================
+
+☐ İşin risk sınıfı A/B/C belirlendi mi?
+☐ Acceptance criteria net mi?
+☐ Uygulayıcıya yalnız gerekli context verildi mi?
+☐ Read-heavy keşif pahalı Author yerine Scout'a verilebilir mi?
+☐ AI'dan önce deterministik test/CI çalıştı mı?
+☐ Reviewer gerekiyorsa taze ve mümkün olduğunca read-only mı?
+☐ Paralel writer varsa ayrı branch/worktree ve dosya sahipliği var mı?
+☐ Aynı hata ikinci kez tekrarlanıyorsa root-cause çözümüne geçildi mi?
+☐ Güçlü model yalnız yüksek değerli muhakemede mi kullanılıyor?
+☐ Ücretli fallback istemeden açılmayacak şekilde kapalı mı?
+☐ Secret/token güvenli credential store'da mı?
+☐ Gerçek CI PASS var mı?
+☐ Risk sınıfının istediği review tamam mı?
+☐ Merge öncesi kritik blocker sıfır mı?
+
+================================================================
+22. KISA KARAR AĞACI
+================================================================
+
+"Bunu script/test çözebilir mi?"
+→ EVET: AI kullanma.
+→ HAYIR:
+
+"İş read-heavy mi?"
+→ EVET: ucuz/free Scout veya subagent.
+→ HAYIR:
+
+"Kod yazılacak mı?"
+→ EVET: tek Author.
+→ HAYIR: Planner/Reviewer.
+
+"CI'dan geçse bile ciddi yanlış olabilir mi?"
+→ HAYIR: ekstra reviewer yok.
+→ EVET: 1 taze reviewer.
+
+"Yanlış karar veri/güvenlik/para/geri dönüş açısından pahalı mı?"
+→ EVET: güçlü reviewer + gerekirse ikinci bağımsız reviewer + kullanıcı onayı.
+
+Bu sistemin amacı çok ajan kullanmak değil; **doğru anda doğru ajanı kullanmaktır.**
