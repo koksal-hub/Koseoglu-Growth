@@ -69,7 +69,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #2b — Phase 0/1 Hardening (Öncelik 0-4 kapanış planı) ---
 - Öncelik: HIGH
 - Sorumlu: Devin
-- Durum: REVIEW (PR açıldı; CI PASS doğrulanınca DONE)
+- Durum: REVIEW (PR #5 açık, CI PASS — merge bekliyor)
 - Bağımlılıklar: Issue #2
 - Acceptance criteria:
   - [x] `.github/workflows/ci.yml` repoda mevcut (Postgres service +
@@ -93,7 +93,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Konfig tutarlılığı: workspaces tek kaynak, engines/packageManager/
     .nvmrc, LOG_LEVEL + CORS_ORIGINS senkronu, env şeması sertleştirme,
     helmet/cors/rate-limit, docker-compose (db+migrate+api) çalışır durumda
-  - [ ] GitHub Actions CI PASS (PR üzerinde) — bekleniyor
+  - [x] GitHub Actions CI PASS (PR #5, `build` job'ı yeşil)
 - NOT: İyileştirme maddeleri (22-26: central logging, ER ölçeklenebilirlik,
   hata sözleşmesi + metrics, coverage threshold, frontend MVP) ayrı
   PR'larda ele alınacak.

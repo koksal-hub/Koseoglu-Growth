@@ -6,7 +6,8 @@ last_actor: Devin (Phase 0/1 Hardening — Öncelik 0-4 kapanış planı)
 CURRENT PHASE: PHASE 1 — DATA FOUNDATION (hardening)
 ACTIVE ISSUE: Phase 0/1 sağlamlaştırma (Köksal'ın önceliklendirilmiş kapanış
 planı; Faz 2+ iş akışları bilinçli olarak kapsam dışı)
-ACTIVE BRANCH: devin/1786664161-phase01-hardening (PR açıldı)
+ACTIVE BRANCH: devin/1786664161-phase01-hardening (PR #5:
+https://github.com/koksal-hub/Koseoglu-Growth/pull/5)
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
@@ -88,14 +89,17 @@ CURRENT QUALITY STATUS (gerçek, doğrulanmış — lokalde):
   PASS
 - docker compose up (db+migrate+api): PASS, health/ready 200, SIGTERM'de
   graceful shutdown exit 0
-- GitHub Actions CI: PR üzerinde bekleniyor (ci.yml artık repoda)
+- GitHub Actions CI: PASS (PR #5 üzerinde `build` job'ı yeşil)
+- Uçtan uca test (Devin testing agent): PASS — health/ready + DB kesinti/
+  geri dönüş, SIGTERM graceful shutdown (exit 0), helmet/rate-limit/CORS,
+  DB CHECK kısıtları, web + /api dev proxy, lang="tr". Detay: PR #5 yorumu.
 
 OPEN BLOCKERS:
 - Yok. (Önceki "workflow scope" blocker'ı bu ortamda oluşmadı; ci.yml push
   edildi. gh CLI hâlâ yok — Issue yönetimi manuel.)
 
 NEXT ACTION:
-- PR'daki GitHub Actions CI sonucunu doğrula (PASS olmalı).
+- PR #5 review/merge.
 - İyileştirme maddeleri (22-26: central logging olgunlaştırma, entity
   resolution blocking/ölçek, hata sözleşmesi + metrics, coverage threshold,
   frontend işlevsel MVP) AYRI PR'larda ele alınacak — bu PR kapsamı dışında.
