@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Load test environment (.env.test)
-        run: cat .env.test >> "$GITHUB_ENV"
+        run: grep -v '^#' .env.test | grep -v '^[[:space:]]*$' >> "$GITHUB_ENV"
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
