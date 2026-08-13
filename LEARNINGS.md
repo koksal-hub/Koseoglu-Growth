@@ -143,6 +143,18 @@ teknik bilgi yazılır.
 - etkisi: Tüm çoklu-paket pnpm script'lerinde (`build`, gelecekteki
   `dev:all` vb.) yol tabanlı filtrelerde her zaman `./` öneki kullanılacak.
 
+- tarih: 2026-08-13T20:58:00+03:00
+- konu: "yerelde geçti" CI'da geçti anlamına gelmez
+- açıklama: Kök dizine `vitest.config.ts` eklendikten sonra yalnızca `pnpm
+  test` yeniden çalıştırıldı, `pnpm lint` tekrar çalıştırılmadı. ESLint'in
+  tip-farkında linting'i (`parserOptions.project` → tsconfig.base.json)
+  yeni dosyanın hiçbir tsconfig `include`'unda olmadığını GitHub Actions'ta
+  ilk gerçek CI çalışmasında yakaladı — yerel doğrulama bunu kaçırmıştı.
+- etkisi: Bir dosya eklendiğinde/değiştiğinde SADECE ilgili görüneni değil,
+  dört komutun (lint/typecheck/test/build) TAMAMI yeniden çalıştırılmalı;
+  "çalışıyor" demek her komutu tekrar tekrar doğrulamadan kanıt sayılmaz
+  (bkz. AGENTS.md → CI as judge kuralı).
+
 - tarih: 2026-08-13T20:26:00+03:00
 - konu: vitest watch-mode varsayılanı
 - açıklama: Vitest, `CI` ortam değişkeni set değilse varsayılan olarak watch

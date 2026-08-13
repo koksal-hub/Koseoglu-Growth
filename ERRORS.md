@@ -166,6 +166,30 @@ oluşturulmaz.
 - düzeltme: `pnpm/action-setup@v2` → `version: 11` (yerel pnpm 11.21.0 ile
   uyumlu), ayrı bir `actions/setup-node@v4` adımı eklendi (`node-version: 20`,
   `cache: pnpm`).
-- status: FIXED (lokalde düzeltildi; push, yukarıdaki workflow-scope engeli
-  nedeniyle henüz yapılamadı — Köksal web UI'dan eklerken bu düzeltilmiş
-  içeriği kullanmalı).
+- status: FIXED. Köksal ci.yml'i GitHub web UI'dan ekledi (commit 4fe5e32),
+  ardından Node sürümünü kendi başına 24'e güncelledi (commit c609b8b).
+
+---
+
+- id: eslint-vitest-config-tsconfig-disinda
+- tarih: 2026-08-13T20:54:00+03:00 (CI'da ilk gözlem) → 20:58:00+03:00 (çözüldü)
+- yer: tsconfig.base.json, vitest.config.ts
+- kısa: Köksal'ın GitHub web UI'dan ci.yml'i eklemesinin ardından çalışan İLK
+  gerçek GitHub Actions CI run'ı (hem 4fe5e32 hem c609b8b) `pnpm lint`
+  adımında başarısız oldu.
+- detay: "0:0 error Parsing error: "parserOptions.project" has been provided
+  for @typescript-eslint/parser. The file was not found in any of the
+  provided project(s): vitest.config.ts" → exit code 1.
+- root_cause: Bu oturumun başında (test'i düzeltirken) kök dizine
+  `vitest.config.ts` eklenmişti, ama `tsconfig.base.json`'ın `include`
+  listesi yalnızca `apps/**/*`, `packages/**/*`, `prisma/**/*` idi — kök
+  seviyesindeki `.ts` dosyalarını kapsamıyordu. ESLint'in
+  `parserOptions.project` (tip-farkında linting) bu yüzden dosyayı
+  reddediyordu. Bu, `vitest.config.ts` eklendikten sonra `pnpm lint`
+  yeniden çalıştırılmadığı için yerel doğrulamada kaçmıştı (bkz.
+  LEARNINGS.md).
+- düzeltme: `tsconfig.base.json` → `include` listesine `"*.ts"` eklendi.
+  Lokalde lint/typecheck/test/build tekrar PASS oldu (commit 2caacb6).
+- status: FIXED — GitHub Actions'ta gerçek CI run'ı ile doğrulandı:
+  https://github.com/koksal-hub/Koseoglu-Growth/actions/runs/31728265957
+  (commit 2caacb6, conclusion: success).
