@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+.env
+.env.local
+.env.*.local
+.vscode/
+.idea/
+.claude/settings.local.json
+.pnpm-store/
+coverage/
+.nyc_output/
