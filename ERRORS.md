@@ -122,3 +122,50 @@ oluşturulmaz.
 - status: FIXED (bu oturum için). Kalıcı not: Docker Desktop'ın Windows
   başlangıcında otomatik açılması (Settings → General → "Start Docker Desktop
   when you sign in") önerilir; bu bir kullanıcı tercihi, otomatik değiştirilmedi.
+
+---
+
+- id: github-push-workflow-scope-eksik
+- tarih: 2026-08-13T20:35:00+03:00
+- yer: git push → .github/workflows/ci.yml
+- kısa: `git push origin main`, kullanılan GitHub kimlik bilgisinin (Git
+  Credential Manager üzerinden OAuth App) `workflow` scope'u olmadığı için
+  `.github/workflows/ci.yml` dosyasını içeren commit'i reddetti.
+- detay: "! [remote rejected] main -> main (refusing to allow an OAuth App to
+  create or update workflow `.github/workflows/ci.yml` without `workflow`
+  scope)". Credential cache temizlenip yeniden denendi, GitHub aynı OAuth App
+  yetkisini (scope değişmeden) sessizce yeniden verdi. `curl -I -H
+  "Authorization: token $TOKEN" https://api.github.com/user` ile doğrulandı:
+  `X-OAuth-Scopes: gist, read:org, repo` (workflow yok).
+- root_cause: GitHub, bir OAuth App'e önceden verilen scope setini hatırlar;
+  yerel token cache'ini silmek GitHub sunucu tarafındaki app-level
+  authorization'ı sıfırlamaz. `.github/workflows/*` altındaki DEĞİŞİKLİKLER
+  (yeni dosya veya düzenleme fark etmeksizin) hem git push hem GitHub Contents
+  API için `workflow` scope'u gerektirir.
+- düzeltme: `.github/workflows/ci.yml` git takibinden çıkarıldı (`git rm
+  --cached`), geri kalan Foundation işi push edildi. Köksal, dosyayı GitHub
+  web arayüzü üzerinden (kendi oturum/cookie auth'u kullanır, bu scope
+  kısıtlamasına tabi değildir) manuel ekleyecek.
+- status: OPEN (workaround uygulandı, kalıcı çözüm — repo'ya yeni bir
+  `workflow` scope'lu Personal Access Token veya OAuth App yetkisi eklemek —
+  Köksal'ın kararına bağlı).
+
+---
+
+- id: ci-yml-pnpm-action-setup-yanlis-versiyon
+- tarih: 2026-08-13T20:50:00+03:00
+- yer: .github/workflows/ci.yml
+- kısa: `pnpm/action-setup@v2` adımında `version: 20` verilmişti; bu alan
+  pnpm sürümünü belirtir (Node sürümünü değil), ve pnpm'in 20.x diye bir
+  sürümü yok. Ayrıca workflow'da hiç `actions/setup-node` adımı yoktu.
+- detay: Workflow ubuntu-latest runner'ının önceden yüklü Node'una güveniyordu
+  ve pnpm'i geçersiz bir sürüm numarasıyla kurmaya çalışıyordu — ilk adımda
+  başarısız olurdu.
+- root_cause: `version: 20` muhtemelen Node.js 20 kastedilerek yazılmış ama
+  yanlış action'ın input'una konmuş.
+- düzeltme: `pnpm/action-setup@v2` → `version: 11` (yerel pnpm 11.21.0 ile
+  uyumlu), ayrı bir `actions/setup-node@v4` adımı eklendi (`node-version: 20`,
+  `cache: pnpm`).
+- status: FIXED (lokalde düzeltildi; push, yukarıdaki workflow-scope engeli
+  nedeniyle henüz yapılamadı — Köksal web UI'dan eklerken bu düzeltilmiş
+  içeriği kullanmalı).
