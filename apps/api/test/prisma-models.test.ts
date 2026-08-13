@@ -47,21 +47,27 @@ describe('Prisma data foundation models', () => {
     expect(company.createdAt).toBeInstanceOf(Date);
   });
 
-  it('enforces a unique constraint on Company.domain', async () => {
-    const domain = `dup-${RUN_ID}.example.com`;
-    await createTestCompany({
-      name: `Dup A ${RUN_ID}`,
-      normalizedName: `DUP A ${RUN_ID}`,
+  it('allows two distinct companies to share one domain (holding/subsidiary case)', async () => {
+    // Company.domain is deliberately NOT globally unique — a holding company
+    // and its subsidiary can share one corporate domain in real Turkish B2B
+    // data (found + verified during the 2026-08-13 review gate, see
+    // REVIEW-issue2.md point A). Uniqueness for entity resolution is a
+    // deterministic-matching concern (entity-resolution.ts), not a DB
+    // constraint.
+    const domain = `shared-${RUN_ID}.example.com`;
+    const parent = await createTestCompany({
+      name: `Shared Domain Holding ${RUN_ID}`,
+      normalizedName: `SHARED DOMAIN HOLDING ${RUN_ID}`,
+      domain
+    });
+    const subsidiary = await createTestCompany({
+      name: `Shared Domain Lojistik ${RUN_ID}`,
+      normalizedName: `SHARED DOMAIN LOJISTIK ${RUN_ID}`,
       domain
     });
 
-    await expect(
-      createTestCompany({
-        name: `Dup B ${RUN_ID}`,
-        normalizedName: `DUP B ${RUN_ID}`,
-        domain
-      })
-    ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
+    expect(subsidiary.id).not.toBe(parent.id);
+    expect(subsidiary.domain).toBe(parent.domain);
   });
 
   it('enforces a unique constraint on Company.taxNumber', async () => {

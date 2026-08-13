@@ -116,7 +116,12 @@ model Company {
   updatedAt DateTime @updatedAt
 
   @@unique([taxNumber])
-  @@unique([domain])
+  // NOT globally unique on purpose: a holding company and its subsidiaries
+  // can legitimately share one corporate domain (found + verified during
+  // the 2026-08-13 review gate, see REVIEW-issue2.md point A). Domain is a
+  // strong entity-resolution SIGNAL, not a hard identity guarantee — unlike
+  // taxNumber, which is.
+  @@index([domain])
   @@index([normalizedName])
   @@index([emailDomain])
   @@index([status])
