@@ -48,23 +48,40 @@ ikinci bakışa ihtiyaç vardı.
 2. NE ZAMAN TEK AJAN, NE ZAMAN ÇOKLU AJAN (maliyet kararı)
 ================================================================
 
-TEK Uygulayıcı + TEK taze Denetçi yeterli:
-- Rutin bilet/bugfix/küçük özellik.
-- Dokümantasyon güncellemesi.
-- Zaten CI'dan geçmiş, düşük riskli değişiklikler.
+ÖNEMLİ: İkinci bir ajan da ÜCRETSİZ DEĞİL. "Denetçi ekle" tavsiyesi maliyetsiz
+değildir — her ekstra ajan çağrısı gerçek token/kredi harcar. Aşağıdaki
+kademelendirme tam olarak bunun için var: her şeye 2 ajan değil, İŞİN
+RİSKİNE göre 0, 1 veya 2-3.
 
-2-3 PARALEL bağımsız Denetçi kullan (daha pahalı, ama gerekçeli):
+**SIFIR ekstra ajan (yalnızca CI + Uygulayıcının kendi kontrolü) yeterli:**
+- Yazım/format/dokümantasyon düzeltmesi.
+- CI zaten kapsıyor ve test edilebilir mantık gerektirmeyen değişiklik
+  (örn. bir config değeri, bir bağımlılık sürümü).
+- Buradaki risk: bir linter/test zaten yakalar, ekstra bir AI ajanının
+  katacağı marjinal değer, maliyetinden düşüktür.
+
+**TEK taze Denetçi yeterli:**
+- CI'ın YAKALAYAMAYACAĞI bir risk taşıyan ama tek başına yıkıcı olmayan
+  değişiklik: yeni bir fonksiyonun mantığı, bir dokümandaki teknik iddia,
+  orta ölçekli bir refactor.
+- Soru: "Bu değişiklik CI'dan geçse bile hâlâ yanlış olabilir mi?" Evetse,
+  1 denetçi. Hayırsa, 0.
+
+**2-3 PARALEL bağımsız Denetçi (en pahalı katman, seçici kullan):**
 - Şema/mimari kararları (geri dönüşü pahalı).
 - Güvenlik-hassas kod (auth, secret, ödeme, gerçek müşteri verisi).
-- Faz/milestone sınırları (main'e merge öncesi).
+- Faz/milestone sınırları (main'e merge öncesi) — sık değil, nadir.
 - Bugünkü örnek: Growth'un Faz 1→Faz 2 geçişinde 3 paralel ajan
-  kullanıldı, üçü de birbirini görmeden aynı kritik sorunları (CI'ın
-  gerçekte hiç çalışmadığı, "multi-agent" sürecinin kurgu olduğu)
-  bağımsız doğruladı — bu, TEK bir ajanın kendi kendine söyleyebileceği
-  bir şey değildi.
+  kullanıldı, üçü de birbirini görmeden aynı kritik sorunları bağımsız
+  doğruladı. Bu 3 ajan (~230K token) + sonrasındaki 1 PR denetim ajanı
+  (~65K token) toplam ~296K token'a mal oldu — GERÇEK bir maliyet.
+  BUNU HER GÜN/HER BİLET İÇİN YAPMAYIN. Bu, projenin tüm "multi-agent"
+  önermesinin kurgu olduğunu ortaya çıkaran, tek seferlik bir temel
+  denetimdi (bir nevi yıllık teftiş) — rutin geliştirme temposu değil.
 
-Kural: Denetçi sayısını, hatanın maliyetine göre ölçekle. Bir README yazım
-hatası 1 denetçi ister; production'a giden bir şema kararı 2-3 ister.
+Kural: Ajan sayısını hatanın MALİYETİNE göre ölçekle, "her zaman 2" gibi
+sabit bir kurala değil. Bir README yazım hatası 0 ekstra ajan ister; bir
+şema kararı 2-3 hak eder. Aradaki her şey 1 ister.
 
 ================================================================
 3. MALİYETİ DÜŞÜREN 5 SOMUT KURAL
@@ -113,8 +130,9 @@ hatası 1 denetçi ister; production'a giden bir şema kararı 2-3 ister.
 ☐ Uygulayıcı, review istemeden önce kendi lokal kalite kapısını geçti mi?
 ☐ Denetçi gerçekten TAZE bağlamda mı (önceki konuşmayı görmüyor mu)?
 ☐ Denetçiye "iddiaları koda karşı çalıştır" talimatı verildi mi?
-☐ Şema/mimari/güvenlik kararı mı? → 2-3 paralel denetçiye çıkar.
-☐ Rutin bilet mi? → 1 uygulayıcı + 1 denetçi yeterli, fazlası israf.
+☐ CI zaten yakalar mıydı? → yakalarsa, 0 ekstra ajan; sadece CI'a güven.
+☐ CI'dan geçse bile hâlâ yanlış olabilir mi? → evetse 1 taze denetçi.
+☐ Şema/mimari/güvenlik kararı mı? → 2-3 paralel denetçiye çıkar (nadiren).
 ☐ Aynı hata ikinci kez mi tekrar ediyor? → workaround değil, kök neden.
 ☐ Doküman büyüyor mu? → rotasyon/arşiv kuralını uygula, şimdi.
 ☐ Branch + PR + (insan ya da taze ajan) onayı olmadan main'e merge YOK.
