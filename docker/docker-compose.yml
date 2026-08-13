@@ -1,8 +1,20 @@
+# Local stack: Postgres + migrations + API.
+#
+# Setup: derive a real env file from the example first (the db service reads
+# it when present, but sane defaults below keep `docker compose up` working
+# without one):
+#   cp .env.example .env
+#
+# Usage (from the repository root):
+#   docker compose -f docker/docker-compose.yml up -d          # db + migrate + api
+#   docker compose -f docker/docker-compose.yml up -d db       # database only
 services:
   db:
     image: postgres:15
     restart: unless-stopped
-    env_file: ../.env
+    env_file:
+      - path: ../.env
+        required: false
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -16,6 +28,36 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # One-shot: applies pending Prisma migrations, then exits. The api service
+  # only starts after this completes successfully.
+  migrate:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    command: ["pnpm", "exec", "prisma", "migrate", "deploy"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-growth_db}?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-growth_db}?schema=public
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   db_data:

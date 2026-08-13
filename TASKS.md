@@ -66,6 +66,38 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [ ] GitHub Actions CI PASS (Postgres servisiyle) — bekleniyor, bkz.
     STATUS.md
 
+--- Issue #2b — Phase 0/1 Hardening (Öncelik 0-4 kapanış planı) ---
+- Öncelik: HIGH
+- Sorumlu: Devin
+- Durum: REVIEW (PR açıldı; CI PASS doğrulanınca DONE)
+- Bağımlılıklar: Issue #2
+- Acceptance criteria:
+  - [x] `.github/workflows/ci.yml` repoda mevcut (Postgres service +
+    migrate deploy + lint→typecheck→test→build) — push edildi, önceki
+    workflow-scope blocker'ı bu ortamda oluşmadı
+  - [x] Graceful shutdown (SIGTERM/SIGINT → server.close + prisma
+    $disconnect) + unhandledRejection/uncaughtException handler'ları
+  - [x] `/api/health` (liveness) + `/api/ready` (DB `SELECT 1`, düşerse 503)
+  - [x] `prisma.ts` doğrulanmamış env fallback'i kaldırıldı
+  - [x] Activity "en az bir Lead/Contact" invariant'ı: createActivity helper
+    + additive CHECK constraint migration
+  - [x] confidence 0..1 CHECK constraint'leri (Company + Evidence, additive)
+  - [x] Entity resolution: free-email blacklist (EMAIL_DOMAIN skip) + PHONE
+    düşük güvenli destekleyici sinyal (0.5, öncelik sırası düşürüldü)
+  - [x] Nullable email + unique bypass edge-case'i şemada dokümante + testle
+    sabitlendi
+  - [x] Negatif testler (Activity invariant, aralık dışı confidence, gmail
+    EMAIL_DOMAIN eşleşmemesi, ortak telefon) — test sayısı 31 → 44
+  - [x] Frontend test altyapısı (vitest + jsdom + RTL, App smoke testi)
+  - [x] Frontend düzeltmeleri: lang="tr", #root null guard, vite dev proxy
+  - [x] Konfig tutarlılığı: workspaces tek kaynak, engines/packageManager/
+    .nvmrc, LOG_LEVEL + CORS_ORIGINS senkronu, env şeması sertleştirme,
+    helmet/cors/rate-limit, docker-compose (db+migrate+api) çalışır durumda
+  - [ ] GitHub Actions CI PASS (PR üzerinde) — bekleniyor
+- NOT: İyileştirme maddeleri (22-26: central logging, ER ölçeklenebilirlik,
+  hata sözleşmesi + metrics, coverage threshold, frontend MVP) ayrı
+  PR'larda ele alınacak.
+
 --- Issue #3 — Research / Verification / Evidence (Phase 2) ---
 - Öncelik: MEDIUM
 - Sorumlu: Claude Code
