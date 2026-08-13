@@ -74,11 +74,26 @@ E) currency: String @default("TRY") — şemanın geri kalanı enum-ağırlıkl�
    KARAR: String + zod ISO-4217 validation'ı Faz 2/3'te eklenecek, enum'a
    ÇEVRİLMEYECEK.
 
-F) (bağımsız inceleme) LEGAL_ENTITY_STOPWORDS içindeki "HOLDING" riskli.
-   "Köseoğlu Lojistik" ile "Köseoğlu Holding" — gerçekte farklı tüzel
-   kişilikler — normalize edilince aynı normalizedName'e düşüp
-   NORMALIZED_NAME adımında (confidence 0.65) yanlış eşleşebilir. Hiç test
-   edilmemiş bir senaryo. KARAR GEREKİYOR.
+F) (bağımsız inceleme, SONRADAN DÜZELTİLDİ — bkz. not) LEGAL_ENTITY_STOPWORDS
+   içindeki "HOLDING" riskli. İlk taslakta yanlış bir örnek verilmişti
+   ("Köseoğlu Lojistik" vs "Köseoğlu Holding" — bu ikisi normalize edilince
+   AYNI DEĞİL: "KOSEOGLU LOJISTIK" vs "KOSEOGLU", similarity 0.47, eşiğin
+   çok altında; PR'ı bağımsız denetleyen ikinci bir ajan bunu koda karşı
+   çalıştırıp yakaladı). DOĞRU VE DOĞRULANMIŞ ÖRNEK: "Köseoğlu Lojistik
+   Holding" (örn. Köseoğlu Lojistik'in üzerindeki bir holding şirketi —
+   gerçekçi bir Türk kurumsal yapı) normalize edilince "Holding" stopword
+   olarak silinip TAM OLARAK "KOSEOGLU LOJISTIK" — yani "Köseoğlu
+   Lojistik"in kendisiyle birebir aynı — sonucunu veriyor
+   (`normalizeCompanyName` ile bizzat test edildi). Bu, NORMALIZED_NAME
+   adımında (confidence 0.65) gerçek, doğrulanmış bir yanlış-eşleşme
+   riskidir: bir holding ile onun altındaki operasyonel şirket otomatik
+   olarak "aynı şirket" sayılabilir. KARAR GEREKİYOR: "HOLDING" (ve benzer
+   şirket-yapısı belirten kelimeler) stopword listesinden çıkarılmalı mı,
+   yoksa bu tür kelimeler stopword yerine ayrı bir "şirket yapısı" sinyaline
+   mi dönüştürülmeli?
+   NOT: Bu maddenin ilk hali, review sürecinin kendisinin de "iddia değil,
+   kod üzerinde doğrulanmış kayıt" ilkesine tam uymadığı bir örnekti —
+   bağımsız denetim tam bunun için var ve işe yaradı.
 
 G) (bağımsız inceleme) Activity/FollowUp'ın "en az leadId veya contactId
    olmalı" kuralı yalnızca şema yorumunda var, hiçbir yerde (route/servis
