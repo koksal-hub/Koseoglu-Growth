@@ -37,13 +37,15 @@ describe('normalizeCompanyName', () => {
 
   it('does not strip "Holding" — a holding company is a distinct entity from its subsidiary', () => {
     // Regression test for REVIEW-issue2.md point F: an earlier stopword
-    // list included HOLDING, which made "Köseoğlu Lojistik Holding"
-    // normalize to exactly the same key as "Köseoğlu Lojistik" — a
-    // verified false-positive collision risk.
-    const lojistik = normalizeCompanyName('Köseoğlu Lojistik');
-    const holding = normalizeCompanyName('Köseoğlu Lojistik Holding');
-    expect(holding).not.toBe(lojistik);
-    expect(holding).toBe('KOSEOGLU LOJISTIK HOLDING');
+    // list included HOLDING, which made a hypothetical "X Lojistik
+    // Holding" normalize to exactly the same key as "X Lojistik" — a
+    // verified false-positive collision risk class (not a claim about any
+    // real company's actual corporate structure — purely illustrative
+    // fictional names below).
+    const subsidiary = normalizeCompanyName('Örnek Lojistik');
+    const holding = normalizeCompanyName('Örnek Lojistik Holding');
+    expect(holding).not.toBe(subsidiary);
+    expect(holding).toBe('ORNEK LOJISTIK HOLDING');
   });
 });
 

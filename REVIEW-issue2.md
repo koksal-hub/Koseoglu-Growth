@@ -85,9 +85,11 @@ E) currency enum olmalı mı? — **ACCEPTED (Köksal'ın itirazı kabul edildi)
 F) LEGAL_ENTITY_STOPWORDS'teki "HOLDING". — **RESOLVED (kod düzeltildi,
    düzeltme sürecinde kendi hatası da düzeltildi)**
    İlk taslaktaki örnek yanlıştı (bağımsız PR denetimi yakaladı, bkz. not).
-   Doğru/doğrulanmış örnekle ("Köseoğlu Lojistik Holding" → eskiden
-   "Köseoğlu Lojistik" ile birebir aynı normalize oluyordu) "HOLDING"
-   stopword listesinden çıkarıldı. Yeni regresyon testi eklendi.
+   Doğru/doğrulanmış (ve kurgusal — Köseoğlu Lojistik'in gerçek yapısıyla
+   ilgili bir iddia DEĞİL) örnekle: "X Lojistik Holding" eskiden "X
+   Lojistik" ile birebir aynı normalize oluyordu. "HOLDING" stopword
+   listesinden çıkarıldı. Yeni regresyon testi (kurgusal isimlerle)
+   eklendi.
    NOT: Bu maddenin ilk hali, tam da düzeltmeye çalıştığı "doğrulanmamış
    iddia" hatasının küçük bir tekrarıydı — taze bir ajanla yapılan bağımsız
    PR denetimi bunu koda karşı çalıştırıp yakaladı ve doğru örneği verdi.

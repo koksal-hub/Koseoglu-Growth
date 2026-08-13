@@ -33,9 +33,11 @@ function stripTurkishDiacritics(input: string): string {
 // Deliberately does NOT include "HOLDING" (or similar corporate-structure
 // words like "GRUP"/"GROUP"): unlike a pure legal-form suffix, "Holding"
 // denotes a distinct real-world entity (a parent company) from its
-// subsidiary. Stripping it made "Köseoğlu Lojistik Holding" normalize to
-// exactly "Köseoğlu Lojistik" — a verified false-positive collision found
-// during the 2026-08-13 review gate (see REVIEW-issue2.md point F).
+// subsidiary. Stripping it made a hypothetical "X Lojistik Holding" and
+// "X Lojistik" collide into the exact same normalized key — a verified
+// false-positive risk class found during the 2026-08-13 review gate (see
+// REVIEW-issue2.md point F; this is about the general normalization logic,
+// not a claim about any specific company's real corporate structure).
 const LEGAL_ENTITY_STOPWORDS = new Set([
   'LTD',
   'STI',
