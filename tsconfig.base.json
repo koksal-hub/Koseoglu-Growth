@@ -10,5 +10,5 @@
     "resolveJsonModule": true,
     "baseUrl": "."
   },
-  "include": ["apps/**/*", "packages/**/*", "prisma/**/*"]
+  "include": ["apps/**/*", "packages/**/*", "prisma/**/*", "*.ts"]
 }
