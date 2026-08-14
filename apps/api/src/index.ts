@@ -2,7 +2,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
-import { buildLogger } from './plugins/logger';
+import { buildLogger, genReqId } from './plugins/logger';
 import { Env, validateEnv } from './plugins/env';
 import { registerErrorHandler } from './plugins/errorHandler';
 import { prisma } from './lib/prisma';
@@ -12,7 +12,16 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
   // validate env on startup
   const env = validateEnv(process.env);
 
-  const server: FastifyInstance = Fastify({ logger: buildLogger(env.LOG_LEVEL) });
+  const server: FastifyInstance = Fastify({
+    logger: buildLogger(env.LOG_LEVEL),
+    genReqId,
+    disableRequestLogging: false
+  });
+
+  // expose the correlation id to clients so responses can be traced in logs
+  server.addHook('onSend', async (request, reply) => {
+    reply.header('x-request-id', request.id);
+  });
 
   // register central error handler
   registerErrorHandler(server);
