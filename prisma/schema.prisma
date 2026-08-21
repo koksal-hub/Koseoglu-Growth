@@ -97,6 +97,8 @@ model Company {
   /// 0..1 — how confident Growth is that this record is accurate. Manually
   /// entered/curated companies default to 1; Phase 2 discovery will write
   /// lower values pending verification (see ADR-008 Confidence Gate).
+  /// Range is enforced in the DB via CHECK constraint
+  /// "Company_confidence_range" (additive migration, not expressible here).
   confidence     Float          @default(1)
   sourceChannel  SourceChannel?
   sourceDetail   String?
@@ -143,6 +145,12 @@ model Contact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// NOTE: email is nullable, and in Postgres NULLs are distinct in unique
+  /// indexes — so multiple Contacts with a NULL email in the SAME company
+  /// are allowed. This is intentional: people whose email we haven't
+  /// discovered yet must still be storable, and NULL means "unknown", not a
+  /// value that can collide. If this ever needs to be restricted, use a
+  /// partial unique index instead of tightening this constraint.
   @@unique([companyId, email])
   @@index([companyId])
 }
@@ -176,7 +184,9 @@ model Lead {
 
 /// A single logged sales-history event (email drafted/sent, call, note...).
 /// Must reference a Lead and/or a Contact — enforced at the application
-/// layer, not the DB, since Prisma has no native "at least one of" check.
+/// layer (createActivity in apps/api/src/lib/activity.ts) AND in the DB via
+/// CHECK constraint "Activity_lead_or_contact_required" (additive migration;
+/// Prisma has no native "at least one of" check in the schema language).
 model Activity {
   id         String       @id @default(cuid())
   type       ActivityType
@@ -249,6 +259,8 @@ model Evidence {
   accessedAt  DateTime  @default(now())
   summary     String
   /// 0..1 — how much this single piece of evidence should be trusted.
+  /// Range is enforced in the DB via CHECK constraint
+  /// "Evidence_confidence_range" (additive migration, not expressible here).
   confidence  Float     @default(0.5)
 
   createdAt DateTime @default(now())

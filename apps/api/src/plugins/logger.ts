@@ -1,5 +1,5 @@
 import { FastifyLoggerOptions } from 'fastify';
 
-export function buildLogger(): FastifyLoggerOptions {
-  return { level: process.env.LOG_LEVEL || 'info' };
+export function buildLogger(level?: string): FastifyLoggerOptions {
+  return { level: level || process.env.LOG_LEVEL || 'info' };
 }

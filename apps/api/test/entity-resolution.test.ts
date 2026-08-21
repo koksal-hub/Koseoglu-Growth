@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   extractEmailDomain,
   findDuplicateCompany,
+  isFreeEmailProvider,
   normalizeCompanyName,
   normalizeDomain,
   normalizeEmail,
@@ -107,6 +108,20 @@ describe('stringSimilarity', () => {
   });
 });
 
+describe('isFreeEmailProvider', () => {
+  it('recognizes common free/generic providers, including URL/www variants', () => {
+    expect(isFreeEmailProvider('gmail.com')).toBe(true);
+    expect(isFreeEmailProvider('hotmail.com')).toBe(true);
+    expect(isFreeEmailProvider('Outlook.com')).toBe(true);
+    expect(isFreeEmailProvider('www.yahoo.com')).toBe(true);
+  });
+
+  it('does not flag corporate domains', () => {
+    expect(isFreeEmailProvider('koseoglulojistik.com')).toBe(false);
+    expect(isFreeEmailProvider(null)).toBe(false);
+  });
+});
+
 describe('findDuplicateCompany', () => {
   const existing: CompanyMatchCandidate[] = [
     {
@@ -151,6 +166,55 @@ describe('findDuplicateCompany', () => {
     const result = findDuplicateCompany({ name: 'Köseoğlu Lojistic' }, existing);
     expect(result?.reason).toBe('SIMILARITY');
     expect(result?.confidence).toBeLessThan(0.65);
+  });
+
+  it('does NOT match two different companies via a shared free email provider domain', () => {
+    const gmailCompany: CompanyMatchCandidate[] = [
+      {
+        id: 'company-gmail',
+        normalizedName: normalizeCompanyName('Aydın Nakliyat'),
+        emailDomain: 'gmail.com'
+      }
+    ];
+
+    const result = findDuplicateCompany(
+      { name: 'Mehmet Taşımacılık', emailDomain: 'gmail.com' },
+      gmailCompany
+    );
+    expect(result).toBeNull();
+  });
+
+  it('still matches on a corporate email domain', () => {
+    const result = findDuplicateCompany(
+      { name: 'Some Other Name', emailDomain: 'koseoglulojistik.com' },
+      existing
+    );
+    expect(result?.reason).toBe('EMAIL_DOMAIN');
+    expect(result?.confidence).toBe(0.8);
+  });
+
+  it('treats a shared phone number as a low-confidence supporting signal, not a strong match', () => {
+    // Shared switchboard scenario: a different company listing the same
+    // central line. The match is still reported, but with confidence 0.5
+    // and only after tax/domain/email-domain/address have been checked.
+    const result = findDuplicateCompany(
+      { name: 'Tamamen Farklı Firma', phone: '+90 212 555 00 00' },
+      existing
+    );
+    expect(result?.reason).toBe('PHONE');
+    expect(result?.confidence).toBe(0.5);
+  });
+
+  it('prefers email domain and address over phone when several signals match', () => {
+    const result = findDuplicateCompany(
+      {
+        name: 'Some Other Name',
+        phone: '+90 212 555 00 00',
+        emailDomain: 'koseoglulojistik.com'
+      },
+      existing
+    );
+    expect(result?.reason).toBe('EMAIL_DOMAIN');
   });
 
   it('returns null for a genuinely new company', () => {
