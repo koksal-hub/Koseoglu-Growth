@@ -1,108 +1,54 @@
-AGENTS — Köseoğlu Growth Ajan Kuralları
+AGENTS — Köseoğlu Growth Ajan Kuralları (≤60 satır)
 
-Genel kural: Her ajan göreve başlamadan önce MASTER_PLAN.md, TASKS.md ve STATUS.md
-dosyalarını okumalıdır.
+Tam metodoloji/gerekçe: AI-ENGINEERING-STANDARD.md (seyrek okunur — yeni
+proje/faz/süreç değişikliğinde). Bu dosya HER oturumda okunur, kısa kalır.
 
-================================================================
-ROLLER VE SORUMLULUKLAR (korunuyor)
-================================================================
+Her ajan başlarken okur: MASTER_PLAN.md, STATUS.md, aktif GitHub Issue/PR,
+son commit'ler.
 
-- CODEX — Başmühendis / Reviewer
-  - Mimari kararlar, kritik inceleme, güvenlik, DB ve API tasarımı.
+ROLLER (gerçek durum — detay: STANDARD Bölüm 2)
+- Claude Code = Yazar. Kendi işini kendi "onaylandı" işaretleyemez.
+- CI (GitHub Actions) = otomatik doğrulayıcı; mimari review DEĞİL.
+- Reviewer = fiilen Köksal (PR bazında) veya taze bağlamlı bir subagent.
+  Codex/Copilot/Gemini/Qwen/free-local: tanımlı ama aktif değil; biri
+  gerçekten review yaparsa PR referansıyla kayda geçirilir, iddia edilmez.
 
-- CLAUDE CODE — Ana geliştirici
-  - Uzun süreli geliştirme, backend/frontend, Docker, Prisma, API, test.
+RİSK YÖNLENDİRME (detay: STANDARD Bölüm 7/10-11/EK)
+- RISK A (düşük): Uygulayıcı → CI → merge. Ekstra ajan yok.
+- RISK B (orta): Uygulayıcı → CI → free/local taze reviewer (yoksa taze
+  Claude fallback) → kritik/çelişkiliyse premium escalation → merge.
+  Reviewer emin değilse veya schema/security/migration'a dokunuyorsa
+  2. taze denetçi otomatik tetiklenir.
+- RISK C (kritik: şema/auth/secret/ödeme/prod veri): + 2. bağımsız denetçi
+  + Köksal onayı zorunlu.
 
-- GITHUB COPILOT — VS Code yardımcı
-  - Küçük değişiklikler, boilerplate, hızlı fix.
+GELİŞTİRME AKIŞI — BRANCH + PR ZORUNLU
+feature/issue-N (veya chore/kısa-ad) → PR → CI PASS → Köksal (veya gerçek
+reviewer) onayı → merge. Main'e doğrudan push YOK. CI kırmızıyken yeni işe
+başlanmaz. "Çalışıyor" demek kanıt değildir — kanıt: GERÇEKTEN GitHub'da
+yeşil CI (yalnız lokal doğrulama yeterli değil).
 
-- GEMINI CLI — Test/İkinci görüş
-  - Test oluşturma, başarısız test analizi, alternatif çözüm önerisi.
+DURDUR VE ONAY İSTE: production data deletion, DB reset/drop, main'e
+merge, secret sızıntısı, ödeme, gerçek müşteri e-postası, geri alınamaz
+production işlemi.
 
-- QWEN CODE — Yedek işçi
-  - Dokümantasyon, tekrar eden düşük riskli işler, yardımcı görevler.
+MIGRATION DEFINITION OF DONE
+1. Temiz DB testi (CI otomatik sağlar). 2. Upgrade path testi (ELLE —
+önceki migration + veri üzerine yeni migration uygula, doğrula).
+3. Destructive SQL taraması (DROP/DELETE/TRUNCATE). 4. Destructive ise
+backup/restore planı PR'da yazılı. Zorunlu down-migration YOK.
 
-- (gelecekteki local/free agent'lar) — aynı kurallara tabidir.
+DOKÜMAN BÜYÜME KURALI
+STATUS.md ≤60 satır (yalnız "şu an"; geçmiş git log'da). ERRORS.md/
+LEARNINGS.md 15 girişi geçince eskiler *_ARCHIVE.md'ye taşınır.
+LEARNINGS.md yalnız gerçek olaylardan gelir, plan/standart kopyası değil.
+**Aynı hata 2. kez tekrar ederse workaround değil kök neden zorunlu.**
 
-Tüm coding agent'lar (Claude Code, Codex, Copilot, gelecekteki local/free agent'lar)
-DEĞİŞTİRİLEBİLİR İŞÇİLERDİR. Hiçbiri projenin hafızası değildir — proje hafızası
-repository'nin kendisidir.
+İLETİŞİM
+Değişiklik sonrası STATUS.md kısa özetle güncellenir. Kritik dosyayı
+paralel değiştirmeyin, ayrı branch kullanın. MASTER_PLAN.md'yi tek ajan
+değiştiremez.
 
-================================================================
-GITHUB = TEK DOĞRULUK KAYNAĞI (2026-08 EK)
-================================================================
-
-- GitHub (Issues, branch'ler, commit geçmişi, PR'lar, CI sonuçları) tek doğruluk
-  kaynağıdır (single source of truth).
-- AI sohbet geçmişi (Claude/Codex/Copilot konuşmaları) source of truth DEĞİLDİR.
-  Bir sohbette söylenen hiçbir şey, repository'de karşılığı yoksa gerçekleşmiş
-  sayılmaz.
-- Her ajan işe başlarken şunları okumalıdır:
-  - MASTER_PLAN.md
-  - AGENTS.md
-  - STATUS.md
-  - aktif GitHub Issue
-  - aktif branch
-  - son commit'ler
-  - test/CI durumu
-
-================================================================
-GÖREV AKIŞI (2026-08 EK — genişletilmiş)
-================================================================
-
-Her görev şu akıştan geçmelidir:
-
-PLAN → IMPLEMENT → LINT → TYPECHECK → TEST → BUILD → VERIFY → COMMIT → PUSH → CI → REPORT
-
-- AI'nın "çalışıyor" demesi KANIT DEĞİLDİR. Kanıt: gerçek komut çıktısı, geçen
-  test, yeşil CI.
-- Güvenli development işlemlerinde (kod yazma, test çalıştırma, lint/typecheck/build,
-  commit, push, PR açma, dokümantasyon güncelleme) sürekli kullanıcı onayı istenmez.
-- Aşağıdaki durumlarda İŞLEM DURDURULUR ve kullanıcıdan açık onay istenir:
-  - production data deletion
-  - database reset/drop
-  - secret sızıntısı veya secret commit riski
-  - payment/ödeme işlemleri
-  - gerçek müşteri e-postasına gönderim
-  - geri alınamaz (irreversible) production işlemleri
-
-================================================================
-KOTA / SESSION SONU KURALI (2026-08 EK)
-================================================================
-
-Claude/Codex kotası veya session sona yaklaşıyorsa:
-- yeni büyük işe başlanmaz
-- mevcut iş stabil hale getirilir
-- test edilir
-- commit/push edilir
-- STATUS.md güncellenir
-- gerekiyorsa ERRORS.md / LEARNINGS.md güncellenir
-- bir HANDOFF oluşturulur
-
-HANDOFF FORMATI:
-
-ISSUE:
-BRANCH:
-LAST COMMIT:
-DONE:
-CHANGED FILES:
-TESTS:
-CI:
-OPEN ERRORS:
-ROOT CAUSE:
-REMAINING WORK:
-NEXT FIRST STEP:
-
-================================================================
-İLETİŞİM (korunuyor)
-================================================================
-
-- Ajanlar değişiklik yaptığında STATUS.md'e kısa bir özet bırakır (son işlem,
-  değiştirilen dosyalar, açık testler, bir sonraki adım).
-- Her değişiklik STATUS.md içinde belgelenmelidir.
-- Hata bulunduğunda ERRORS.md güncellenmelidir.
-- Önemli teknik öğrenimler LEARNINGS.md içine yazılmalıdır.
-- Aynı anda kritik dosyayı değiştirmeyin; paralel iş için ayrı task/branch kullanın.
-- Hiçbir ajan ana planı (MASTER_PLAN.md) tek başına değiştiremez.
-
-Bu dosya sürekli olarak ajanlar tarafından referans alınacak temel kuralları içerir.
+Session sonu/kota yaklaşınca: işi stabilize et, test et, branch'e (main'e
+değil) push et, STATUS.md güncelle, HANDOFF bırak: ISSUE/BRANCH/COMMIT/
+DONE/CHANGED FILES/TESTS/CI/OPEN ERRORS/REMAINING WORK/NEXT STEP.

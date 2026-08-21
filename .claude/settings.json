@@ -10,7 +10,20 @@
       "Bash(git ls-remote *)",
       "Bash(git pull *)",
       "Bash(sed -n '195,212p' /tmp/ci_log.txt)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(git fetch *)",
+      "Read(//c/Users/KOKSAL/**)",
+      "Bash(ssh -T git@github.com -o BatchMode=yes -o ConnectTimeout=5)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(gh --version)",
+      "Bash(mkdir -p ~/.ssh)",
+      "Bash(ssh-keygen -t ed25519 -C \"koseoglukoksal@gmail.com - koseoglu-growth\" -f ~/.ssh/id_ed25519_koseoglu_growth -N \"\")",
+      "Bash(chmod 600 ~/.ssh/id_ed25519_koseoglu_growth)",
+      "Read(//c/Users/KOKSAL/.ssh/**)",
+      "Bash(ssh-keyscan -t ed25519 github.com)",
+      "Bash(cat)",
+      "Bash(chmod 600 ~/.ssh/config)",
+      "WebFetch(domain:docs.github.com)"
     ]
   }
 }

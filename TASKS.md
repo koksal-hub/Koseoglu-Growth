@@ -1,98 +1,59 @@
-TASKS — Görev listesi formatı ve GitHub Issues senkronizasyonu
+TASKS — GitHub Issues'a pointer
 
 ================================================================
-ÖNEMLİ KURAL
+GERÇEK GÖREV KUYRUĞU: GITHUB ISSUES
 ================================================================
 
-GitHub Issues ESAS görev kuyruğudur. Bu dosya GitHub Issues ile ÇELİŞMEZ ve ikinci
-bağımsız bir task sistemi değildir — burası yalnızca Issue'ların kısa bir aynası ve
-görev formatı referansıdır.
+https://github.com/koksal-hub/Koseoglu-Growth/issues
 
-Issue #1 tamamlanmadan (CI PASS + gerçek doğrulama) Issue #2 implementasyonuna
-geçilmez.
+Bu dosya ikinci, bağımsız bir görev sistemi DEĞİLDİR. Görev durumu, öncelik ve
+kabul kriterleri GitHub Issues üzerinde tutulur. Çelişki durumunda GitHub Issue
+esastır, bu dosya değil.
 
 ================================================================
-GÖREV FORMATI
+BİLİNEN AÇIK — Issue #1/#2/#3 henüz gerçek GitHub Issue değil
 ================================================================
 
-Her görev şu alanları içermelidir:
-- ID: kısa-kebabcased-id
+Bu ortamda GitHub CLI (`gh`) kurulu/authenticate değil ve kullanılan git
+kimlik bilgisinin (OAuth App) `workflow` scope'u yok — muhtemelen aynı token
+`issues:write` iznine de sahip değil (doğrulanmadı). Bu yüzden Issue #1/#2/#3,
+MASTER_PLAN.md Faz 0-2'ye karşılık gelen HEDEF yapı olarak yalnızca bu dosyada
+ve commit mesajlarında var; GitHub'da gerçek Issue olarak henüz açılmadı.
+
+Bu, "GitHub tek doğruluk kaynağı" ilkesinin (ADR-002) şu an tam
+uygulanamadığı bilinen bir boşluktur — düzeltilene kadar öyle kalacak.
+
+Açma komutları (gh CLI veya web UI erişimi olduğunda):
+
+gh issue create --title "Phase 0: Foundation" --body "..."
+gh issue create --title "Data Models (Phase 1)" --body "..."
+gh issue create --title "Process + Architecture Review Gate" --body "..."
+gh issue create --title "Research / Verification / Evidence (Phase 2)" --body "..."
+
+================================================================
+GÖREV FORMATI (Issue açarken kullanılacak şablon)
+================================================================
+
 - Başlık: Kısa açıklama
 - Öncelik: HIGH / MEDIUM / LOW
-- Sorumlu ajan/rol: (Codex / Claude Code / GitHub Copilot / Gemini CLI / Qwen Code)
 - Durum: TODO / IN_PROGRESS / BLOCKED / REVIEW / DONE
 - Bağımlılıklar: (varsa)
 - Acceptance criteria: Net, test edilebilir kabul kriterleri
 
 ================================================================
-GITHUB ISSUES (AYNA)
+KALICI ALTYAPI GÖREVLERİ (ERRORS.md'den — oturumluk kalmaması gerekenler)
 ================================================================
 
-NOT: Bu ortamda GitHub CLI (gh) kurulu/authenticate değil, bu yüzden Issue'lar bu
-oturumda otomatik olarak GitHub üzerinde açılamadı. Aşağıdaki üç Issue MASTER_PLAN
-Faz 0-2'ye karşılık gelen HEDEF yapıdır. Köksal veya gh CLI erişimi olan bir ajan
-bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en altta).
+Bunlar her oturumda tekrar "workaround" edilmek yerine bir kez kalıcı
+çözülmesi gereken açık işler (bkz. AGENTS.md → Doküman Büyüme Kuralı):
 
---- Issue #1 — Phase 0: Foundation ---
-- Öncelik: HIGH
-- Sorumlu: Claude Code
-- Durum: IN_PROGRESS
-- Bağımlılıklar: None
-- Acceptance criteria:
-  - pnpm install çalışır
-  - pnpm lint / typecheck / test / build geçer
-  - PostgreSQL Docker Compose ile çalışır
-  - /api/health HTTP 200 döner
-  - GitHub Actions CI (install→lint→typecheck→test→build) PASS
-
---- Issue #2 — Data Models (Phase 1) ---
-- Öncelik: HIGH
-- Sorumlu: Claude Code / Codex review
-- Durum: IN_PROGRESS (schema + entity resolution + testler lokalde PASS;
-  CI PASS doğrulanınca DONE)
-- Bağımlılıklar: Issue #1 DONE olmalı (DONE — CI PASS ile doğrulandı)
-- Acceptance criteria:
-  - [x] Prisma şemasına çekirdek modeller eklendi: Company, Contact, Lead,
-    Activity, FollowUp, Opportunity, Evidence, Event (Source/Channel: ayrı
-    tablo yerine Company/Contact/Lead üzerinde SourceChannel enum alanı —
-    overengineering'den kaçınıldı)
-  - [x] Migration oluşturuldu ve uygulandı (geri alınabilir — yalnızca
-    CREATE TABLE/ADD CONSTRAINT, DROP/DELETE yok)
-  - [x] Entity Resolution: deterministik normalizasyon + öncelik sıralı
-    duplicate detection (tax number → domain → phone → email domain →
-    address → normalized name → similarity), 22 unit test ile doğrulandı
-  - [x] Event Store: Event modeli (entityType/entityId polimorfik referans,
-    metadata JSON) + Evidence modeli (Company/Lead/Event ile ilişkili)
-  - [ ] GitHub Actions CI PASS (Postgres servisiyle) — bekleniyor, bkz.
-    STATUS.md
-
---- Issue #3 — Research / Verification / Evidence (Phase 2) ---
-- Öncelik: MEDIUM
-- Sorumlu: Claude Code
-- Durum: TODO
-- Bağımlılıklar: Issue #2 DONE olmalı
-- Acceptance criteria:
-  - Company Discovery iskeleti çalışır
-  - Verification Pipeline temel akışı var
-  - Confidence Gate düşük güvenli veriyi engeller
-  - Evidence Store'a kanıt kaydı yapılır
-  - Web Security Gateway + prompt-injection koruması temel seviyede var
-
-================================================================
-ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
-================================================================
-
-gh issue create --title "Phase 0: Foundation" --body-file .github/ISSUE_1_BODY.md
-gh issue create --title "Data Models (Phase 1)" --body-file .github/ISSUE_2_BODY.md
-gh issue create --title "Research / Verification / Evidence (Phase 2)" --body-file .github/ISSUE_3_BODY.md
-
-================================================================
-YEREL KISA LİSTE (geçmiş kayıt — korunuyor)
-================================================================
-
-- foundation-scaffold (DONE) — temel dosyalar oluşturuldu
-- toolchain-fixes (IN_PROGRESS) — lint/typecheck düzenlemeleri
-- git-root-fix (DONE, 2026-08-13) — .git yanlış iç içe klasördeydi, köke taşındı
-
-Yeni görev eklerken bu dosyaya bir satır ve detay açıklaması ekleyin (yalnızca
-GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
+- infra-workflow-scope-pat: GitHub'a `workflow` scope'lu bir Personal Access
+  Token bağlanmalı — aksi halde `.github/workflows/ci.yml`'e her dokunuşta
+  push reddedilmeye devam eder (bkz. ERRORS.md →
+  github-push-workflow-scope-eksik).
+- infra-node-pnpm-path: Node/pnpm'in kullanılan shell ortamının PATH'ine
+  kalıcı eklenmesi (bkz. ERRORS.md → pnpm-path-erisilemiyor).
+- infra-docker-autostart: Docker Desktop'ın oturum açılışında otomatik
+  başlaması (bkz. ERRORS.md → docker-daemon-baslangicta-calismiyordu).
+- infra-onedrive-relocation: Proje kökünün OneDrive senkronizasyonu dışına
+  taşınması değerlendirilmeli (bkz. LEARNINGS.md → OneDrive içinde git repo).

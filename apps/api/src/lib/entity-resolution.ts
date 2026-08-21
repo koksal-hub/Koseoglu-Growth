@@ -29,6 +29,15 @@ function stripTurkishDiacritics(input: string): string {
 // name has been split into words (e.g. "LTD ŞTİ" / "A.Ş." / "SANAYİ VE
 // TİCARET"). Stripped so "Köseoğlu Lojistik" and "KÖSEOĞLU LOJİSTİK LTD ŞTİ"
 // resolve to the same key.
+//
+// Deliberately does NOT include "HOLDING" (or similar corporate-structure
+// words like "GRUP"/"GROUP"): unlike a pure legal-form suffix, "Holding"
+// denotes a distinct real-world entity (a parent company) from its
+// subsidiary. Stripping it made a hypothetical "X Lojistik Holding" and
+// "X Lojistik" collide into the exact same normalized key — a verified
+// false-positive risk class found during the 2026-08-13 review gate (see
+// REVIEW-issue2.md point F; this is about the general normalization logic,
+// not a claim about any specific company's real corporate structure).
 const LEGAL_ENTITY_STOPWORDS = new Set([
   'LTD',
   'STI',
@@ -46,8 +55,7 @@ const LEGAL_ENTITY_STOPWORDS = new Set([
   'CORP',
   'INC',
   'LLC',
-  'LIMITED',
-  'HOLDING'
+  'LIMITED'
 ]);
 
 /** Uppercase, ASCII-folded, legal-suffix-stripped comparison key for a company name. */
@@ -180,11 +188,42 @@ export type CompanyMatchReason =
   | 'NORMALIZED_NAME'
   | 'SIMILARITY';
 
+/** What a caller should do with a match, given how strong its signal is. */
+export type CompanyMatchAction = 'AUTO_MERGE_CANDIDATE' | 'REVIEW_REQUIRED';
+
+// Only TAX_NUMBER is a government-issued, guaranteed-unique identifier.
+// Every other signal (including DOMAIN — see REVIEW-issue2.md point A: it's
+// not DB-unique either, a holding and its subsidiary can share one) is a
+// probabilistic hint, not proof of identity, and must not drive an
+// unattended merge.
+const AUTO_MERGE_REASONS = new Set<CompanyMatchReason>(['TAX_NUMBER']);
+
 export type CompanyMatchResult = {
   candidate: CompanyMatchCandidate;
   reason: CompanyMatchReason;
-  confidence: number;
+  /**
+   * A heuristic 0..1 match score — hand-picked per signal, NOT a calibrated
+   * probability (see REVIEW-issue2.md point D). Do not present this to a
+   * user as "X% confident."
+   */
+  matchScore: number;
+  /** AUTO_MERGE_CANDIDATE is still a suggestion, not permission to write —
+   * no code in this repo currently merges anything unattended. */
+  recommendedAction: CompanyMatchAction;
 };
+
+function toResult(
+  candidate: CompanyMatchCandidate,
+  reason: CompanyMatchReason,
+  matchScore: number
+): CompanyMatchResult {
+  return {
+    candidate,
+    reason,
+    matchScore,
+    recommendedAction: AUTO_MERGE_REASONS.has(reason) ? 'AUTO_MERGE_CANDIDATE' : 'REVIEW_REQUIRED'
+  };
+}
 
 /**
  * Deterministic duplicate-company lookup, checked in priority order:
@@ -192,7 +231,8 @@ export type CompanyMatchResult = {
  * normalized name -> fuzzy name similarity -> (AI, not implemented here).
  *
  * Returns the first/strongest match found, or null if `input` looks like a
- * genuinely new company.
+ * genuinely new company. Only a TAX_NUMBER match is ever recommended for
+ * unattended auto-merge; everything else must go through human review.
  */
 export function findDuplicateCompany(
   input: CompanyMatchInput,
@@ -207,32 +247,32 @@ export function findDuplicateCompany(
 
   if (taxNumber) {
     const match = existing.find((c) => normalizeTaxNumber(c.taxNumber) === taxNumber);
-    if (match) return { candidate: match, reason: 'TAX_NUMBER', confidence: 1 };
+    if (match) return toResult(match, 'TAX_NUMBER', 1);
   }
 
   if (domain) {
     const match = existing.find((c) => normalizeDomain(c.domain) === domain);
-    if (match) return { candidate: match, reason: 'DOMAIN', confidence: 0.95 };
+    if (match) return toResult(match, 'DOMAIN', 0.95);
   }
 
   if (phone) {
     const match = existing.find((c) => normalizePhone(c.phone) === phone);
-    if (match) return { candidate: match, reason: 'PHONE', confidence: 0.85 };
+    if (match) return toResult(match, 'PHONE', 0.85);
   }
 
   if (emailDomain) {
     const match = existing.find((c) => normalizeDomain(c.emailDomain) === emailDomain);
-    if (match) return { candidate: match, reason: 'EMAIL_DOMAIN', confidence: 0.8 };
+    if (match) return toResult(match, 'EMAIL_DOMAIN', 0.8);
   }
 
   if (address) {
     const match = existing.find((c) => normalizeAddress(c.address) === address);
-    if (match) return { candidate: match, reason: 'ADDRESS', confidence: 0.7 };
+    if (match) return toResult(match, 'ADDRESS', 0.7);
   }
 
   if (normalizedName) {
     const match = existing.find((c) => c.normalizedName === normalizedName);
-    if (match) return { candidate: match, reason: 'NORMALIZED_NAME', confidence: 0.65 };
+    if (match) return toResult(match, 'NORMALIZED_NAME', 0.65);
   }
 
   let best: { candidate: CompanyMatchCandidate; score: number } | null = null;
@@ -245,7 +285,7 @@ export function findDuplicateCompany(
     }
   }
   if (best) {
-    return { candidate: best.candidate, reason: 'SIMILARITY', confidence: best.score * 0.6 };
+    return toResult(best.candidate, 'SIMILARITY', best.score * 0.6);
   }
 
   // Step 8 (AI-assisted fuzzy resolution) is intentionally not implemented

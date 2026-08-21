@@ -8,10 +8,15 @@ Her yeni hata şu formatta eklenmeli:
 - detay: tam hata çıktısı / stack / lint veya tsc çıktısı
 - root_cause: kısa analiz
 - düzeltme: yapılan veya önerilen düzeltme
+- kalıcılık: KALICI (bir daha olmaz) / OTURUMLUK (her oturumda tekrar
+  edebilir — TASKS.md'de kalıcı bir altyapı görevine dönüştürülmeli)
 - status: OPEN / IN_PROGRESS / FIXED / WONT_FIX
 
 Yalnızca gerçekten yaşanan ve doğrulanmış önemli hatalar kaydedilir. Hayali hata
 oluşturulmaz.
+
+ROTASYON KURALI (bkz. AGENTS.md): 15 girişi geçen dosya, en eski girişlerini
+ERRORS_ARCHIVE.md'ye taşır.
 
 ================================================================
 
@@ -47,6 +52,8 @@ oluşturulmaz.
 - düzeltme: PATH'e `/c/Program Files/nodejs` eklendi; `corepack enable
   --install-directory "$HOME/.corepack-shims"` ile pnpm/yarn shim'leri
   kullanıcı yazılabilir bir dizine kuruldu, PATH'e o dizin de eklendi.
+- kalıcılık: OTURUMLUK — her yeni ajan oturumunda tekrar edecek. Kalıcı
+  çözüm TASKS.md → infra-node-pnpm-path'te.
 - status: FIXED (bu ajan oturumu için). Kalıcı çözüm: Köksal'ın kendi
   makinesinde `C:\Program Files\nodejs`'in sistem PATH'inde olduğunu doğrulaması
   ve/veya pnpm'i kalıcı olarak kurması (örn. `corepack enable` yönetici
@@ -119,6 +126,8 @@ oluşturulmaz.
 - düzeltme: `Docker Desktop.exe` başlatıldı, ~15 saniye içinde daemon hazır
   hale geldi; `docker compose -f docker/docker-compose.yml up -d` ile Postgres
   container'ı başarıyla ayağa kaldırıldı ve "healthy" duruma geçti.
+- kalıcılık: OTURUMLUK — her yeni oturumda Docker Desktop kapalıysa tekrar
+  edecek. Kalıcı çözüm TASKS.md → infra-docker-autostart'ta.
 - status: FIXED (bu oturum için). Kalıcı not: Docker Desktop'ın Windows
   başlangıcında otomatik açılması (Settings → General → "Start Docker Desktop
   when you sign in") önerilir; bu bir kullanıcı tercihi, otomatik değiştirilmedi.
@@ -146,6 +155,9 @@ oluşturulmaz.
   --cached`), geri kalan Foundation işi push edildi. Köksal, dosyayı GitHub
   web arayüzü üzerinden (kendi oturum/cookie auth'u kullanır, bu scope
   kısıtlamasına tabi değildir) manuel ekleyecek.
+- kalıcılık: OTURUMLUK — 2026-08-13 içinde bu iki kez tekrar etti (ilk Phase
+  0'da, sonra Phase 1'de Postgres servisi eklenirken). Her ci.yml
+  değişikliğinde tekrar edecek. Kalıcı çözüm TASKS.md → infra-workflow-scope-pat'te.
 - status: OPEN (workaround uygulandı, kalıcı çözüm — repo'ya yeni bir
   `workflow` scope'lu Personal Access Token veya OAuth App yetkisi eklemek —
   Köksal'ın kararına bağlı).
