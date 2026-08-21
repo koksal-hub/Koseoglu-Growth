@@ -125,7 +125,18 @@ faz CI'da yeşil ve gerçek doğrulamayla tamamlanmadan başlamaz.
 - 08:00 Türkiye saatiyle yönetim raporu
 
 --- PHASE 8 — Social / SEO / GEO / Experiments ---
-- Social Media Orchestration
+- **Social Command Center** (detay: SOCIAL_COMMAND_CENTER.md)
+  - Master Content → platform-specific variants
+  - LinkedIn, Instagram, Facebook, X, Threads, TikTok, YouTube,
+    Google Business Profile, Pinterest
+  - Human Approval → deterministic provider adapters → publish/schedule
+  - delivery monitor, retry, idempotency, dead-letter, OAuth/token refresh
+  - unified inbox + engagement classification
+  - UTM / CRM attribution: post → site visit → lead → quote → won business → gross profit
+  - AI agents: Strategy Orchestrator, Content Intelligence, Platform Adaptation,
+    Brand + Fact Guard, Engagement, Performance & Learning
+  - Pinterest ayrıca Visual SEO / evergreen traffic / site acquisition kanalıdır
+  - başarı kriteri yalnız engagement değil; qualified lead, teklif, kazanılmış iş ve brüt kâr
 - SEO
 - GEO / AI-search visibility
 - A/B Testing
