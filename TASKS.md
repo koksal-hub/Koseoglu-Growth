@@ -186,7 +186,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #17 — Resend Test Sandbox, Send Attempts ve Signed Webhook Receipts (Phase 5) ---
 - Öncelik: HIGH / RISK C
 - Sorumlu: Codex; iki bağımsız salt-okunur güvenlik/veri incelemesi zorunlu
-- Durum: REVIEW (PR #18 run `33534095475` PASS; Risk C merge onayı pending)
+- Durum: DONE (PR #18 run `33534095475` PASS; squash merge `7c328413`; Issue #17 kapalı)
 - Bağımlılıklar: Issue #14 DONE; gerçek müşteri iletişimi için ayrıca açık kullanıcı onayı
 - Acceptance criteria:
   - [x] Gerçek müşteri adresi/içeriği kabul etmeyen sabit Resend test-simulation adapter'i
@@ -207,7 +207,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] API+web build ve iki bağımsız yeniden inceleme; blocking bulgu yok
   - [x] Final diff/secret scan
   - [x] Commit `eb00ac8`, push, PR #18 ve GitHub Actions run `33534095475` PASS
-  - [ ] Risk C `main` merge için kullanıcı açık onayı
+  - [x] Risk C `main` merge için kullanıcı açık onayı alındı; PR #18 `main`'e merge edildi
 - Kapsam dışı: gerçek provider çağrısı, secret/domain kurulumu, müşteri e-postası,
   inbound reply işleme, auth/public deploy ve sosyal hesap yayını.
 
