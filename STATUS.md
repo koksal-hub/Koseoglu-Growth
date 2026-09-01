@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T21:38:00+03:00
-last_actor: Codex (Issue #29 social connection lifecycle/publish gate)
+last_update: 2026-09-01T21:48:00+03:00
+last_actor: Codex (Issue #31 social delivery/UTM attribution)
 
-CURRENT PHASE: PHASE 8C SOCIAL CONNECTION LIFECYCLE / FAIL-CLOSED PUBLISH GATE — LOCAL REVIEW
-ACTIVE ISSUE: #29 — Social connection lifecycle and fail-closed publish gate
-ACTIVE BRANCH: `codex/phase8c-social-connection-gate-v1` (`main` `03b3374` tabanı)
+CURRENT PHASE: PHASE 8D SOCIAL DELIVERY MONITOR / UTM ATTRIBUTION — LOCAL REVIEW
+ACTIVE ISSUE: #31 — Social delivery monitor and UTM attribution receipt
+ACTIVE BRANCH: `codex/phase8d-social-delivery-attribution-v1` (`main` `1e3b1c8` tabanı)
 
 ## Uygulanan dar kapsam
 
@@ -75,6 +75,9 @@ ACTIVE BRANCH: `codex/phase8c-social-connection-gate-v1` (`main` `03b3374` taban
 - Publish readiness endpoint'i variant, bağlı hesap, adapter ve genel execution
   kapısını birlikte raporlar; hiçbir network çağrısı yapmaz ve publish etkin değilken
   `ready: false` döner.
+- Delivery monitor ve UTM attribution receipt sözleşmesi bu fazda ekleniyor;
+  provider tarafı teslimat iddiası yapılmadan internal Job durumu ve attribution
+  metadata'sı ayrı tutulacak.
 
 ## Taze yerel kanıt
 
@@ -114,6 +117,8 @@ ACTIVE BRANCH: `codex/phase8c-social-connection-gate-v1` (`main` `03b3374` taban
   doğrulama da CI kapısında yeniden koşulmalıdır.
 - Phase 8B PR #28 merge: CI run `33543718681` SUCCESS (159 test, lint, typecheck,
   migration ve API/web build); squash commit `03b3374`; Issue #27 CLOSED.
+- Phase 8C PR #30 merge: CI run `33544546114` SUCCESS (159 test, lint, typecheck,
+  migration ve API/web build); squash commit `1e3b1c8`; Issue #29 CLOSED.
 - Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
   migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
 - Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
@@ -149,7 +154,7 @@ ACTIVE BRANCH: `codex/phase8c-social-connection-gate-v1` (`main` `03b3374` taban
 
 ## Sonraki adım
 
-Issue #29 için fresh DB migration/full integration testi, CI ve PR merge kapısını
+Issue #31 için fresh DB migration/full integration testi, CI ve PR merge kapısını
 tamamla. Gerçek OAuth/token refresh, medya yükleme, sosyal yayın/DM, AI çağrısı,
 Resend API çağrısı, müşteri gönderimi, inbound reply, auth/public deploy hâlâ
 kapsam dışıdır; bunlar ayrı açık güvenlik/operasyon onayı gerektirir.

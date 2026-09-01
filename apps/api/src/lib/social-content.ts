@@ -389,6 +389,116 @@ export async function scheduleSocialVariant(id: string, scheduledAt: Date) {
   return { variant: await prisma.socialContentVariant.findUniqueOrThrow({ where: { id } }), job };
 }
 
+function normalizeUtmValue(value: string, label: string) {
+  if (typeof value !== 'string') throw new SocialContentPolicyError(400, `${label} is required`);
+  const normalized = value.trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9._~-]{0,127}$/.test(normalized)) {
+    throw new SocialContentPolicyError(400, `Invalid ${label}`);
+  }
+  return normalized;
+}
+
+function normalizeDestinationUrl(value: string) {
+  if (typeof value !== 'string' || value.length > 2_000 || CREDENTIAL_PATTERN.test(value)) {
+    throw new SocialContentPolicyError(400, 'Invalid destinationUrl');
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new SocialContentPolicyError(400, 'destinationUrl must be a valid URL');
+  }
+  if (parsed.protocol !== 'https:' || !parsed.hostname || parsed.username || parsed.password) {
+    throw new SocialContentPolicyError(400, 'destinationUrl must use HTTPS without embedded credentials');
+  }
+  for (const key of parsed.searchParams.keys()) {
+    if (/password|secret|token|authorization|cookie|api.?key/i.test(key)) {
+      throw new SocialContentPolicyError(400, 'destinationUrl contains a prohibited query parameter');
+    }
+  }
+  parsed.hash = '';
+  return parsed.toString();
+}
+
+export async function recordSocialAttribution(input: {
+  variantId: string;
+  destinationUrl: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmContent?: string;
+}) {
+  validateKey(input.variantId, 'social variant id');
+  const variant = await prisma.socialContentVariant.findUnique({ where: { id: input.variantId }, select: { id: true } });
+  if (!variant) throw new SocialContentPolicyError(404, 'Social variant not found');
+  const normalized = {
+    variantId: input.variantId,
+    destinationUrl: normalizeDestinationUrl(input.destinationUrl),
+    utmSource: normalizeUtmValue(input.utmSource, 'utmSource'),
+    utmMedium: normalizeUtmValue(input.utmMedium, 'utmMedium'),
+    utmCampaign: normalizeUtmValue(input.utmCampaign, 'utmCampaign'),
+    utmContent: input.utmContent === undefined ? null : normalizeUtmValue(input.utmContent, 'utmContent'),
+  };
+  const receiptHash = sha256(JSON.stringify(normalized));
+  try {
+    const receipt = await prisma.socialAttributionReceipt.create({ data: { ...normalized, receiptHash } });
+    return { receipt, reused: false };
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') throw error;
+    const existing = await prisma.socialAttributionReceipt.findUnique({ where: { variantId: input.variantId } });
+    if (!existing) throw error;
+    if (existing.receiptHash !== receiptHash) {
+      throw new SocialContentPolicyError(409, 'Attribution receipt already exists with a different payload');
+    }
+    return { receipt: existing, reused: true };
+  }
+}
+
+function mapDeliveryState(status: string | undefined) {
+  switch (status) {
+    case 'QUEUED':
+      return 'QUEUED_PROVIDER_UNVERIFIED';
+    case 'RUNNING':
+      return 'PUBLISHING_PROVIDER_UNVERIFIED';
+    case 'RETRYABLE_FAILED':
+      return 'RETRYING_PROVIDER_UNVERIFIED';
+    case 'SUCCEEDED':
+      return 'INTERNAL_JOB_SUCCEEDED_PROVIDER_UNVERIFIED';
+    case 'DEAD_LETTER':
+      return 'DEAD_LETTER_PROVIDER_UNVERIFIED';
+    default:
+      return 'NOT_SCHEDULED';
+  }
+}
+
+/** Project internal job state without claiming a provider-side delivery. */
+export async function getSocialDeliveryStatus(variantId: string) {
+  validateKey(variantId, 'social variant id');
+  const variant = await prisma.socialContentVariant.findUnique({
+    where: { id: variantId },
+    select: { id: true, platform: true, status: true, scheduledAt: true, publishedAt: true, providerPostId: true },
+  });
+  if (!variant) throw new SocialContentPolicyError(404, 'Social variant not found');
+  const job = await prisma.job.findFirst({
+    where: { type: 'SOCIAL_PUBLISH', idempotencyKey: { startsWith: `social-publish:${variantId}:` } },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: { id: true, type: true, status: true, attempts: true, maxAttempts: true, runAt: true, lastError: true, completedAt: true },
+  });
+  return {
+    variant: {
+      id: variant.id,
+      platform: variant.platform,
+      status: variant.status,
+      scheduledAt: variant.scheduledAt,
+      publishedAt: variant.publishedAt,
+      providerPostId: variant.providerPostId,
+    },
+    job,
+    deliveryState: mapDeliveryState(job?.status),
+    providerVerified: false,
+  };
+}
+
 export function registerSocialAdapter(adapter: SocialProviderAdapter) {
   assertPlatform(adapter.platform);
   if (adapters.has(adapter.platform)) throw new SocialContentPolicyError(409, `Adapter already registered for ${adapter.platform}`);

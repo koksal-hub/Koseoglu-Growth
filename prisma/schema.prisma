@@ -993,12 +993,32 @@ model SocialContentVariant {
   publishedAt      DateTime?
   providerPostId   String?
   idempotencyKey   String                    @unique
+  attribution      SocialAttributionReceipt?
   createdAt        DateTime                  @default(now())
   updatedAt        DateTime                  @updatedAt
 
   @@unique([masterContentId, platform])
   @@index([platform, status, scheduledAt])
   @@index([contentHash])
+}
+
+/// Immutable, credential-free UTM receipt for a social variant.
+/// It records intended attribution metadata only; it does not ingest website
+/// analytics or assert that a visit, lead, quote or sale occurred.
+model SocialAttributionReceipt {
+  id              String               @id @default(cuid())
+  variantId       String               @unique
+  variant         SocialContentVariant @relation(fields: [variantId], references: [id])
+  destinationUrl  String
+  utmSource       String
+  utmMedium       String
+  utmCampaign     String
+  utmContent      String?
+  receiptHash     String               @unique
+  createdAt       DateTime             @default(now())
+
+  @@index([utmCampaign])
+  @@index([utmSource, utmMedium])
 }
 
 /// A Growth sales opportunity. Not a MYLojistik operational record.
