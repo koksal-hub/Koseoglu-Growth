@@ -36,7 +36,9 @@ describe('safe social unified inbox', () => {
     };
     const created = await server.inject({ method: 'POST', url: '/api/social/inbox/receipts', payload });
     expect(created.statusCode).toBe(201);
-    const receipt = body<{ id: string; status: string; intent: string }>(created.payload);
+    const createdBody = body<{ receipt: { id: string; status: string; intent: string }; reused: boolean }>(created.payload);
+    expect(createdBody.reused).toBe(false);
+    const receipt = createdBody.receipt;
     messageIds.push(receipt.id);
     expect(receipt).toMatchObject({ status: 'RECEIVED', intent: 'UNCLASSIFIED' });
 
