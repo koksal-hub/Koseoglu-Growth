@@ -99,7 +99,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- İyileştirme 22 — Central Logging ---
 - Öncelik: HIGH
 - Sorumlu: Codex review
-- Durum: REVIEW (PR #6; yerel kapılar PASS, push/CI bekleniyor)
+- Durum: DONE (PR #6; GitHub Actions run `33472791803` PASS; merge `2f6f11a`)
 - Bağımlılıklar: Issue #2 DONE
 - Acceptance criteria:
   - [x] Her istekte correlation id var ve response `x-request-id` başlığında dönüyor
@@ -107,19 +107,22 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Authorization, cookie, x-api-key ve set-cookie gerçek log çıktısında maskeleniyor
   - [x] Pino doğrudan bağımlılığı Fastify logger tipiyle aynı major sürümde
   - [x] İzole DB üzerinde lint/typecheck/test (56/56)/build PASS
-  - [ ] GitHub Actions CI PASS ve PR #6 merge
+  - [x] GitHub Actions CI PASS ve PR #6 merge
 
 --- Issue #3 — Research / Verification / Evidence (Phase 2) ---
 - Öncelik: MEDIUM
-- Sorumlu: Claude Code
-- Durum: TODO
+- Sorumlu: Codex
+- Durum: IN_PROGRESS (PR #7 açık; yerel kapılar PASS, GitHub CI/merge bekleniyor)
 - Bağımlılıklar: Issue #2 DONE olmalı
 - Acceptance criteria:
-  - Company Discovery iskeleti çalışır
-  - Verification Pipeline temel akışı var
-  - Confidence Gate düşük güvenli veriyi engeller
-  - Evidence Store'a kanıt kaydı yapılır
-  - Web Security Gateway + prompt-injection koruması temel seviyede var
+  - [x] Manuel/fixture tabanlı Company Discovery iskeleti çalışır
+  - [x] Mission → candidate → evidence → human decision temel akışı var
+  - [x] Confidence Gate düşük güvenli adayın kabulünü ve Lead üretimini engeller
+  - [x] Evidence Store'a URL/accessedAt/summary/confidence/provenance kaydı yapılır
+  - [x] Dış özet untrusted data kalır; credential/secret taşıyan kaynak URL reddedilir
+  - [x] Deterministik duplicate önerisi insan onaylı kanonik bağdan ayrıdır
+  - [x] Yerel migration/lint/typecheck/test (71/71)/build PASS
+  - [ ] GitHub Actions CI PASS ve PR merge
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)

@@ -196,3 +196,25 @@ yalnız benchmark/referans olarak incelenir; lisans ve güvenlik kontrolü olmad
 kopyalanmaz. Pinterest ayrıca Visual SEO / evergreen traffic kanalı olarak ölçülür.
 
 STATUS: ACCEPTED
+
+---
+
+## ADR-011 — Research Eşleşme Önerisi ile Kanonik Şirket Bağını Ayır
+
+DECISION: ResearchCandidate üzerindeki deterministik entity-resolution sonucu
+`matchedCompanyId` olarak yalnız öneri/receipt şeklinde saklanır. Kanonik
+`companyId` ancak insan `ACCEPT` kararı ve açık `LINK_MATCH` veya `CREATE_NEW`
+seçiminden sonra set edilir. Kabul, otomatik Lead veya Outreach üretmez.
+
+WHY: Domain, telefon, adres ve bulanık ad gibi sinyaller farklı güven düzeylerine
+sahiptir. Olası eşleşmeyi doğrudan şirket ilişkisi saymak false-merge riskini ve
+yanlış şirket üzerinde satış aksiyonu alma ihtimalini büyütür.
+
+ALTERNATIVES: Entity-resolution sonucunu doğrudan `companyId` yapmak; kabul anında
+belirsizliği sessizce çözmek; otomatik Company/Lead oluşturmak.
+
+CONSEQUENCES: API yanıtı match nedeni ve güvenini gösterir; eşleşen adayın kabulü
+açık resolution ister. Veri modeli iki nullable ilişki taşır, fakat araştırma
+gerçeği ile insan kararını denetlenebilir biçimde ayırır.
+
+STATUS: ACCEPTED

@@ -1,28 +1,30 @@
 STATUS — Kısa, güncel durum (master ajanın okuması için)
 
-last_update: 2026-09-01T08:11:56+03:00
-last_actor: Codex (PR #6 güvenlik incelemesi ve central logging doğrulaması)
+last_update: 2026-09-01T08:43:00+03:00
+last_actor: Codex (Aşama 1 Research Mission dikey dilimi)
 
-CURRENT PHASE: PHASE 1 — DATA FOUNDATION (hardening)
-ACTIVE ISSUE: İyileştirme 22 — central logging / correlation id / secret redaction
-ACTIVE BRANCH: devin/1786666529-central-logging (PR #6:
-https://github.com/koksal-hub/Koseoglu-Growth/pull/6)
+CURRENT PHASE: PHASE 2 — DISCOVERY / VERIFICATION
+ACTIVE ISSUE: Issue #3 — Research, Verification ve Evidence pipeline
+ACTIVE BRANCH: codex/research-mission-v1 (PR #7 açık)
 
 CURRENT CODEX CHECKPOINT (2026-09-01):
-- PR #5, `3d426e1` test-DB izolasyon düzeltmesi ve başarılı GitHub CI sonrası
-  `main` üzerine `8a6e2ec` ile merge edildi; Issue #2 tamamlandı ve kapatıldı.
-- PR #6 güncel `main` ile birleştirildi. Güvenlik incelemesi, doğrulanmamış
-  `x-request-id` değerinin doğrudan loglanıp yanıta yansıtıldığını ve maskeleme
-  testinin gerçek seri çıktıyı doğrulamadığını gösterdi.
-- Gelen request id artık yalnız 1..128 karakterlik `[A-Za-z0-9._:-]` sözleşmesini
-  sağlarsa korunuyor; geçersiz/çoklu değerlerde UUID üretiliyor.
-- Secret-redaction regresyon testi authorization, cookie, x-api-key ve set-cookie
-  değerlerinin gerçek Pino JSON çıktısında `[REDACTED]` olduğunu doğruluyor.
-- Fastify logger tipleri Pino v9 iken doğrudan Pino bağımlılığı v8 idi; bağımlılık
-  v9.14 ile hizalandı.
-- `growth_logging_review_20260901` izole DB'sine iki migration sıfırdan uygulandı.
-- Güncel yerel kalite kanıtı: lint PASS; typecheck PASS; test PASS (56/56,
-  6 dosya); API + web build PASS. Commit/push ve GitHub CI henüz bekleniyor.
+- PR #6, GitHub Actions run `33472791803` PASS sonrası `main` üzerine
+  `2f6f11a` ile merge edildi.
+- `ResearchMission` ve `ResearchCandidate` additive modelleri eklendi; mevcut
+  `Evidence` provenance/freshness/claim alanları ve aday ilişkisiyle genişletildi.
+- API: mission create/list/detail, evidence-backed candidate intake ve insan
+  kararı endpoint'leri eklendi. Crawler, LLM, contact ve outreach yoktur.
+- Zod request/response doğrulaması source URL + accessedAt olmadan adayı engeller;
+  credential veya secret query parametresi taşıyan URL kabul edilmez.
+- Düşük confidence kabul edilemez. Deterministik `matchedCompanyId` yalnız öneri,
+  insan onaylı `companyId` ise kesin bağdır; açık `LINK_MATCH`/`CREATE_NEW`
+  kararı gerekir ve otomatik Lead/Outreach yaratılmaz. Koşullu DB update'i aynı
+  aday için eşzamanlı iki kabulden yalnız birinin kazanmasını sağlar.
+- `growth_research_mission_v1_verify_20260901` boş DB'sine üç migration sıfırdan
+  uygulandı. Yerel lint/typecheck PASS; test 71/71 (7 dosya) PASS; API+web build
+  PASS. Odaklı Research Mission testi 15/15 PASS ve trace açık koşuda `pg`
+  concurrent query uyarısı giderilmiş durumdadır. Kod commit'i `b386f8d` olarak
+  push edildi ve PR #7 açıldı; GitHub CI henüz bekleniyor.
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
@@ -97,14 +99,13 @@ CURRENT QUALITY STATUS (gerçek, doğrulanmış — lokalde):
 - pnpm install: PASS
 - pnpm lint: PASS
 - pnpm typecheck: PASS
-- pnpm test: PASS — 44/44 (4 dosya; +13 yeni test: negatif/edge-case +
-  frontend smoke)
+- pnpm test: PASS — 71/71 (7 dosya; Research Mission için +15 API/DB testi)
 - pnpm build: PASS (api + web)
-- prisma validate / migrate deploy (yeni CHECK constraint migration dahil):
-  PASS
+- prisma format / validate / generate: PASS
+- prisma migrate deploy: PASS — üç migration temiz izole DB'ye sıfırdan uygulandı
 - docker compose up (db+migrate+api): PASS, health/ready 200, SIGTERM'de
   graceful shutdown exit 0
-- GitHub Actions CI: PASS (PR #5 üzerinde `build` job'ı yeşil)
+- GitHub Actions CI: BU BRANCH İÇİN BEKLENİYOR (son kanıt PR #6 run `33472791803` PASS)
 - Uçtan uca test (Devin testing agent): PASS — health/ready + DB kesinti/
   geri dönüş, SIGTERM graceful shutdown (exit 0), helmet/rate-limit/CORS,
   DB CHECK kısıtları, web + /api dev proxy, lang="tr". Detay: PR #5 yorumu.
@@ -112,12 +113,14 @@ CURRENT QUALITY STATUS (gerçek, doğrulanmış — lokalde):
 OPEN BLOCKERS:
 - Yok. (Önceki "workflow scope" blocker'ı bu ortamda oluşmadı; ci.yml push
   edildi. gh CLI hâlâ yok — Issue yönetimi manuel.)
+- Bilinen, bu dilimi bloklamayan teknik borç: Vite 5 CJS Node API deprecation
+  uyarısı ve merkezi error handler'ın beklenen 4xx workflow/validation hatalarını
+  error seviyesinde `Unhandled error` diye loglaması. ERRORS.md içinde açıkça kayıtlıdır.
 
 NEXT ACTION:
-- PR #5 review/merge.
-- İyileştirme maddeleri (22-26: central logging olgunlaştırma, entity
-  resolution blocking/ölçek, hata sözleşmesi + metrics, coverage threshold,
-  frontend işlevsel MVP) AYRI PR'larda ele alınacak — bu PR kapsamı dışında.
+- PR #7 GitHub CI ve head/mergeability kontrolü.
+- CI PASS ve review sonrası merge; ancak ondan sonra Aşama 2 ContactPoint /
+  permission / suppression modeline geçilir.
 
 notes:
 - Her ajan bu dosyayı okuyup iş devralmalıdır. Değişiklik yapmadan önce TASKS.md

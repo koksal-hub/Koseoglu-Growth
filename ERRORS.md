@@ -265,10 +265,9 @@ oluşturulmaz.
   test DB ayrımını açıklıyor. Resolver için iki regresyon testi eklendi.
   PR #5 migrationları `growth_phase01_review_20260901` adlı izole yerel DB'ye
   sıfırdan uygulandı.
-- status: FIXED LOCALLY. İzole DB üzerinde lint PASS, typecheck PASS,
-  test PASS (46/46) ve build PASS. Kullanıcı 2026-09-01'de commit/push ve
-  CI başarılıysa PR #5 merge işlemini onayladı; uzak CI/merge sonucu STATUS.md
-  içinde ayrıca kaydedilecektir.
+- status: FIXED. İzole DB üzerinde lint PASS, typecheck PASS, test PASS (46/46)
+  ve build PASS; PR #5 CI run `33471855155` PASS sonrası `main` üzerine
+  `8a6e2ec` ile merge edildi.
 
 ---
 
@@ -285,4 +284,62 @@ oluşturulmaz.
 - düzeltme: Doğrudan bağımlılık `pino: ^9.14.0` olarak hizalandı ve kilit dosyası
   yenilendi. Gerçek JSON log çıktısı üzerinde dört hassas başlığın maskelenmesi
   regresyon testiyle doğrulandı.
-- status: FIXED LOCALLY. lint/typecheck/test (56/56)/build PASS; GitHub CI bekleniyor.
+- status: FIXED. lint/typecheck/test (56/56)/build PASS; PR #6 GitHub Actions
+  run `33472791803` PASS sonrası `main` üzerine `2f6f11a` ile merge edildi.
+
+---
+
+- id: zod-url-refine-invalid-url-500
+- tarih: 2026-09-01T08:30:03+03:00
+- yer: apps/api/src/routes/research-missions.ts
+- kısa: Boş evidence source URL, beklenen 400 yerine `new URL()` istisnasıyla 500 dönüyordu.
+- detay: Research Mission odaklı ilk koşu 8/9 oldu; `TypeError: Invalid URL` HTTP
+  response status 500 üretti. `z.string().url()` başarısız olsa bile zincirdeki
+  sonraki `.refine()` callback'i çalıştı.
+- root_cause: Protokol kontrolü, geçersiz input için exception-safe değildi.
+- düzeltme: URL parse işlemi try/catch içine alındı; yalnız credential içermeyen
+  HTTP(S) URL'ler ve secret query parametresi taşımayan kaynaklar kabul ediliyor.
+  Boş/file/credential/secret-query/future-time negatif testleri eklendi.
+- status: FIXED LOCALLY. Odaklı test 15/15; full test 71/71 PASS; CI bekleniyor.
+
+---
+
+- id: prisma-pg-transaction-include-concurrent-query
+- tarih: 2026-09-01T08:35:00+03:00
+- yer: apps/api/src/lib/research.ts, Prisma 7.9.1 + @prisma/adapter-pg 7.9.1 + pg 8.23.0
+- kısa: Research candidate kabulü başarılı olsa da `pg`, işlem devam ederken aynı
+  istemcide ikinci `client.query()` çağrısının pg@9'da kaldırılacağı uyarısını verdi.
+- kanıt: `NODE_OPTIONS=--trace-deprecation` ile odaklı akışta stack,
+  `PgTransaction.performIO` ve Prisma query interpreter'ın relation include için
+  kullandığı `Array.map` yolunu gösterdi.
+- root_cause: Atomik update içindeki `include` ile evidence/company/matchedCompany
+  ilişkileri aynı interactive transaction bağlantısında paralel okunuyordu.
+- düzeltme: Transaction yalnız update/evidence/event yazılarını atomik olarak
+  tamamlıyor; tam response projection, commit sonrasında ayrı bir read ile alınıyor.
+- status: FIXED LOCALLY. `NODE_OPTIONS=--trace-deprecation` açık odaklı 15/15
+  regresyon koşusunda uyarı tekrar etmedi; ardından migration status, lint,
+  typecheck, tam test (71/71) ve API+web build PASS.
+
+---
+
+- id: expected-4xx-logged-as-unhandled-error
+- tarih: 2026-09-01T08:40:30+03:00
+- yer: apps/api/src/plugins/errorHandler.ts
+- kısa: Beklenen 400/409 doğrulama ve workflow cevapları doğru HTTP status ile
+  dönüyor, ancak mevcut merkezi handler hepsini önce error seviyesinde
+  `Unhandled error` mesajıyla ve stack ile logluyor.
+- etki: İşlevsel sonuç doğru ve testler PASS; operasyonel loglarda false-positive
+  error gürültüsü ve gereksiz stack hacmi oluşuyor.
+- status: OPEN / NON-BLOCKING. Merkezi error taxonomy/log-level düzenlemesi ayrı,
+  odaklı bir observability değişikliği olarak ele alınacak.
+
+---
+
+- id: vite5-cjs-node-api-deprecation
+- tarih: 2026-09-01T08:40:30+03:00
+- yer: vitest.config.ts, apps/web/vite.config.ts, Vite 5.4.21
+- kısa: Test ve web build başarılı olsa da Vite, CJS Node API kullanımının
+  deprecated olduğunu bildiriyor.
+- etki: Şu an test/build sonucu etkilenmiyor; ilerideki Vite major yükseltmesinde
+  config/module biçimi uyarlanmazsa kırılma riski var.
+- status: OPEN / NON-BLOCKING. ESM config geçişi ayrı toolchain görevi olmalıdır.

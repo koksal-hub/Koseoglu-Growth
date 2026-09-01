@@ -226,3 +226,31 @@ teknik bilgi yazılır.
   bağımlılıkları aynı major sürümde tutulmalı. Dışarıdan taşınan correlation id
   değerleri log enjeksiyonu ve kaynak tüketimi riskine karşı karakter ve uzunluk
   sınırından geçirilmelidir.
+
+- tarih: 2026-09-01T08:30:03+03:00
+- konu: Entity-resolution sonucu kabul edilmiş ilişki değildir
+- açıklama: Araştırma adayı için bulunan deterministik match doğrudan `companyId`
+  olarak tutulduğunda, henüz insanın doğrulamadığı bir öneri kanonik bağ gibi
+  görünür. Bu özellikle telefon/adres/fuzzy-name gibi destekleyici sinyallerde
+  false-merge riskini gizler.
+- etkisi: ResearchCandidate `matchedCompanyId` (öneri) ve `companyId` (insan
+  onaylı bağ) alanlarını ayrı tutar. Kabul, açık LINK_MATCH/CREATE_NEW kararı ister;
+  otomatik Lead veya Outreach üretmez.
+
+- tarih: 2026-09-01T08:30:03+03:00
+- konu: Zincirlenmiş doğrulayıcılar geçersiz inputta da exception-safe olmalıdır
+- açıklama: Zod `.url()` hatası, sonraki `.refine()` içinde `new URL(value)`
+  çalışmasını otomatik engellemedi. Bu nedenle beklenen client validation hatası
+  sunucu hatasına dönüştü.
+- etkisi: Bir doğrulama zincirindeki her custom refine/transform, önceki adımların
+  başarısına güvenmeden kendi başına güvenli çalışmalıdır; negatif HTTP status testi
+  yalnız mesajı değil 4xx/5xx ayrımını da sabitlemelidir.
+
+- tarih: 2026-09-01T08:35:00+03:00
+- konu: Interactive transaction içinde relation projection sürücü davranışını değiştirebilir
+- açıklama: Prisma 7, bir update üzerindeki çoklu relation `include` projection'ını
+  aynı transaction istemcisinde paralel sorgulara çevirebildi. pg 8 bunu uyarıyla
+  kabul ediyor; pg 9 aynı çağrı biçimini kaldıracağını bildiriyor.
+- etkisi: Transaction sınırı yalnız birlikte commit/rollback olması gereken yazıları
+  taşımalı. Zengin response projection atomik yazılar tamamlandıktan sonra okunarak
+  hem tutarlılık korunmalı hem sürücünün concurrent-query yoluna girilmemelidir.
