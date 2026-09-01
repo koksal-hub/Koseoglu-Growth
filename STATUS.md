@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T20:05:02+03:00
-last_actor: Codex (Aşama 5 merge sonrası dokümantasyon senkronu)
+last_update: 2026-09-01T20:27:49+03:00
+last_actor: Codex (Issue #3 deterministic discovery extraction)
 
-CURRENT PHASE: PHASE 5 COMPLETE — POST-MERGE DOCUMENTATION SYNC
-ACTIVE ISSUE: #17 CLOSED — Phase 5 PR #18 main'e merge edildi
-ACTIVE BRANCH: `codex/issue-17-email-sandbox` (merge sonrası `main` `7c32841`)
+CURRENT PHASE: PHASE 2 RESEARCH EXTRACTION — CI/REVIEW GATE
+ACTIVE ISSUE: #3 — Research, Verification ve Evidence pipeline
+ACTIVE BRANCH: `codex/research-extraction-v2` (`main` `3991d33` tabanı)
 
 ## Uygulanan dar kapsam
 
@@ -34,19 +34,23 @@ ACTIVE BRANCH: `codex/issue-17-email-sandbox` (merge sonrası `main` `7c32841`)
   yazımları PostgreSQL trigger/constraint katmanında reddedilir.
 - Testler explicit `TEST_DATABASE_URL` ister ve yalnız adı test/sandbox/ci içeren
   izole veritabanlarını kabul eder. CI veritabanı `growth_ci_test` olarak ayrıldı.
+- Bounded deterministic discovery endpoint'i (`POST /research-missions/:id/discover`)
+  HTML-like snapshot'tan sektör, faaliyet, lokasyon, domain ve iletişim sinyallerini
+  çıkarır; kaynak metni çalıştırmaz veya ham içerik olarak saklamaz.
+- İkinci kaynak endpoint'i (`POST /research-candidates/:id/evidence`) yalnızca nihai
+  karardan önce kanıt ekler. Kabul için en az iki farklı source origin zorunludur.
 
 ## Taze yerel kanıt
 
 - `pnpm lint`: PASS
 - `pnpm typecheck`: PASS
 - Odaklı testler: PASS — 31/31; Phase 5 dosyası 17/17
-- Tam test paketi: PASS — 135/135, 11 dosya
+- Tam test paketi: PASS — 141/141, 12 dosya
 - Prisma validate/generate: PASS
 - `pnpm build`: PASS — API + web production build
 - Baseline DB: 15 migration up to date; mevcut `Company` sayısı 1 olarak korundu
-- Fresh DB: `growth_email_sandbox_final15_20260901` sıfırdan 15/15 migration PASS;
-  4 Phase 5 tablosu, 9 trigger, 6 composite provenance FK ve null-safe state
-  constraint'i katalogda doğrulandı
+- Fresh DB: `growth_research_extraction_test_20260901` sıfırdan 16/16 migration PASS;
+  research activity kolonları ve `RESEARCH_EVIDENCE_ADDED` event tipi uygulandı.
 - Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
   migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
 - Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
@@ -54,14 +58,17 @@ ACTIVE BRANCH: `codex/issue-17-email-sandbox` (merge sonrası `main` `7c32841`)
 - İki bağımsız salt-okunur güvenlik/migration yeniden incelemesi: blocking
   kritik/yüksek/orta bulgu yok; düşük operasyonel riskler aşağıda açık
 - Final `git diff --check`: PASS; high-confidence secret-shaped literal taraması: PASS
-- Kod commit'i `eb00ac8`; PR #18 squash merge commit'i `7c328413262d130aca0b6e8ddaede873a051a42c`
-  olarak `main`'e alındı. GitHub Actions run `33534095475` migration/lint/typecheck/test/build
-  adımlarının tamamında SUCCESS verdi.
+- Önceki Phase 5 kodu `eb00ac8`, PR #18 squash merge commit'i
+  `7c328413262d130aca0b6e8ddaede873a051a42c` olarak `main`'e alındı. Yeni Issue #3
+  dilimi için yerel migration/lint/typecheck/test/build kanıtı hazır; CI/PR kanıtı
+  merge öncesi bekleniyor.
 
 ## Açık sınırlar
 
 - Bu çalışma gerçek Resend API çağrısı yapmadı; API key, webhook secret, domain,
   SPF/DKIM/DMARC ve gerçek mailbox kurulmadı.
+- Discovery endpoint'i gerçek web taraması yapmaz; çağıran worker'ın sağladığı bounded
+  public-page snapshot'ını deterministic olarak işler. Bu aşamada AI çağrısı yoktur.
 - Gerçek müşteriye/potansiyel müşteriye e-posta gönderilmedi; telefon veya sosyal
   medya hesabına dış aksiyon alınmadı.
 - Authentication/authorization hâlâ yoktur. Business API'leri private/local
@@ -79,6 +86,7 @@ ACTIVE BRANCH: `codex/issue-17-email-sandbox` (merge sonrası `main` `7c32841`)
 
 ## Sonraki adım
 
-Bu docs-only senkron PR'ı Phase 5 kayıtlarını merge sonrası gerçekle eşitler. Gerçek
+Issue #3 değişiklikleri için migration/lint/typecheck/test/build CI'sini, bağımsız
+güvenlik/veri incelemesini ve PR merge kapısını tamamla. Gerçek web crawler, AI çağrısı,
 Resend API çağrısı, müşteri gönderimi, inbound reply, auth/public deploy veya sosyal
-hesap yayını hâlâ kapsam dışıdır; bunlar için ayrı plan ve açık onay gerekir.
+hesap yayını hâlâ kapsam dışıdır; bunlar ayrı faz ve onay gerektirir.

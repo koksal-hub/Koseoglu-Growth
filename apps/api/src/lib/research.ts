@@ -7,8 +7,14 @@ import {
   normalizePhone,
   normalizeTaxNumber
 } from './entity-resolution';
+import {
+  countIndependentResearchSources,
+  extractResearchSignals,
+  researchSourceOrigin
+} from './research-extraction';
 
 export const MIN_ACCEPTANCE_CONFIDENCE = 0.7;
+export const MIN_INDEPENDENT_RESEARCH_SOURCES = 2;
 
 export class ResearchWorkflowError extends Error {
   readonly statusCode: number;
@@ -42,6 +48,7 @@ export type ResearchCompanyProposal = {
   city?: string;
   address?: string;
   sector?: string;
+  activity?: string;
   website?: string;
 };
 
@@ -65,6 +72,7 @@ export type AddResearchCandidateInput = {
   confidence: number;
   evidence: ResearchEvidenceInput;
   actor: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type DecideResearchCandidateInput = {
@@ -73,6 +81,21 @@ export type DecideResearchCandidateInput = {
   reason: string;
   decidedBy: string;
   resolution?: 'LINK_MATCH' | 'CREATE_NEW';
+};
+
+export type AddResearchEvidenceInput = {
+  candidateId: string;
+  evidence: ResearchEvidenceInput;
+  actor: string;
+};
+
+export type DiscoverResearchCandidateInput = {
+  missionId: string;
+  sourceUrl: string;
+  sourceName?: string;
+  accessedAt: Date;
+  content: string;
+  actor: string;
 };
 
 const missionInclude = {
@@ -146,6 +169,7 @@ export async function addResearchCandidate(input: AddResearchCandidateInput) {
     city: input.company.city?.trim(),
     address: input.company.address?.trim(),
     sector: input.company.sector?.trim(),
+    activity: input.company.activity?.trim(),
     website: input.company.website?.trim()
   };
 
@@ -179,6 +203,7 @@ export async function addResearchCandidate(input: AddResearchCandidateInput) {
         city: normalizedProposal.city,
         address: normalizedProposal.address,
         sector: normalizedProposal.sector,
+        activity: normalizedProposal.activity,
         website: normalizedProposal.website,
         reason: input.reason,
         confidence: input.confidence,
@@ -198,7 +223,8 @@ export async function addResearchCandidate(input: AddResearchCandidateInput) {
           untrustedExternalData: true,
           matchedCompanyId: match?.candidate.id ?? null,
           matchedBy: match?.reason ?? null,
-          matchConfidence: match?.confidence ?? null
+          matchConfidence: match?.confidence ?? null,
+          ...(input.metadata ?? {})
         }
       }
     });
@@ -224,6 +250,101 @@ export async function addResearchCandidate(input: AddResearchCandidateInput) {
   });
 }
 
+export async function addResearchEvidence(input: AddResearchEvidenceInput) {
+  const candidate = await prisma.researchCandidate.findUnique({
+    where: { id: input.candidateId },
+    include: { evidences: { select: { sourceUrl: true } } }
+  });
+  if (!candidate) throw new ResearchWorkflowError(404, 'Research candidate not found');
+  if (!['PROPOSED', 'NEEDS_MORE_EVIDENCE'].includes(candidate.status)) {
+    throw new ResearchWorkflowError(409, 'Evidence can only be added before a final candidate decision');
+  }
+
+  const sourceOrigin = researchSourceOrigin(input.evidence.sourceUrl);
+  if (!sourceOrigin) throw new ResearchWorkflowError(400, 'Evidence source must have a valid HTTP(S) origin');
+
+  const evidence = await prisma.$transaction(async (tx) => {
+    const event = await tx.event.create({
+      data: {
+        type: 'RESEARCH_EVIDENCE_ADDED',
+        entityType: 'ResearchCandidate',
+        entityId: candidate.id,
+        actor: input.actor,
+        metadata: {
+          candidateId: candidate.id,
+          sourceOrigin,
+          untrustedExternalData: true,
+          independentSourceCount: countIndependentResearchSources([
+            ...candidate.evidences.map((item) => item.sourceUrl),
+            input.evidence.sourceUrl
+          ])
+        }
+      }
+    });
+
+    return tx.evidence.create({
+      data: {
+        candidateId: candidate.id,
+        eventId: event.id,
+        sourceUrl: input.evidence.sourceUrl,
+        sourceName: input.evidence.sourceName,
+        publishedAt: input.evidence.publishedAt,
+        accessedAt: input.evidence.accessedAt,
+        observedAt: input.evidence.observedAt,
+        claimKey: input.evidence.claimKey,
+        freshnessStatus: input.evidence.freshnessStatus,
+        legalNotes: input.evidence.legalNotes,
+        summary: input.evidence.summary,
+        confidence: input.evidence.confidence
+      }
+    });
+  });
+
+  return evidence;
+}
+
+export async function discoverResearchCandidate(input: DiscoverResearchCandidateInput) {
+  let signals;
+  try {
+    signals = extractResearchSignals(input.sourceUrl, input.content);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Research source could not be parsed';
+    throw new ResearchWorkflowError(400, message);
+  }
+
+  return addResearchCandidate({
+    missionId: input.missionId,
+    actor: input.actor,
+    company: {
+      name: signals.name,
+      domain: signals.domain ?? undefined,
+      website: signals.website,
+      sector: signals.sector ?? undefined,
+      activity: signals.activity ?? undefined,
+      country: signals.country ?? undefined,
+      city: signals.city ?? undefined,
+      phone: signals.phone ?? undefined,
+      emailDomain: signals.emailDomain ?? undefined
+    },
+    reason: 'Deterministic extraction from a bounded untrusted public source; human verification is required.',
+    confidence: signals.confidence,
+    evidence: {
+      sourceUrl: input.sourceUrl,
+      sourceName: input.sourceName,
+      accessedAt: input.accessedAt,
+      claimKey: 'company.research_signals',
+      freshnessStatus: 'CURRENT',
+      summary: signals.summary,
+      confidence: signals.confidence
+    },
+    metadata: {
+      extractionMethod: 'deterministic',
+      aiUsed: false,
+      sourceContentBounded: true
+    }
+  });
+}
+
 export async function decideResearchCandidate(input: DecideResearchCandidateInput) {
   const candidate = await prisma.researchCandidate.findUnique({
     where: { id: input.candidateId },
@@ -238,6 +359,16 @@ export async function decideResearchCandidate(input: DecideResearchCandidateInpu
     throw new ResearchWorkflowError(
       409,
       `Candidate confidence must be at least ${MIN_ACCEPTANCE_CONFIDENCE} before acceptance`
+    );
+  }
+  if (
+    input.decision === 'ACCEPT' &&
+    countIndependentResearchSources(candidate.evidences.map((evidence) => evidence.sourceUrl)) <
+      MIN_INDEPENDENT_RESEARCH_SOURCES
+  ) {
+    throw new ResearchWorkflowError(
+      409,
+      `At least ${MIN_INDEPENDENT_RESEARCH_SOURCES} independent evidence sources are required before acceptance`
     );
   }
   if (input.decision === 'ACCEPT' && !input.resolution) {
@@ -282,6 +413,7 @@ export async function decideResearchCandidate(input: DecideResearchCandidateInpu
             city: candidate.city,
             address: candidate.address,
             sector: candidate.sector,
+            activity: candidate.activity,
             website: candidate.website,
             confidence: candidate.confidence,
             sourceChannel: 'COLD_RESEARCH',

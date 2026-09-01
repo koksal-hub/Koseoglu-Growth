@@ -112,8 +112,8 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #3 — Research / Verification / Evidence (Phase 2) ---
 - Öncelik: MEDIUM
 - Sorumlu: Codex
-- Durum: IN_PROGRESS (ilk Research Mission dilimi PR #7 ile merge edildi;
-  otomatik extraction/ikinci-kaynak politikası henüz yapılmadı)
+- Durum: REVIEW (ilk Research Mission dilimi PR #7 ve deterministic extraction/
+  ikinci kaynak dilimi yerelde PASS; PR/CI ve bağımsız inceleme kapısı bekliyor)
 - Bağımlılıklar: Issue #2 DONE olmalı
 - Acceptance criteria:
   - [x] Manuel/fixture tabanlı Company Discovery iskeleti çalışır
@@ -124,8 +124,12 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Deterministik duplicate önerisi insan onaylı kanonik bağdan ayrıdır
   - [x] Yerel migration/lint/typecheck/test (71/71)/build PASS
   - [x] İlk dikey dilim için GitHub Actions CI PASS ve PR #7 merge (`4978d2f`)
-  - [ ] Otomatik sektör/faaliyet/lokasyon/contact-signal extraction
-  - [ ] İkinci kaynak politikası; ileride AI kullanılırsa AI receipt
+  - [x] Bounded deterministic sector/activity/location/contact-signal extraction
+    (`POST /research-missions/:id/discover`); dış içerik untrusted data olarak kalır
+  - [x] İkinci kaynak politikası: farklı source origin sayımı ve ACCEPT öncesi en az
+    iki bağımsız kaynak; kanıt ekleme endpoint'i ile regresyon testi
+  - [x] Bu dilimde AI çağrısı yapılmadı; discovery event metadata'sında
+    `extractionMethod=deterministic`, `aiUsed=false` açıkça kayıtlı
 
 --- Issue #8 — ContactPoint, Permission ve Suppression Gate (Phase 2b) ---
 - Öncelik: HIGH
