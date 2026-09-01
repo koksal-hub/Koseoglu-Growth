@@ -637,3 +637,32 @@ tek bir pilot adapter ve paper/sandbox contract testleri yürütülür; live go-
 ayrı karar olarak ele alınır.
 
 STATUS: ACCEPTED — IMPLEMENTATION WAITING FOR EXPLICIT PROVIDER SCOPE
+
+---
+
+## ADR-026 — Credential-Free SEO/GEO Visibility Asset Contract
+
+DECISION: SEO ve GEO görünürlük için Growth DB'sine yalnız sahip olunan canonical
+sayfanın metadata sözleşmesi alınır: HTTPS canonical URL, locale, başlık,
+açıklama, hedef niyetleri, isteğe bağlı JSON-LD metadata'sı, robots direktifi ve
+deterministic content hash/validation receipt. Asset akışı
+`DRAFT → IN_REVIEW → APPROVED` olup yazar kendi asset'ini onaylayamaz. Provider
+arama, indexleme, sıralama veya AI-search doğrulaması bu model/API tarafından
+yapılmaz; receipt bunları `NOT_RUN`, readiness ise execution disabled olarak
+gösterir.
+
+WHY: Görünürlük hedefi, dış arama sağlayıcılarına ve ham web taramasına bağlanmadan
+önce içerik kalitesi, canonical/robots güvenliği ve insan onayıyla denetlenebilir
+olmalıdır. Credential-shaped metadata veya tracking/query URL'si kabul etmek,
+provenance ve gizlilik sınırını zayıflatır.
+
+ALTERNATIVES: Search API'lerinden canlı ranking çekmek; canonical URL'leri query
+parametreleriyle kabul etmek; ham sayfa metnini Growth DB'sine kopyalamak; asset'i
+insan onayı olmadan yayınlanabilir saymak.
+
+CONSEQUENCES: Bu faz SEO/GEO metadata hazırlama ve review yüzeyini sağlar ancak
+indexlendi, sıralandı, AI cevabında göründü veya trafik/lead üretti iddiasında
+bulunmaz. Search Console, analytics, crawler ve provider connector'ları ayrı
+provenance, credential ve onay sözleşmeleriyle sonraki fazlara bırakılır.
+
+STATUS: ACCEPTED FOR SAFE METADATA/REVIEW ONLY

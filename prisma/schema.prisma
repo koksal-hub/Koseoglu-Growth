@@ -125,6 +125,25 @@ enum SocialInboxIntent {
   OTHER
 }
 
+/// Visibility assets describe owned-page metadata for SEO and GEO review.
+/// They do not prove search indexing, ranking, or provider visibility.
+enum VisibilityMode {
+  SEO
+  GEO
+}
+
+enum VisibilityRobotsDirective {
+  INDEX_FOLLOW
+  NOINDEX_NOFOLLOW
+}
+
+enum VisibilityAssetStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  ARCHIVED
+}
+
 enum OpportunityStage {
   QUALIFICATION
   PROPOSAL
@@ -1063,6 +1082,34 @@ model SocialInboxMessage {
   @@index([platform, status, receivedAt])
   @@index([threadKey, receivedAt])
   @@index([intent, status])
+}
+
+/// Credential-free SEO/GEO metadata contract for an owned canonical page.
+/// Search engines and AI providers are intentionally not called by this model.
+model SearchVisibilityAsset {
+  id                 String                    @id @default(cuid())
+  assetKey           String                    @unique
+  mode               VisibilityMode
+  locale             String
+  canonicalUrl       String
+  title              String
+  description        String
+  targetIntents      Json
+  structuredData     Json?
+  robots             VisibilityRobotsDirective @default(INDEX_FOLLOW)
+  contentHash        String
+  policyVersion      String
+  validationReceipt  Json
+  status             VisibilityAssetStatus     @default(DRAFT)
+  author             String
+  approvedBy         String?
+  approvedAt         DateTime?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  @@unique([mode, locale, canonicalUrl])
+  @@index([mode, status, locale])
+  @@index([contentHash])
 }
 
 /// A Growth sales opportunity. Not a MYLojistik operational record.

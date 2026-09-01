@@ -536,3 +536,17 @@ oluşturulmaz.
 - etki: Migration/lint/typecheck/test/build sonucunu etkilemedi; gelecekte action
   major sürümleri güncellenmezse platform uyumluluk riski oluşabilir.
 - status: OPEN / NON-BLOCKING. Action major güncellemesi ayrı toolchain görevidir.
+
+---
+
+- id: visibility-asset-canonical-url-test-expectation
+- tarih: 2026-09-01T23:24:00+03:00
+- yer: `apps/api/test/visibility-assets.test.ts`
+- kısa: İlk Phase 8H CI koşusu yalnız yeni testte canonical URL'nin path sonuna
+  otomatik slash ekleneceğini varsaydığı için başarısız oldu; URL parser path'i
+  değiştirmeden koruyor.
+- root_cause: Test beklentisi, uygulamanın açıkça tanımlanmamış URL normalizasyonunu
+  gerçek davranış yerine varsaydı.
+- düzeltme: Beklenti parser'ın gözlenen canonical değerine çekildi; uygulama
+  davranışı gereksiz yere değiştirilmedi.
+- status: FIXED. CI yeniden çalıştırılmalıdır.
