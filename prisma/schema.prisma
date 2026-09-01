@@ -106,6 +106,25 @@ enum SocialContentVariantStatus {
   CANCELLED
 }
 
+enum SocialInboxMessageStatus {
+  RECEIVED
+  CLASSIFIED
+  ASSIGNED
+  REQUIRES_APPROVAL
+  RESPONDED
+  IGNORED
+}
+
+enum SocialInboxIntent {
+  UNCLASSIFIED
+  LEAD
+  CUSTOMER
+  QUESTION
+  COMPLAINT
+  SPAM
+  OTHER
+}
+
 enum OpportunityStage {
   QUALIFICATION
   PROPOSAL
@@ -1019,6 +1038,31 @@ model SocialAttributionReceipt {
 
   @@index([utmCampaign])
   @@index([utmSource, utmMedium])
+}
+
+/// Inbound social metadata receipt. Raw message text is intentionally not stored.
+/// Provider fetch and outbound reply remain separate, disabled capabilities.
+model SocialInboxMessage {
+  id                   String                    @id @default(cuid())
+  platform             SocialPlatform
+  accountKey           String
+  externalMessageKey   String
+  threadKey            String
+  senderHandle         String
+  messageType          String
+  receivedAt           DateTime
+  contentHash          String
+  intent               SocialInboxIntent        @default(UNCLASSIFIED)
+  status               SocialInboxMessageStatus @default(RECEIVED)
+  assignedTo           String?
+  classificationReceipt Json?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  @@unique([platform, accountKey, externalMessageKey])
+  @@index([platform, status, receivedAt])
+  @@index([threadKey, receivedAt])
+  @@index([intent, status])
 }
 
 /// A Growth sales opportunity. Not a MYLojistik operational record.
