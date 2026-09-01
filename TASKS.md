@@ -216,7 +216,8 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
 --- Issue #21 — Durable Queue, Worker, Scheduler ve Crash Recovery (Phase 6) ---
 - Öncelik: HIGH
 - Sorumlu: Codex
-- Durum: REVIEW (PR/CI merge kapısı bekleniyor)
+- Durum: DONE (PR #22 CI run `33539954625` PASS; squash merge `65abee6`;
+  Issue #21 kapalı)
 - Bağımlılıklar: Issue #17 DONE; gerçek dış provider işlemleri hâlâ kapsam dışı
 - Acceptance criteria:
   - [x] Additive PostgreSQL `Job` modeli ve açık durum geçişleri
@@ -228,7 +229,23 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
   - [x] Deterministic in-process handler registry ve scheduler tick; provider,
     müşteri, sosyal medya veya e-posta dış aksiyonu yok
   - [x] Disposable DB migration, lint/typecheck ve queue regression 6/6 PASS
-  - [ ] Tam test/build, secret scan, PR CI PASS ve Issue #21 kapanışı
+  - [x] Tam test/build, secret scan, PR CI PASS ve Issue #21 kapanışı
+
+--- Issue #23 — Reporting, Observability ve Cost Attribution (Phase 7) ---
+- Öncelik: HIGH
+- Sorumlu: Codex
+- Durum: REVIEW (PR/CI merge kapısı bekleniyor)
+- Bağımlılıklar: Issue #21 DONE; auth/public deploy hâlâ kapsam dışı
+- Acceptance criteria:
+  - [x] Europe/Istanbul günlük window ve additive idempotent `ManagementReport`
+  - [x] Company/Lead/Research/Job/Outreach/Event aggregate KPI'ları; raw contact
+    değerleri raporlanmıyor
+  - [x] Secret-free `UsageReceipt` ledger'ı; token/cost integer CHECK'leri ve
+    idempotency conflict guard
+  - [x] Receipt yoksa AI kullanımı `0`; provider/AI çağrısı başlatılmıyor
+  - [x] Private management report endpoint'i ve invalid date/metadata reddi
+  - [x] Fresh disposable DB 18/18 migration ve odaklı reporting 4/4 PASS
+  - [ ] Tam test/build, secret scan, PR CI PASS ve Issue #23 kapanışı
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)

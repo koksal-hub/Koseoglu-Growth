@@ -12,6 +12,7 @@ import contactPointRoutes from './routes/contact-points';
 import rankingRoutes from './routes/ranking';
 import outreachDraftRoutes from './routes/outreach-drafts';
 import resendWebhookRoutes from './routes/resend-webhooks';
+import reportingRoutes from './routes/reporting';
 
 export function buildServer(): { server: FastifyInstance; env: Env } {
   // validate env on startup
@@ -53,6 +54,7 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
     prefix: '/api',
     webhookSecret: env.RESEND_WEBHOOK_SECRET,
   });
+  server.register(reportingRoutes, { prefix: '/api' });
 
   // basic swagger/OpenAPI could be added here in the future
 

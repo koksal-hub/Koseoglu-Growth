@@ -811,8 +811,8 @@ model Activity {
   @@index([type])
 }
 
-/// A scheduled follow-up task. No queue/scheduler yet (Phase 6) — this is
-/// data only.
+/// A scheduled follow-up task. Queue execution is represented separately by
+/// Job; this record remains the business-facing due-date state.
 model FollowUp {
   id        String         @id @default(cuid())
   leadId    String?
@@ -854,6 +854,47 @@ model Job {
 
   @@index([status, runAt])
   @@index([lockedAt])
+}
+
+/// A deterministic, secret-free usage receipt for a model/provider call that
+/// actually occurred outside this repository. Recording a receipt never calls
+/// a provider; absent a receipt, report cost remains explicitly zero/unknown.
+model UsageReceipt {
+  id             String   @id @default(cuid())
+  provider       String
+  model          String
+  operation      String
+  idempotencyKey String   @unique
+  receiptHash    String
+  inputTokens    Int      @default(0)
+  outputTokens   Int      @default(0)
+  costMinor      Int      @default(0)
+  currency       String   @default("USD")
+  occurredAt     DateTime
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([occurredAt])
+  @@index([provider, model])
+}
+
+/// Idempotent management snapshot for one Europe/Istanbul reporting day.
+/// Metrics are deterministic JSON and contain no raw contact values or secrets.
+model ManagementReport {
+  id          String   @id @default(cuid())
+  reportKey   String   @unique
+  reportDate  String
+  timezone    String   @default("Europe/Istanbul")
+  periodStart DateTime
+  periodEnd   DateTime
+  inputHash   String
+  metrics     Json
+  generatedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([reportDate, timezone])
+  @@index([periodStart, periodEnd])
 }
 
 /// A Growth sales opportunity. Not a MYLojistik operational record.
