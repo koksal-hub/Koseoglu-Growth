@@ -510,3 +510,29 @@ public deploy değildir. Concrete adapters, token refresh, media upload, schedul
 publish, inbox/DM ve analytics attribution sonraki ayrı risk dilimleridir.
 
 STATUS: ACCEPTED FOR SAFE SCHEDULING ONLY
+
+---
+
+## ADR-021 — Social Connection Metadata ve Fail-Closed Publish Gate
+
+DECISION: Social connection endpoint'leri yalnız platform/account metadata'sı,
+scopes ve gelecekteki `vault://` opaque reference'ı saklar; access/refresh token,
+secret veya credential-shaped metadata reddedilir. Private lifecycle route'u
+`CONNECTED` durumunu kendi başına yazamaz; bu durum ancak gelecekteki dış adapter
+doğrulamasıyla üretilebilir. Readiness endpoint'i bağlı hesap, adapter kaydı,
+variant schedule durumu ve global publish-disabled sınırını birlikte raporlar.
+
+WHY: Bir hesabı bağlı veya yayına hazır gösterip gerçekte OAuth/adapter olmaması
+yanlış güven ve geri alınamaz dış aksiyon riski doğurur. Blocker'ları görünür ve
+deterministic yapmak, sonraki provider entegrasyonunun güvenli bir sözleşmeye
+bağlanmasını sağlar.
+
+ALTERNATIVES: API'den doğrudan CONNECTED yazmak; tokenları DB'ye kopyalamak;
+adapter yokken job'ı başarılı saymak; yalnız tek bir blocker döndürmek.
+
+CONSEQUENCES: Bu faz hesap bağlantısı başlatmaz, token refresh/media upload/publish
+yapmaz ve readiness hiçbir koşulda `ready: true` üretmez. Gerçek OAuth callback,
+vault entegrasyonu, concrete adapter ve dış platform operasyonları sonraki ayrı
+risk/onay dilimleridir.
+
+STATUS: ACCEPTED FOR CREDENTIAL-FREE GATE ONLY

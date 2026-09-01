@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T21:22:00+03:00
-last_actor: Codex (Issue #27 social composer/approval API)
+last_update: 2026-09-01T21:38:00+03:00
+last_actor: Codex (Issue #29 social connection lifecycle/publish gate)
 
-CURRENT PHASE: PHASE 8B SOCIAL COMPOSER / APPROVAL / SCHEDULING — CI/REVIEW GATE
-ACTIVE ISSUE: #27 — Social composer, approval API ve publish-job scheduling
-ACTIVE BRANCH: `codex/phase8b-social-composer-v1` (`main` `d399100` tabanı)
+CURRENT PHASE: PHASE 8C SOCIAL CONNECTION LIFECYCLE / FAIL-CLOSED PUBLISH GATE — LOCAL REVIEW
+ACTIVE ISSUE: #29 — Social connection lifecycle and fail-closed publish gate
+ACTIVE BRANCH: `codex/phase8c-social-connection-gate-v1` (`main` `03b3374` tabanı)
 
 ## Uygulanan dar kapsam
 
@@ -70,6 +70,11 @@ ACTIVE BRANCH: `codex/phase8b-social-composer-v1` (`main` `d399100` tabanı)
 - Web composer MVP'si dokuz kanalın policy limitlerini, varyant matrisini, review/
   approval/scheduled durumlarını ve güvenli-mod sınırını görünür kılar; UI provider
   ağına bağlanmaz.
+- Connection metadata create/list ve kontrollü lifecycle endpoint'leri eklendi;
+  private API `CONNECTED` durumunu dış adapter doğrulaması olmadan üretemez.
+- Publish readiness endpoint'i variant, bağlı hesap, adapter ve genel execution
+  kapısını birlikte raporlar; hiçbir network çağrısı yapmaz ve publish etkin değilken
+  `ready: false` döner.
 
 ## Taze yerel kanıt
 
@@ -107,6 +112,8 @@ ACTIVE BRANCH: `codex/phase8b-social-composer-v1` (`main` `d399100` tabanı)
 - Phase 8B local Vitest ve web build, OneDrive worktree reparse erişim hatası
   (`esbuild` config dizinine erişemiyor) nedeniyle çalıştırılamadı; bu iki
   doğrulama da CI kapısında yeniden koşulmalıdır.
+- Phase 8B PR #28 merge: CI run `33543718681` SUCCESS (159 test, lint, typecheck,
+  migration ve API/web build); squash commit `03b3374`; Issue #27 CLOSED.
 - Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
   migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
 - Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
@@ -142,7 +149,7 @@ ACTIVE BRANCH: `codex/phase8b-social-composer-v1` (`main` `d399100` tabanı)
 
 ## Sonraki adım
 
-Issue #27 için fresh DB migration/full integration testi, CI ve PR merge kapısını
+Issue #29 için fresh DB migration/full integration testi, CI ve PR merge kapısını
 tamamla. Gerçek OAuth/token refresh, medya yükleme, sosyal yayın/DM, AI çağrısı,
 Resend API çağrısı, müşteri gönderimi, inbound reply, auth/public deploy hâlâ
 kapsam dışıdır; bunlar ayrı açık güvenlik/operasyon onayı gerektirir.

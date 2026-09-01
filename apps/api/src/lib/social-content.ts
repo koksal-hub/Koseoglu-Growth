@@ -159,6 +159,96 @@ export async function createSocialConnection(input: {
   }
 }
 
+type SocialConnectionStatusValue = 'DISCONNECTED' | 'CONNECTED' | 'REAUTH_REQUIRED' | 'REVOKED';
+
+const SOCIAL_CONNECTION_STATUS_TRANSITIONS: Record<SocialConnectionStatusValue, readonly SocialConnectionStatusValue[]> = {
+  DISCONNECTED: ['REAUTH_REQUIRED'],
+  CONNECTED: ['DISCONNECTED', 'REAUTH_REQUIRED', 'REVOKED'],
+  REAUTH_REQUIRED: ['DISCONNECTED', 'REVOKED'],
+  REVOKED: ['DISCONNECTED'],
+};
+
+export async function listSocialConnections(limit = 100) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+    throw new SocialContentPolicyError(400, 'limit must be an integer between 1 and 100');
+  }
+  return prisma.socialConnection.findMany({
+    orderBy: [{ platform: 'asc' }, { accountKey: 'asc' }],
+    take: limit,
+    select: {
+      id: true,
+      platform: true,
+      accountKey: true,
+      accountLabel: true,
+      status: true,
+      scopes: true,
+      tokenExpiresAt: true,
+      lastValidatedAt: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}
+
+/**
+ * Change only provider-reported non-connected states from the private API.
+ * CONNECTED must be established by a future adapter after real validation;
+ * accepting it from an unauthenticated route would create a false readiness signal.
+ */
+export async function transitionSocialConnection(id: string, status: SocialConnectionStatusValue) {
+  validateKey(id, 'social connection id');
+  if (!Object.prototype.hasOwnProperty.call(SOCIAL_CONNECTION_STATUS_TRANSITIONS, status)) {
+    throw new SocialContentPolicyError(400, 'Unsupported social connection status');
+  }
+  if (status === 'CONNECTED') {
+    throw new SocialContentPolicyError(409, 'CONNECTED requires external adapter validation');
+  }
+  const current = await prisma.socialConnection.findUnique({ where: { id } });
+  if (!current) throw new SocialContentPolicyError(404, 'Social connection not found');
+  if (current.status === status) return current;
+  if (!SOCIAL_CONNECTION_STATUS_TRANSITIONS[current.status].includes(status)) {
+    throw new SocialContentPolicyError(409, `Cannot transition social connection from ${current.status} to ${status}`);
+  }
+  return prisma.socialConnection.update({ where: { id }, data: { status } });
+}
+
+/**
+ * Report all blockers before a future publish worker could call a provider.
+ * This function never performs network I/O and intentionally never reports
+ * ready while concrete publish execution remains disabled.
+ */
+export async function evaluateSocialPublishReadiness(variantId: string) {
+  validateKey(variantId, 'social variant id');
+  const variant = await prisma.socialContentVariant.findUnique({ where: { id: variantId } });
+  if (!variant) throw new SocialContentPolicyError(404, 'Social variant not found');
+
+  const blockers: string[] = [];
+  if (variant.status !== 'SCHEDULED') blockers.push('VARIANT_NOT_SCHEDULED');
+  const connection = await prisma.socialConnection.findFirst({
+    where: { platform: variant.platform, status: 'CONNECTED' },
+    orderBy: { updatedAt: 'desc' },
+    select: { id: true, accountKey: true, status: true },
+  });
+  if (!connection) blockers.push('NO_CONNECTED_ACCOUNT');
+  let adapterRegistered = true;
+  try {
+    getSocialAdapter(variant.platform);
+  } catch (error) {
+    if (!(error instanceof SocialContentPolicyError) || error.statusCode !== 503) throw error;
+    adapterRegistered = false;
+    blockers.push('NO_PROVIDER_ADAPTER');
+  }
+  blockers.push('PUBLISH_EXECUTION_DISABLED');
+  return {
+    ready: false,
+    variantId: variant.id,
+    platform: variant.platform,
+    adapterRegistered,
+    connection: connection ? { id: connection.id, accountKey: connection.accountKey } : null,
+    blockers,
+  };
+}
+
 export async function createMasterContent(input: {
   title: string;
   body: string;
