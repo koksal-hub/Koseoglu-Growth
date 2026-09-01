@@ -1,11 +1,11 @@
 STATUS — Kısa, güncel durum (master ajanın okuması için)
 
-last_update: 2026-09-01T10:15:49+03:00
-last_actor: Codex (Aşama 4 outreach draft / bağımsız insan onayı)
+last_update: 2026-09-01T10:30:56+03:00
+last_actor: Codex (Aşama 4 merge ve kanıt kapanışı)
 
-CURRENT PHASE: PHASE 4 — OUTREACH DRAFT + HUMAN APPROVAL
-ACTIVE ISSUE: Issue #14 — Outreach Draft ve bağımsız insan onayı
-ACTIVE BRANCH: codex/outreach-draft-v1 (`main` `240ce72` tabanı)
+CURRENT PHASE: PHASE 4 COMPLETE — PHASE 5 PLANNING GATE
+ACTIVE ISSUE: None — Phase 5 provider/sandbox görevi henüz açılmadı
+ACTIVE BRANCH: codex/outreach-docs-sync (`main` `39699eb` tabanı)
 
 CURRENT CODEX CHECKPOINT (2026-09-01):
 - Research Mission ilk dikey dilimi PR #7 CI PASS sonrası `main` üzerine
@@ -59,6 +59,10 @@ CURRENT CODEX CHECKPOINT (2026-09-01):
   yeniden çalışır; permission policy değişimi, suppression veya opt-out bloklar.
 - İçerik yazarları karar veremez. Approval/rejection append-only receipt bırakır;
   approval dahi `sendAuthorized=false` ve hiçbir provider/send/Lead/Activity üretmez.
+- Kod commit'i `93a5022` olarak push edildi. PR #15 GitHub Actions run
+  `33482197125` içindeki migration/lint/typecheck/test/build ve cleanup
+  adımlarının tamamı SUCCESS olduktan sonra beklenen head SHA kilidiyle
+  squash-merge edildi. `main` HEAD `39699eb`; Issue #14 completed olarak kapandı.
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
@@ -146,22 +150,24 @@ CURRENT QUALITY STATUS (gerçek, doğrulanmış — bu branch):
   graceful shutdown exit 0
 - GitHub Actions CI: PASS — PR #12 run `33478818433`; migration/lint/typecheck/
   test/build ve cleanup adımlarının tamamı SUCCESS
-- GitHub Actions CI: Aşama 4 branch'i için BEKLENİYOR
+- GitHub Actions CI: PASS — PR #15 run `33482197125`; migration/lint/typecheck/
+  test/build ve cleanup adımlarının tamamı SUCCESS
 - Uçtan uca test (Devin testing agent): PASS — health/ready + DB kesinti/
   geri dönüş, SIGTERM graceful shutdown (exit 0), helmet/rate-limit/CORS,
   DB CHECK kısıtları, web + /api dev proxy, lang="tr". Detay: PR #5 yorumu.
 
 OPEN BLOCKERS:
-- Aşama 4 yerel kod/kalite blocker'ı yoktur; commit/push/PR/CI bekleniyor.
 - Authentication/authorization hâlâ yoktur. Business API'leri
   yalnız private/local geliştirme içindir; public veya multi-user deploy edilemez.
+- E-posta provider/sandbox connector'ı ve credentials henüz seçilmedi; gerçek
+  gönderim yetkisi ve müşteri iletişimi verilmedi.
 - Bilinen, bu dilimi bloklamayan teknik borç: Vite 5 CJS Node API deprecation
   uyarısı ve merkezi error handler'ın beklenen 4xx workflow/validation hatalarını
   error seviyesinde `Unhandled error` diye loglaması. ERRORS.md içinde açıkça kayıtlıdır.
 
 NEXT ACTION:
-- Aşama 4 exact-file commit/push, Issue #14 PR ve GitHub CI/head kontrolü.
-- CI PASS sonrası beklenen head SHA ile merge ve kapanış belge senkronu.
+- Aşama 5 için önce provider/sandbox, secret storage, idempotency, bounce/complaint/
+  opt-out receipt ve authz tehdit modelini dar bir GitHub Issue olarak tanımla.
 - Authentication/authorization çözülmeden public veya multi-user deploy yapma;
   gerçek gönderim ve müşteri iletişimi için ayrıca açık kullanıcı onayı bekle.
 

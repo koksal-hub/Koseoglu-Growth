@@ -167,7 +167,8 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #14 — Outreach Draft ve Bağımsız İnsan Onayı (Phase 4) ---
 - Öncelik: HIGH
 - Sorumlu: Codex
-- Durum: REVIEW (`codex/outreach-draft-v1`; yerel kapılar PASS, PR/CI bekleniyor)
+- Durum: DONE (commit `93a5022`; PR #15 run `33482197125` PASS sonrası
+  `main` üzerine `39699eb` ile merge edildi; Issue #14 kapatıldı)
 - Bağımlılıklar: Issue #11 DONE
 - Acceptance criteria:
   - [x] Yalnız güncel `READY_FOR_HUMAN_OUTREACH_REVIEW` ranking receipt'i draft açar
@@ -180,7 +181,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Provider/send/Lead/Activity yok; approval dahi `sendAuthorized=false`
   - [x] Sekiz migration temiz DB'ye sıfırdan uygulandı; 29 constraint/FK + 3 trigger doğrulandı
   - [x] Prisma/lint/typecheck; odaklı 10/10; tam 116/116; API+web build PASS
-  - [ ] GitHub Actions CI PASS ve PR merge
+  - [x] GitHub Actions CI PASS (run `33482197125`) ve PR #15 merge (`39699eb`)
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
