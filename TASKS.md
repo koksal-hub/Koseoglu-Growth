@@ -28,10 +28,8 @@ Her görev şu alanları içermelidir:
 GITHUB ISSUES (AYNA)
 ================================================================
 
-NOT: Bu ortamda GitHub CLI (gh) kurulu/authenticate değil, bu yüzden Issue'lar bu
-oturumda otomatik olarak GitHub üzerinde açılamadı. Aşağıdaki üç Issue MASTER_PLAN
-Faz 0-2'ye karşılık gelen HEDEF yapıdır. Köksal veya gh CLI erişimi olan bir ajan
-bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en altta).
+NOT: Aşağıdaki kayıt GitHub Issues'ın kısa aynasıdır; geçmişte gh erişimi olmayan
+oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kanıtı esastır.
 
 --- Issue #1 — Phase 0: Foundation ---
 - Öncelik: HIGH
@@ -112,8 +110,8 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #3 — Research / Verification / Evidence (Phase 2) ---
 - Öncelik: MEDIUM
 - Sorumlu: Codex
-- Durum: REVIEW (ilk Research Mission dilimi PR #7 ve deterministic extraction/
-  ikinci kaynak dilimi yerelde PASS; PR/CI ve bağımsız inceleme kapısı bekliyor)
+- Durum: DONE (PR #20 CI run `33538344289` PASS; squash merge `805fd45`;
+  Issue #3 kapalı)
 - Bağımlılıklar: Issue #2 DONE olmalı
 - Acceptance criteria:
   - [x] Manuel/fixture tabanlı Company Discovery iskeleti çalışır
@@ -214,6 +212,23 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Risk C `main` merge için kullanıcı açık onayı alındı; PR #18 `main`'e merge edildi
 - Kapsam dışı: gerçek provider çağrısı, secret/domain kurulumu, müşteri e-postası,
   inbound reply işleme, auth/public deploy ve sosyal hesap yayını.
+
+--- Issue #21 — Durable Queue, Worker, Scheduler ve Crash Recovery (Phase 6) ---
+- Öncelik: HIGH
+- Sorumlu: Codex
+- Durum: REVIEW (PR/CI merge kapısı bekleniyor)
+- Bağımlılıklar: Issue #17 DONE; gerçek dış provider işlemleri hâlâ kapsam dışı
+- Acceptance criteria:
+  - [x] Additive PostgreSQL `Job` modeli ve açık durum geçişleri
+  - [x] Canonical JSON payload hash'i ile stable idempotency key; aynı key'de
+    farklı payload/type 409 conflict
+  - [x] `FOR UPDATE SKIP LOCKED` atomik claim ve worker lease sahipliği
+  - [x] Exponential backoff, max-attempts, retryable failure ve dead-letter
+  - [x] Stale lease crash recovery; attempt sayısı sessizce sıfırlanmaz
+  - [x] Deterministic in-process handler registry ve scheduler tick; provider,
+    müşteri, sosyal medya veya e-posta dış aksiyonu yok
+  - [x] Disposable DB migration, lint/typecheck ve queue regression 6/6 PASS
+  - [ ] Tam test/build, secret scan, PR CI PASS ve Issue #21 kapanışı
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)

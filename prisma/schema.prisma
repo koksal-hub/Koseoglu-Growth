@@ -57,6 +57,17 @@ enum FollowUpStatus {
   CANCELLED
 }
 
+/// Durable internal work item state. Jobs are deliberately limited to
+/// deterministic in-process handlers in Phase 6; they do not authorize
+/// external email, social-media, or customer operations.
+enum JobStatus {
+  QUEUED
+  RUNNING
+  RETRYABLE_FAILED
+  SUCCEEDED
+  DEAD_LETTER
+}
+
 enum OpportunityStage {
   QUALIFICATION
   PROPOSAL
@@ -818,6 +829,31 @@ model FollowUp {
   @@index([leadId])
   @@index([dueAt])
   @@index([status])
+}
+
+/// A durable, idempotent unit of internal Growth work. `payload` is untrusted
+/// input and is never executed as code. Mutable operational state is kept here
+/// while the append-only Event table remains the audit log.
+model Job {
+  id             String    @id @default(cuid())
+  type           String
+  payload        Json
+  payloadHash    String
+  idempotencyKey String    @unique
+  status         JobStatus @default(QUEUED)
+  attempts       Int       @default(0)
+  maxAttempts    Int       @default(3)
+  runAt          DateTime  @default(now())
+  lockedAt       DateTime?
+  lockedBy       String?
+  lastError      String?
+  completedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, runAt])
+  @@index([lockedAt])
 }
 
 /// A Growth sales opportunity. Not a MYLojistik operational record.
