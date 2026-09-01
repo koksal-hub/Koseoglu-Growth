@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
+import { enqueueJob } from './job-queue';
 
 export const SOCIAL_CONTENT_POLICY_VERSION = 'social-content-policy-v1';
 
@@ -182,6 +183,17 @@ export async function createMasterContent(input: {
   });
 }
 
+export async function listMasterContent(limit = 50) {
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+    throw new SocialContentPolicyError(400, 'limit must be an integer between 1 and 100');
+  }
+  return prisma.masterContent.findMany({
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: limit,
+    include: { variants: { orderBy: { platform: 'asc' } } },
+  });
+}
+
 export async function createSocialVariant(input: {
   masterContentId: string;
   platform: string;
@@ -257,6 +269,34 @@ export async function approveSocialVariant(id: string, reviewedBy: string) {
   });
   if (result.count !== 1) throw new SocialContentPolicyError(409, 'Only IN_REVIEW variants can be approved');
   return prisma.socialContentVariant.findUniqueOrThrow({ where: { id } });
+}
+
+/** Schedule only an internal job. No adapter lookup or provider call occurs. */
+export async function scheduleSocialVariant(id: string, scheduledAt: Date) {
+  if (Number.isNaN(scheduledAt.getTime())) throw new SocialContentPolicyError(400, 'Invalid scheduledAt');
+  const variant = await prisma.socialContentVariant.findUnique({ where: { id } });
+  if (!variant) throw new SocialContentPolicyError(404, 'Social variant not found');
+  if (variant.status !== 'APPROVED') {
+    throw new SocialContentPolicyError(409, 'Only APPROVED variants can be scheduled');
+  }
+  const idempotencyKey = `social-publish:${variant.id}:${variant.contentHash.slice(0, 32)}`;
+  const job = await enqueueJob({
+    type: 'SOCIAL_PUBLISH',
+    payload: {
+      variantId: variant.id,
+      platform: variant.platform,
+      contentHash: variant.contentHash,
+      policyVersion: variant.policyVersion,
+    },
+    idempotencyKey,
+    runAt: scheduledAt,
+  });
+  const result = await prisma.socialContentVariant.updateMany({
+    where: { id, status: 'APPROVED' },
+    data: { status: 'SCHEDULED', scheduledAt },
+  });
+  if (result.count !== 1) throw new SocialContentPolicyError(409, 'Variant changed before it could be scheduled');
+  return { variant: await prisma.socialContentVariant.findUniqueOrThrow({ where: { id } }), job };
 }
 
 export function registerSocialAdapter(adapter: SocialProviderAdapter) {
