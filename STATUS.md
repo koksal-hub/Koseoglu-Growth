@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T23:10:00+03:00
-last_actor: Codex (Issue #39 SEO/GEO visibility contract)
+last_update: 2026-09-01T23:16:00+03:00
+last_actor: Codex (Issue #39 CI/merge verification)
 
-CURRENT PHASE: PHASE 8H SEO/GEO VISIBILITY ASSET CONTRACT (SAFE MODE)
-ACTIVE ISSUE: #39 — SEO/GEO visibility asset contract
-ACTIVE BRANCH: `codex/phase8h-seo-geo-visibility-v1` (`origin/main` `5dc0cf2` tabanı)
+CURRENT PHASE: PHASE 8H SEO/GEO VISIBILITY ASSET CONTRACT — DONE (SAFE MODE)
+ACTIVE ISSUE: #37 — Provider OAuth onboarding and pilot approval gate (WAITING_APPROVAL)
+ACTIVE BRANCH: `main` (`e9ef322` Phase 8H merge)
 
 ## Uygulanan dar kapsam
 
@@ -110,6 +110,8 @@ ACTIVE BRANCH: `codex/phase8h-seo-geo-visibility-v1` (`origin/main` `5dc0cf2` ta
 - Phase 8H focused Vitest: NOT_RUN — OneDrive worktree/esbuild reparse-point erişim
   hatası; Docker/DB integration kanıtı da bu checkout'ta mevcut değil. CI kapısı
   yeniden doğrulamalıdır.
+- Phase 8H PR #40 CI run `33553751055`: SUCCESS — fresh migration, full 170 tests,
+  lint, typecheck ve API/web build; squash merge `e9ef322`; Issue #39 CLOSED.
 
 - `pnpm lint`: PASS
 - `pnpm typecheck`: PASS
@@ -191,8 +193,7 @@ ACTIVE BRANCH: `codex/phase8h-seo-geo-visibility-v1` (`origin/main` `5dc0cf2` ta
 
 ## Sonraki adım
 
-Issue #39 için CI ve fresh disposable migration kanıtı bekleniyor. Ardından Issue
-#37 için kullanıcıdan seçili provider/pilot hesap, exact scope, secret-manager ve
+Issue #37 için kullanıcıdan seçili provider/pilot hesap, exact scope, secret-manager ve
 sandbox/paper onayı gerekir. Bu kanıt gelene kadar gerçek OAuth/token refresh,
 medya yükleme, sosyal yayın/DM, search/indexing API, AI çağrısı, Resend API çağrısı,
 müşteri gönderimi ve inbound reply kapsam dışıdır.
