@@ -202,3 +202,15 @@ teknik bilgi yazılır.
 - etkisi: Faz 1'den itibaren CI, `.github/workflows/ci.yml` içinde bir
   Postgres servisi içeriyor. Gelecekteki fazlarda yeni bir dış bağımlılık
   (Redis, vb.) gerçek entegrasyon testi gerektirirse aynı desen izlenmeli.
+
+- tarih: 2026-09-01T01:12:00+03:00
+- konu: Paralel Git worktree'leri aynı migration veritabanını paylaşmamalı
+- açıklama: Bir worktree'nin migration geçmişi, başka bir branch'in dosya
+  ağacında bulunmayan migrationları ortak DB'ye uygulayabilir. `prisma migrate
+  status` yalnız kaynak branch'teki migrationları gördüğünden bu çapraz-branch
+  drift'i yeterince görünür kılmadı; aynı test kaynak branch'in temiz CI DB'sinde
+  geçerken paylaşılan yerel DB'de başarısız oldu.
+- etkisi: Her paralel worktree için ayrı `TEST_DATABASE_URL`/DB adı kullanılmalı.
+  Migration ve entegrasyon testleri o branch'in migrationlarıyla sıfırdan
+  hazırlanmış izole DB üzerinde çalıştırılmalı; yeşil CI veya ortak dev DB tek
+  başına başka worktree için kanıt sayılmamalı.

@@ -166,3 +166,33 @@ ve sağlayıcı değişimi kolaylaşır. Faz 0'da yalnızca mimari yer tutucu,
 implementasyon ileri fazlarda.
 
 STATUS: ACCEPTED
+
+---
+
+## ADR-010 — Social Command Center: AI Adaptation + Deterministic Publishing
+
+DECISION: Growth'un sosyal medya katmanı tek bir cross-post butonu olarak değil,
+Social Command Center olarak geliştirilecek. Bir Master Content AI ile platforma
+özgü varyantlara dönüştürülecek; marka/doğruluk kontrolü ve insan onayından sonra
+yayın aksiyonu deterministic ProviderAdapter katmanı üzerinden yapılacaktır.
+Destek hedefi: LinkedIn, Instagram, Facebook, X, Threads, TikTok, YouTube,
+Google Business Profile ve Pinterest.
+
+WHY: Platformların format, medya, karakter, API, izin ve audience beklentileri
+farklıdır. Aynı metni körlemesine tüm platformlara kopyalamak kaliteyi düşürür.
+LLM'in doğrudan yayın API'sini kontrol etmesi ise yetki, tekrar edilebilirlik,
+retry/idempotency ve hata ayıklama riskini artırır. Growth'un gerçek amacı
+engagement değil; qualified lead → teklif → kazanılmış iş → brüt kâr üretmektir.
+
+ALTERNATIVES: Her platformu manuel yönetmek; Buffer/Hootsuite/Postiz benzeri bir
+ürünü bütünüyle kopyalamak; LLM'e doğrudan platform API yetkisi vermek; aynı postu
+bütün kanallara aynen göndermek.
+
+CONSEQUENCES: Phase 8'de Composer, platform variant, ProviderAdapter, Human Approval,
+scheduler/publish queue, delivery monitor, Unified Inbox, analytics ve CRM attribution
+yüzeyleri oluşturulacaktır. Phase 6 queue/retry/idempotency altyapısı ve Phase 7
+attribution/observability reuse edilir. Postiz/Mixpost/Buffer/Hootsuite/Sprout/Metricool
+yalnız benchmark/referans olarak incelenir; lisans ve güvenlik kontrolü olmadan kod
+kopyalanmaz. Pinterest ayrıca Visual SEO / evergreen traffic kanalı olarak ölçülür.
+
+STATUS: ACCEPTED

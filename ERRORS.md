@@ -244,3 +244,28 @@ oluşturulmaz.
 - status: FIXED. `pnpm typecheck` artık test dosyalarını da kapsıyor,
   `pnpm build`'in `dist/` çıktısı hâlâ yalnızca `src/`'ten üretiliyor
   (doğrulandı: `dist/` içinde test dosyası yok).
+
+---
+
+- id: worktree-test-db-schema-drift
+- tarih: 2026-09-01T01:12:00+03:00
+- yer: vitest.config.ts, paralel Git worktree PostgreSQL kullanımı
+- kısa: PR #5 bağımsız doğrulamasında testler ortak `growth_db` veritabanında
+  43/44 oldu; `Company.domain` unique testi, ikinci kaydın kabul edilmesiyle
+  başarısız oldu.
+- root_cause: Farklı Git worktree'leri aynı yerel PostgreSQL veritabanını
+  kullanıyordu. Başka bir branch'in repoda PR #5 ile birlikte bulunmayan
+  `20260813185529_company_domain_not_globally_unique` migration'ı ortak
+  `growth_db` üzerine daha önce uygulanmıştı. Vitest yapılandırması
+  `DATABASE_URL`'yi sabit yazdığı için izole test DB seçimi dışarıdan
+  yapılamıyordu. Böylece kaynak branch'in migration sözleşmesi ile çalışan
+  DB şeması birbirinden ayrıldı.
+- düzeltme: `vitest.config.ts`, `TEST_DATABASE_URL` verilirse onu kullanacak
+  şekilde değiştirildi; fallback mevcut CI sözleşmesini koruyor. `.env.example`
+  test DB ayrımını açıklıyor. Resolver için iki regresyon testi eklendi.
+  PR #5 migrationları `growth_phase01_review_20260901` adlı izole yerel DB'ye
+  sıfırdan uygulandı.
+- status: FIXED LOCALLY. İzole DB üzerinde lint PASS, typecheck PASS,
+  test PASS (46/46) ve build PASS. Kullanıcı 2026-09-01'de commit/push ve
+  CI başarılıysa PR #5 merge işlemini onayladı; uzak CI/merge sonucu STATUS.md
+  içinde ayrıca kaydedilecektir.
