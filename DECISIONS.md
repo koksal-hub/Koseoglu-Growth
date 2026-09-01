@@ -536,3 +536,30 @@ vault entegrasyonu, concrete adapter ve dış platform operasyonları sonraki ay
 risk/onay dilimleridir.
 
 STATUS: ACCEPTED FOR CREDENTIAL-FREE GATE ONLY
+
+---
+
+## ADR-022 — Provider-Unverified Delivery ve Immutable UTM Attribution Receipt
+
+DECISION: Social delivery endpoint'i yalnız internal `SOCIAL_PUBLISH` Job ve
+variant state'ini projection olarak gösterir; provider tarafında yayınlandı
+iddiası üretmez. Attribution için her variant'a en fazla bir immutable receipt
+bağlanır. Receipt yalnız HTTPS destination ve normalize UTM değerlerini, hash'i
+ile saklar; web analytics, lead, teklif, kazanılmış iş veya brüt kâr verisi
+aldığı anlamına gelmez. Aynı hash idempotent reuse edilir, farklı payload 409'dur.
+
+WHY: Queue'daki bir işin varlığı platformda post'un gerçekten göründüğünü kanıtlamaz.
+Attribution metadata'sını ölçüm olaylarından ayırmak, erken başarı iddialarını ve
+credential/query-string sızıntısını önler; daha sonra gerçek analytics connector'u
+ayrı provenance ve consent sözleşmesiyle eklenebilir.
+
+ALTERNATIVES: Job SUCCEEDED durumunu doğrudan PUBLISHED saymak; attribution'ı
+variant JSON'una serbestçe eklemek; HTTP veya credential içeren destination URL'leri
+kabul etmek; aynı variant için receipt'i overwrite etmek.
+
+CONSEQUENCES: Bu faz site analytics webhook'u, provider metrics, CRM lead/opportunity
+bağı veya revenue attribution çalıştırmaz. Delivery state'leri açıkça
+`*_PROVIDER_UNVERIFIED` olarak adlandırılır; gerçek provider adapter ve analytics
+entegrasyonu sonraki ayrı risk/onay dilimleridir.
+
+STATUS: ACCEPTED FOR OBSERVABILITY CONTRACT ONLY

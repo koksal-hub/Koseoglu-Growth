@@ -284,7 +284,8 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
 --- Issue #29 — Social Connection Lifecycle ve Fail-Closed Publish Gate (Phase 8C) ---
 - Öncelik: HIGH / RISK C
 - Sorumlu: Codex
-- Durum: REVIEW (fresh DB/CI/merge kapısı bekleniyor)
+- Durum: DONE (PR #30 CI run `33544546114` PASS; squash merge `1e3b1c8`;
+  Issue #29 kapalı)
 - Bağımlılıklar: Issue #27 DONE; gerçek provider/OAuth için ayrıca açık onay
 - Acceptance criteria:
   - [x] Credential-free connection metadata create/list endpoint'leri
@@ -292,7 +293,19 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
   - [x] Publish readiness bütün blocker'ları raporlar ve execution disabled iken
     daima `ready: false` döner
   - [x] Credential-shaped scopes/ref input persistence öncesi reddedilir
-  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #29 kapanışı
+  - [x] Fresh DB migration, full test/build, CI PASS ve Issue #29 kapanışı
+
+--- Issue #31 — Social Delivery Monitor ve UTM Attribution Receipt (Phase 8D) ---
+- Öncelik: HIGH / RISK C
+- Sorumlu: Codex
+- Durum: REVIEW (fresh DB/CI/merge kapısı bekleniyor)
+- Bağımlılıklar: Issue #29 DONE; gerçek provider/site analytics için ayrıca açık onay
+- Acceptance criteria:
+  - [x] Internal SOCIAL_PUBLISH job ve variant state için provider-unverified delivery view
+  - [x] HTTPS destination + UTM validation ve credential-shaped query rejection
+  - [x] Immutable/idempotent attribution receipt; farklı payload conflict
+  - [x] Attribution metadata ham ziyaret/lead/quote/satış iddiası oluşturmaz
+  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #31 kapanışı
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)

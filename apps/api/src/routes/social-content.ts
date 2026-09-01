@@ -5,9 +5,11 @@ import {
   approveSocialVariant,
   createMasterContent,
   createSocialVariant,
+  getSocialDeliveryStatus,
   listMasterContent,
   listSocialConnections,
   evaluateSocialPublishReadiness,
+  recordSocialAttribution,
   scheduleSocialVariant,
   SocialContentPolicyError,
   submitMasterForReview,
@@ -57,6 +59,15 @@ const createConnectionSchema = z
     accountLabel: z.string().trim().min(1).max(200).optional(),
     secretManagerRef: z.string().trim().min(1).max(200).optional(),
     scopes: z.unknown().optional(),
+  })
+  .strict();
+const attributionSchema = z
+  .object({
+    destinationUrl: z.string().trim().min(1).max(2_000),
+    utmSource: z.string().trim().min(1).max(128),
+    utmMedium: z.string().trim().min(1).max(128),
+    utmCampaign: z.string().trim().min(1).max(128),
+    utmContent: z.string().trim().min(1).max(128).optional(),
   })
   .strict();
 
@@ -133,6 +144,17 @@ const socialContentRoutes: FastifyPluginAsync = async (server) => {
   server.get('/social/variants/:id/publish-readiness', async (request) => {
     const { id } = parse(idParamsSchema, request.params);
     return evaluateSocialPublishReadiness(id);
+  });
+
+  server.get('/social/variants/:id/delivery', async (request) => {
+    const { id } = parse(idParamsSchema, request.params);
+    return getSocialDeliveryStatus(id);
+  });
+
+  server.post('/social/variants/:id/attribution', async (request, reply) => {
+    const { id } = parse(idParamsSchema, request.params);
+    const result = await recordSocialAttribution({ variantId: id, ...parse(attributionSchema, request.body) });
+    return reply.status(result.reused ? 200 : 201).send(result);
   });
 };
 

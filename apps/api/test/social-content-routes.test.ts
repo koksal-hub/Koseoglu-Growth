@@ -20,6 +20,7 @@ describe('social composer approval and scheduling API', () => {
 
   afterAll(async () => {
     await prisma.job.deleteMany({ where: { idempotencyKey: { startsWith: 'social-publish:' } } });
+    await prisma.socialAttributionReceipt.deleteMany({ where: { variant: { masterContentId: { in: masterIds } } } });
     await prisma.socialContentVariant.deleteMany({ where: { masterContentId: { in: masterIds } } });
     await prisma.masterContent.deleteMany({ where: { id: { in: masterIds } } });
     await server.close();
@@ -104,6 +105,43 @@ describe('social composer approval and scheduling API', () => {
     expect(readinessBody.blockers).toEqual(
       expect.arrayContaining(['NO_CONNECTED_ACCOUNT', 'NO_PROVIDER_ADAPTER', 'PUBLISH_EXECUTION_DISABLED'])
     );
+
+    const delivery = await server.inject({
+      method: 'GET',
+      url: `/api/social/variants/${variant.id}/delivery`,
+    });
+    expect(delivery.statusCode).toBe(200);
+    expect(body<{ deliveryState: string; providerVerified: boolean }>(delivery.payload)).toMatchObject({
+      deliveryState: 'QUEUED_PROVIDER_UNVERIFIED',
+      providerVerified: false,
+    });
+
+    const attributionPayload = {
+      destinationUrl: 'https://www.koseoglu.example/avrupa-tasimacilik',
+      utmSource: 'linkedin',
+      utmMedium: 'social',
+      utmCampaign: 'avrupa-lane-2026',
+      utmContent: 'x-variant',
+    };
+    const attribution = await server.inject({
+      method: 'POST',
+      url: `/api/social/variants/${variant.id}/attribution`,
+      payload: attributionPayload,
+    });
+    expect(attribution.statusCode).toBe(201);
+    const reusedAttribution = await server.inject({
+      method: 'POST',
+      url: `/api/social/variants/${variant.id}/attribution`,
+      payload: attributionPayload,
+    });
+    expect(reusedAttribution.statusCode).toBe(200);
+    expect(body<{ reused: boolean }>(reusedAttribution.payload).reused).toBe(true);
+    const conflictingAttribution = await server.inject({
+      method: 'POST',
+      url: `/api/social/variants/${variant.id}/attribution`,
+      payload: { ...attributionPayload, utmCampaign: 'different-campaign' },
+    });
+    expect(conflictingAttribution.statusCode).toBe(409);
 
     const duplicateSchedule = await server.inject({
       method: 'POST',
