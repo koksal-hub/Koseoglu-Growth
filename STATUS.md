@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T22:00:00+03:00
-last_actor: Codex (Issue #33 internal API auth boundary)
+last_update: 2026-09-01T22:12:00+03:00
+last_actor: Codex (Issue #35 safe social inbox receipts)
 
-CURRENT PHASE: PHASE 8E FAIL-CLOSED INTERNAL API AUTH — LOCAL REVIEW
-ACTIVE ISSUE: #33 — Fail-closed internal API authentication boundary
-ACTIVE BRANCH: `codex/phase8e-internal-api-auth-v1` (`main` `800e3b5` tabanı)
+CURRENT PHASE: PHASE 8F SAFE SOCIAL INBOX / HUMAN CLASSIFICATION — LOCAL REVIEW
+ACTIVE ISSUE: #35 — Safe Unified Inbox receipts and human classification
+ACTIVE BRANCH: `codex/phase8f-social-inbox-receipts-v1` (`main` `ccc5021` tabanı)
 
 ## Uygulanan dar kapsam
 
@@ -81,6 +81,9 @@ ACTIVE BRANCH: `codex/phase8e-internal-api-auth-v1` (`main` `800e3b5` tabanı)
 - `GROWTH_INTERNAL_API_KEY` production env'de zorunlu hale getirildi. Business
   route'ları constant-time `x-api-key` kontrolüyle korunuyor; health/readiness ve
   imzalı Resend webhook kendi kontrolleriyle ayrı tutuluyor.
+- Unified Inbox metadata receipt'i provider dedup anahtarı, sender/thread handle,
+  message hash ve alınma zamanı tutar; ham mesaj metni saklanmaz. Intent yalnız
+  insan review endpoint'iyle sınıflandırılır; otomatik cevap/DM yoktur.
 
 ## Taze yerel kanıt
 
@@ -124,6 +127,8 @@ ACTIVE BRANCH: `codex/phase8e-internal-api-auth-v1` (`main` `800e3b5` tabanı)
   migration ve API/web build); squash commit `1e3b1c8`; Issue #29 CLOSED.
 - Phase 8D PR #32 merge: CI run `33545554867` SUCCESS (migration, tests, lint,
   typecheck ve API/web build); squash commit `800e3b5`; Issue #31 CLOSED.
+- Phase 8E PR #34 merge: CI run `33546195604` SUCCESS (auth tests, regression,
+  lint, typecheck ve API/web build); squash commit `ccc5021`; Issue #33 CLOSED.
 - Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
   migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
 - Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
@@ -159,7 +164,7 @@ ACTIVE BRANCH: `codex/phase8e-internal-api-auth-v1` (`main` `800e3b5` tabanı)
 
 ## Sonraki adım
 
-Issue #33 için auth boundary testleri, CI ve PR merge kapısını
+Issue #35 için inbox migration/integration testleri, CI ve PR merge kapısını
 tamamla. Gerçek OAuth/token refresh, medya yükleme, sosyal yayın/DM, AI çağrısı,
 Resend API çağrısı, müşteri gönderimi, inbound reply, auth/public deploy hâlâ
 kapsam dışıdır; bunlar ayrı açık güvenlik/operasyon onayı gerektirir.

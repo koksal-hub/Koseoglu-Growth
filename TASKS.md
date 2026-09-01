@@ -311,14 +311,27 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
 --- Issue #33 — Fail-Closed Internal API Authentication Boundary (Phase 8E) ---
 - Öncelik: HIGH / RISK A
 - Sorumlu: Codex
-- Durum: REVIEW (CI/merge kapısı bekleniyor)
+- Durum: DONE (PR #34 CI run `33546195604` PASS; squash merge `ccc5021`;
+  Issue #33 kapalı)
 - Bağımlılıklar: Business API'leri public/multi-user deploy edilmeden önce auth zorunlu
 - Acceptance criteria:
   - [x] Production env'de `GROWTH_INTERNAL_API_KEY` yoksa startup validation fail
   - [x] Configured key için constant-time `x-api-key` kontrolü ve 401/403 ayrımı
   - [x] Development/test key'siz local uyumluluk; CORS preflight bloklanmıyor
   - [x] Health/readiness ve signed Resend webhook istisnaları korunuyor
-  - [ ] Auth unit tests, full CI PASS ve Issue #33 kapanışı
+  - [x] Auth unit tests, full CI PASS ve Issue #33 kapanışı
+
+--- Issue #35 — Safe Unified Inbox Receipts ve Human Classification (Phase 8F) ---
+- Öncelik: HIGH / RISK B
+- Sorumlu: Codex
+- Durum: REVIEW (CI/merge kapısı bekleniyor)
+- Bağımlılıklar: Issue #33 DONE; provider inbox/DM için ayrıca açık onay
+- Acceptance criteria:
+  - [x] Metadata-only inbound receipt; raw message body persistence yok
+  - [x] Platform/account/external message key ile duplicate receipt idempotency
+  - [x] Human classification: LEAD/CUSTOMER/QUESTION/COMPLAINT/SPAM/OTHER
+  - [x] Credential-shaped sender/key input rejection
+  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #35 kapanışı
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)

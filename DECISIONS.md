@@ -588,3 +588,27 @@ enjeksiyonu, multi-user identity, CSRF/cookie politikası ve provider OAuth sonr
 ayrı güvenlik/onay dilimleridir. Gerçek anahtar repo'ya veya loglara yazılmaz.
 
 STATUS: ACCEPTED FOR INTERNAL BOUNDARY ONLY
+
+---
+
+## ADR-024 — Safe Unified Inbox Receipt ve Human Classification
+
+DECISION: Inbound sosyal olaylar ilk aşamada yalnız metadata receipt olarak kabul
+edilir: platform/account, provider message key, thread/sender handle, message type,
+alınma zamanı ve içerik hash'i saklanır; ham mesaj metni alınmaz. Aynı provider key
+aynı immutable receipt'e idempotent biçimde döner, farklı payload conflict'tir.
+Intent (LEAD, CUSTOMER, QUESTION, COMPLAINT, SPAM, OTHER) yalnız açık human review
+endpoint'iyle yazılır ve reviewer receipt'ine bağlanır.
+
+WHY: Dış platform mesajları untrusted input ve PII içerebilir. Ham metni ve otomatik
+cevap yetkisini ilk dilime almak gereksiz gizlilik, prompt-injection ve dış iletişim
+riski doğurur. Önce dedup ve insan sınıflandırma kanıtlanmalıdır.
+
+ALTERNATIVES: Ham DM/comment saklamak; AI'ı otomatik intent/cevap için çalıştırmak;
+aynı provider key'i overwrite etmek; complaint/lead mesajına otomatik yanıt vermek.
+
+CONSEQUENCES: Bu faz provider fetch, message body storage, sentiment/AI inference,
+CRM link, assignment, reply veya DM göndermez. Connector, retention/consent, PII
+redaction ve human response workflow sonraki ayrı risk/onay dilimleridir.
+
+STATUS: ACCEPTED FOR METADATA-ONLY INBOX
