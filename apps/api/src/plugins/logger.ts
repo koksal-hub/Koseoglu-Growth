@@ -12,6 +12,9 @@ const REDACT_PATHS = [
   'res.headers["set-cookie"]'
 ];
 
+const MAX_REQUEST_ID_LENGTH = 128;
+const SAFE_REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
+
 export function buildLogger(level?: string): FastifyLoggerOptions & PinoLoggerOptions {
   return {
     level: level || process.env.LOG_LEVEL || 'info',
@@ -20,14 +23,23 @@ export function buildLogger(level?: string): FastifyLoggerOptions & PinoLoggerOp
 }
 
 /**
- * Correlation id for every request: honor an incoming `x-request-id` header
- * (so ids propagate across services), otherwise generate a UUID. The id is
- * attached to every log line via Fastify's per-request logger and echoed
- * back in the `x-request-id` response header.
+ * Correlation id for every request: honor a bounded, log-safe incoming
+ * `x-request-id` header (so ids propagate across services), otherwise generate
+ * a UUID. The id is attached to every log line via Fastify's per-request
+ * logger and echoed back in the `x-request-id` response header.
  */
+export function isValidRequestId(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= MAX_REQUEST_ID_LENGTH &&
+    SAFE_REQUEST_ID_PATTERN.test(value)
+  );
+}
+
 export function genReqId(req: FastifyRequest['raw']): string {
   const incoming = req.headers['x-request-id'];
-  if (typeof incoming === 'string' && incoming.length > 0) {
+  if (isValidRequestId(incoming)) {
     return incoming;
   }
   return randomUUID();
