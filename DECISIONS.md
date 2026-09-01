@@ -314,3 +314,43 @@ auth eklenmeden public/multi-user deploy yapılmaz ve provider/send Phase 5'te
 ayrı kullanıcı onayı + güvenlik checkpoint'i ister.
 
 STATUS: ACCEPTED
+
+---
+
+## ADR-015 — Provider Entegrasyonu Önce Kapalı Resend Test-Simulation Capability'sidir
+
+DECISION: Phase 5 gerçek gönderim açmaz. Provider adapter'i yalnız Resend'in sabit
+test adreslerine, sabit sentetik konu/gövdeyle çalışabilir ve public HTTP send route
+sunmaz. Uygulama katmanındaki tek yürütme sınırı; `RESEND_TEST`, explicit enable,
+API key, from address ve yeterli uzunlukta webhook secret birlikte doğrulandığında
+oluşturulan config-bound service'tir. Her `SendAttempt`; exact approved
+revision/content hash, current permission/suppression gate, ayrı customer/test
+recipient hash'i, stable idempotency key ve test scenario receipt'i taşır.
+
+WHY: Approval gönderim yetkisi değildir. Process crash'i, timeout veya provider
+cevabından önce gelen webhook; tek bir dış HTTP çağrısı ile yerel transaction
+arasında atomiklik olmadığını gösterir. Caller-controlled bir boolean ya da serbest
+alıcı/içerik alanı, test sınırını kolayca üretim gönderimine dönüştürebilir. Provider
+webhook'ları duplicate ve sırasız gelebilir; inbound e-posta ayrıca içerik ve
+kimlik doğrulama yüzeyi açar.
+
+ALTERNATIVES: Approval endpoint'inden doğrudan send; gerçek müşteri mailbox pilotu;
+caller'ın `executionEnabled=true` geçmesi; provider message ID olmadan erken webhook'u
+kalıcı ignore etmek; inbound reply'ı bu aşamada otomatik işlemek; mutable audit rows.
+
+CONSEQUENCES: Provider request'i `send_attempt_id` tag'i ve stable idempotency key
+taşır; exact versioned provider body hash'i ilk dispatch'te set-once saklanır ve
+değişmiş body/config ile UNKNOWN retry provider çağrısından önce durur. İmzalı
+webhook exact raw body üzerinden doğrulanır; provider response commit'inden önce
+gelirse tag + normalize test-recipient hash'iyle aynı attempt'e yakınsar.
+Timeout/transport belirsizliği `UNKNOWN` kalır; stale `DISPATCHING` lease tekrar
+provider çağrısı yapmadan `UNKNOWN` olarak kurtarılır. Receipt'ler UPDATE/DELETE,
+SendAttempt DELETE'e kapalıdır. Bounce/complaint yalnız test recipient suppression'ı
+üretir; public SMTP girdisi olan `email.received` persistent receipt oluşturmadan
+IGNORED kalır. SendAttempt yalnız canonical PREPARED şekliyle INSERT edilebilir;
+durum constraint'leri nullable delivery kanıtını SQL üç-değerli mantığına karşı
+`IS TRUE`/`IS FALSE` ile doğrular. Secret, ham recipient ve gerçek mesaj içeriği audit tablolarına
+yazılmaz. Authentication, domain doğrulama ve gerçek customer send ayrı karar ve
+açık kullanıcı onayı ister.
+
+STATUS: ACCEPTED FOR TEST-SIMULATION ONLY

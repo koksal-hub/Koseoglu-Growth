@@ -90,6 +90,13 @@ enum EventType {
   OUTREACH_REVIEW_REQUESTED
   OUTREACH_APPROVAL_RECORDED
   OUTREACH_DRAFT_EXPIRED
+  SEND_ATTEMPT_PREPARED
+  TEST_PROVIDER_DISPATCH_STARTED
+  TEST_PROVIDER_ACCEPTED
+  TEST_PROVIDER_OUTCOME_UNKNOWN
+  TEST_PROVIDER_FAILED
+  DELIVERY_EVENT_RECORDED
+  REPLY_RECEIPT_RECORDED
 }
 
 enum ResearchMissionStatus {
@@ -207,6 +214,52 @@ enum OutreachDraftStatus {
 enum OutreachApprovalDecision {
   APPROVED
   REJECTED
+}
+
+enum EmailProvider {
+  RESEND
+}
+
+enum SendRecipientMode {
+  TEST_SIMULATION
+}
+
+enum SandboxDeliveryScenario {
+  DELIVERED
+  BOUNCED
+  COMPLAINED
+  SUPPRESSED
+}
+
+enum SendAttemptStatus {
+  PREPARED
+  DISPATCHING
+  ACCEPTED
+  UNKNOWN
+  FAILED
+  DELIVERED
+  BOUNCED
+  COMPLAINED
+  SUPPRESSED
+}
+
+enum DeliveryEventType {
+  SENT
+  DELIVERED
+  BOUNCED
+  COMPLAINED
+  SUPPRESSED
+  FAILED
+  DELIVERY_DELAYED
+}
+
+enum WebhookReceiptOutcome {
+  PROCESSED
+  IGNORED
+}
+
+enum ReplyClassification {
+  UNCLASSIFIED
 }
 
 /// A B2B company Growth has discovered, researched, or sold to.
@@ -397,6 +450,7 @@ model ContactPoint {
 
   permissions    CommunicationPermission[]
   outreachDrafts OutreachDraft[]
+  sendAttempts   SendAttempt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -432,8 +486,10 @@ model CommunicationPermission {
   createdAt           DateTime                      @default(now())
 
   outreachApprovals OutreachApproval[]
+  sendAttempts      SendAttempt[]
 
-  @@index([contactPointId, channel, purpose, jurisdictionCountry])
+  @@unique([id, contactPointId], map: "CommunicationPermission_contact_receipt_key")
+  @@index([contactPointId, channel, purpose, jurisdictionCountry], map: "CommunicationPermission_contactPointId_channel_purpose_jurisdic")
   @@index([status])
   @@index([checkedAt])
 }
@@ -511,12 +567,14 @@ model OutreachDraft {
   submittedAt           DateTime?
   submittedBy           String?
 
-  revisions OutreachDraftRevision[]
-  approval  OutreachApproval?
+  revisions    OutreachDraftRevision[]
+  approval     OutreachApproval?
+  sendAttempts SendAttempt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([id, contactPointId])
   @@index([companyId, status])
   @@index([contactPointId])
   @@index([rankingReceiptId])
@@ -537,7 +595,8 @@ model OutreachDraftRevision {
   editReason     String
   createdAt      DateTime      @default(now())
 
-  approval OutreachApproval?
+  approval     OutreachApproval?
+  sendAttempts SendAttempt[]
 
   @@unique([draftId, revisionNumber])
   @@unique([id, draftId])
@@ -558,14 +617,136 @@ model OutreachApproval {
   reviewedBy     String
   policyVersion  String
   permissionId   String?
-  permission     CommunicationPermission? @relation(fields: [permissionId], references: [id])
+  permission     CommunicationPermission? @relation(fields: [permissionId], references: [id], onDelete: Restrict, map: "OutreachApproval_permissionId_fkey")
   gateReceipt    Json
   contentHash    String
   decidedAt      DateTime
   createdAt      DateTime                 @default(now())
 
+  sendAttempts SendAttempt[]
+
+  @@unique([id, draftId, revisionId, contentHash], map: "OutreachApproval_send_receipt_key")
+  @@unique([id, draftId, revisionId, contentHash, permissionId], map: "OutreachApproval_send_permission_receipt_key")
   @@index([decision, decidedAt])
   @@index([permissionId])
+}
+
+/// Mutable delivery aggregate for the provider test sandbox only. The approved
+/// recipient and the provider recipient are stored as separate pseudonymous
+/// hashes; no raw address or customer-send mode exists in this phase.
+model SendAttempt {
+  id                       String                  @id @default(cuid())
+  draftId                  String
+  draft                    OutreachDraft           @relation(fields: [draftId, contactPointId], references: [id, contactPointId], map: "SendAttempt_draft_contact_fkey")
+  approvalId               String
+  approval                 OutreachApproval        @relation(fields: [approvalId, draftId, revisionId, contentHash, permissionId], references: [id, draftId, revisionId, contentHash, permissionId], map: "SendAttempt_approval_permission_fkey")
+  revisionId               String
+  revision                 OutreachDraftRevision   @relation(fields: [revisionId, draftId, contentHash], references: [id, draftId, contentHash], map: "SendAttempt_revision_receipt_fkey")
+  contactPointId           String
+  contactPoint             ContactPoint            @relation(fields: [contactPointId], references: [id])
+  permissionId             String
+  permission               CommunicationPermission @relation(fields: [permissionId, contactPointId], references: [id, contactPointId], map: "SendAttempt_contact_permission_fkey")
+  provider                 EmailProvider           @default(RESEND)
+  recipientMode            SendRecipientMode       @default(TEST_SIMULATION)
+  scenario                 SandboxDeliveryScenario
+  idempotencyKey           String                  @unique
+  payloadHash              String
+  providerPayloadHash      String?
+  contentHash              String
+  approvedRecipientHash    String
+  recipientHash            String
+  gateReceipt              Json
+  status                   SendAttemptStatus       @default(PREPARED)
+  providerMessageId        String?                 @unique
+  attemptCount             Int                     @default(0)
+  providerCallPerformed    Boolean                 @default(false)
+  testMessageSubmitted     Boolean?                @default(false)
+  customerMessageSubmitted Boolean                 @default(false)
+  requestedBy              String
+  preparedAt               DateTime                @default(now())
+  expiresAt                DateTime
+  dispatchStartedAt        DateTime?
+  providerAcceptedAt       DateTime?
+  failedAt                 DateTime?
+  failureCode              String?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+
+  deliveryEvents            DeliveryEvent[] @relation("DeliveryEventMessage")
+  deliveryEventsByRecipient DeliveryEvent[] @relation("DeliveryEventRecipient")
+  replies                   Reply[]
+
+  @@unique([id, recipientHash])
+  @@unique([id, providerMessageId])
+  @@index([draftId, status])
+  @@index([approvalId])
+  @@index([revisionId])
+  @@index([contactPointId])
+  @@index([permissionId])
+  @@index([expiresAt])
+}
+
+/// One immutable receipt per signed provider webhook message. The raw payload
+/// is verified before parsing and represented only by a SHA-256 hash.
+model ProviderWebhookReceipt {
+  id                String                @id @default(cuid())
+  provider          EmailProvider
+  providerEventId   String
+  eventType         String
+  payloadHash       String
+  providerCreatedAt DateTime
+  receivedAt        DateTime
+  outcome           WebhookReceiptOutcome
+  createdAt         DateTime              @default(now())
+
+  deliveryEvent DeliveryEvent?
+  reply         Reply?
+
+  @@unique([provider, providerEventId])
+  @@index([providerCreatedAt])
+  @@index([eventType])
+}
+
+/// Append-only normalized delivery result. Provider payloads and recipient
+/// addresses are not copied into this table.
+model DeliveryEvent {
+  id                String                 @id @default(cuid())
+  sendAttemptId     String
+  sendAttempt       SendAttempt            @relation("DeliveryEventMessage", fields: [sendAttemptId, providerMessageId], references: [id, providerMessageId], map: "DeliveryEvent_attempt_message_fkey")
+  recipientAttempt  SendAttempt            @relation("DeliveryEventRecipient", fields: [sendAttemptId, recipientHash], references: [id, recipientHash], map: "DeliveryEvent_attempt_recipient_fkey")
+  webhookReceiptId  String                 @unique
+  webhookReceipt    ProviderWebhookReceipt @relation(fields: [webhookReceiptId], references: [id])
+  type              DeliveryEventType
+  providerMessageId String
+  recipientHash     String
+  receipt           Json
+  occurredAt        DateTime
+  createdAt         DateTime               @default(now())
+
+  @@index([sendAttemptId, occurredAt])
+  @@index([type])
+}
+
+/// Minimal inbound receipt. Email addresses, subject and body are hashed; the
+/// provider body/attachments are deliberately not retrieved in this phase.
+model Reply {
+  id               String                 @id @default(cuid())
+  sendAttemptId    String?
+  sendAttempt      SendAttempt?           @relation(fields: [sendAttemptId], references: [id], onDelete: Restrict, map: "Reply_sendAttemptId_fkey")
+  webhookReceiptId String                 @unique
+  webhookReceipt   ProviderWebhookReceipt @relation(fields: [webhookReceiptId], references: [id])
+  providerEmailId  String
+  messageIdHash    String
+  senderHash       String
+  recipientHash    String
+  subjectHash      String
+  classification   ReplyClassification    @default(UNCLASSIFIED)
+  receipt          Json
+  receivedAt       DateTime
+  createdAt        DateTime               @default(now())
+
+  @@index([sendAttemptId, receivedAt])
+  @@index([receivedAt])
 }
 
 /// A sales lead: a Company (and optionally a specific Contact) Growth is

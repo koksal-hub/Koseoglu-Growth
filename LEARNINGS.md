@@ -324,3 +324,53 @@ teknik bilgi yazılır.
 - etkisi: Uygulama yolundaki permission/suppression yazımı ve karar-anı gate'i
   aynı ContactPoint satırını `FOR UPDATE` ile kilitler. Bu, DB'ye uygulama dışı
   doğrudan yazma yetkisi verilmemesi gereğini ortadan kaldırmaz.
+
+- tarih: 2026-09-01T19:22:46+03:00
+- konu: Dış HTTP çağrısı ile yerel commit arasındaki boşluk ayrı uzlaşma kimliği ister
+- açıklama: Provider webhook'u send response yerel DB'ye yazılmadan önce gelebilir;
+  yalnız provider message ID ile lookup bu geçerli olayı kaybeder.
+- etkisi: Provider request'i stable attempt kimliğini tag olarak taşır; imzalı
+  webhook aynı attempt'i row-lock altında correlate eder ve geç/tekrar response aynı
+  provider ID'ye yakınsar. Webhook'ların at-least-once ve sırasız olduğu varsayılır.
+
+- tarih: 2026-09-01T19:22:46+03:00
+- konu: Execution gate boolean değil, doğrulanmış capability olmalıdır
+- açıklama: Caller'ın geçebildiği `executionEnabled=true`, test-only sınırı gerçek
+  provider çağrısına çevirebilir ve eksik webhook güvenliğini sessizce atlayabilir.
+- etkisi: Raw dispatch export edilmez; config-bound service yalnız mode, explicit
+  enable, API key, from address ve webhook secret birlikte doğrulanınca kurulabilir.
+
+- tarih: 2026-09-01T19:22:46+03:00
+- konu: Append-only hem UPDATE hem DELETE demektir
+- açıklama: Yalnız UPDATE trigger'ı audit receipt'inin silinmesini engellemez. Test
+  cleanup alışkanlığı da gerçek append-only sözleşmeyle çelişir.
+- etkisi: Webhook, delivery ve reply receipt'leri UPDATE+DELETE guard taşır; testler
+  yalnız adında test/sandbox/ci geçen disposable DB'de benzersiz fixture bırakır.
+
+- tarih: 2026-09-01T19:22:46+03:00
+- konu: Migration dosyası kısmi uygulanmaya dayanıklı olmalıdır
+- açıklama: Bir migration'ın sonundaki syntax hatası, daha önceki DDL'nin her zaman
+  otomatik rollback olacağı anlamına gelmez.
+- etkisi: Özellikle hardening migration'larında catalog-check'li idempotent DDL,
+  temiz-DB uygulaması ve mevcut-veri koruma kontrolü birlikte zorunludur; reset çözüm değildir.
+
+- tarih: 2026-09-01T19:22:46+03:00
+- konu: Database-backed test varsayılanı ortak geliştirme DB'si olamaz
+- açıklama: Divergent worktree migration'ları ve append-only receipt testleri ortak
+  `growth_db` üzerinde kalıntı, drift ve yanlış PASS riski üretir.
+- etkisi: `TEST_DATABASE_URL` explicit olmalı; DB adı test/sandbox/ci güvenlik
+  sözleşmesini sağlamazsa Vitest başlamadan fail-fast etmelidir.
+
+- tarih: 2026-09-01T19:40:59+03:00
+- konu: State machine yalnız UPDATE transition trigger'ı değildir
+- açıklama: UPDATE geçişleri kusursuz olsa bile doğrudan INSERT terminal bir durum
+  yaratabiliyorsa idempotency ve audit geçmişi sahte başlangıçla aşılabilir.
+- etkisi: Mutable aggregate tablolarında canonical initial INSERT shape, UPDATE
+  transition graph ve DELETE yasağı üç ayrı DB guard olarak birlikte sınanmalıdır.
+
+- tarih: 2026-09-01T19:40:59+03:00
+- konu: PostgreSQL CHECK içinde nullable boolean eşitliği güvenli değildir
+- açıklama: `nullable_boolean = false` NULL için FALSE değil UNKNOWN üretir ve
+  PostgreSQL CHECK, UNKNOWN sonucu kabul eder; PL/pgSQL `IF NOT (NULL)` da raise etmez.
+- etkisi: Nullable state evidence için `IS FALSE`, `IS TRUE` ve `IS NULL` kullanılmalı;
+  doğrudan NULL insert/update regresyonları constraint'in gerçek davranışını kanıtlamalıdır.

@@ -1,15 +1,66 @@
 import { z } from 'zod';
 
-export const envSchema = z.object({
-  DATABASE_URL: z.string().nonempty(),
-  PORT: z.coerce.number().int().positive().default(3000),
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  LOG_LEVEL: z
-    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
-    .default('info'),
-  /** Comma-separated allowlist of origins allowed to call the API cross-origin. */
-  CORS_ORIGINS: z.string().default('')
-});
+const webhookSecretSchema = z
+  .string()
+  .regex(/^whsec_[A-Za-z0-9+/]+={0,2}$/)
+  .refine((value) => Buffer.from(value.slice('whsec_'.length), 'base64').length >= 16, {
+    message: 'must decode to at least 16 bytes',
+  });
+
+export const envSchema = z
+  .object({
+    DATABASE_URL: z.string().nonempty(),
+    PORT: z.coerce.number().int().positive().default(3000),
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    LOG_LEVEL: z
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+      .default('info'),
+    /** Comma-separated allowlist of origins allowed to call the API cross-origin. */
+    CORS_ORIGINS: z.string().default(''),
+    /** Provider calls are disabled unless both this mode and the explicit gate are enabled. */
+    EMAIL_PROVIDER_MODE: z.enum(['DISABLED', 'RESEND_TEST']).default('DISABLED'),
+    OUTREACH_TEST_DISPATCH_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    RESEND_API_KEY: z
+      .string()
+      .regex(/^re_[A-Za-z0-9_]+$/)
+      .optional(),
+    RESEND_WEBHOOK_SECRET: webhookSecretSchema.optional(),
+    EMAIL_FROM_ADDRESS: z.string().email().optional(),
+  })
+  .superRefine((value, context) => {
+    if (!value.OUTREACH_TEST_DISPATCH_ENABLED) return;
+    if (value.EMAIL_PROVIDER_MODE !== 'RESEND_TEST') {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['EMAIL_PROVIDER_MODE'],
+        message: 'must be RESEND_TEST when test dispatch is enabled',
+      });
+    }
+    if (!value.RESEND_API_KEY) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['RESEND_API_KEY'],
+        message: 'is required when test dispatch is enabled',
+      });
+    }
+    if (!value.EMAIL_FROM_ADDRESS) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['EMAIL_FROM_ADDRESS'],
+        message: 'is required when test dispatch is enabled',
+      });
+    }
+    if (!value.RESEND_WEBHOOK_SECRET) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['RESEND_WEBHOOK_SECRET'],
+        message: 'is required when test dispatch is enabled',
+      });
+    }
+  });
 
 export type Env = z.infer<typeof envSchema>;
 

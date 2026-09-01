@@ -183,6 +183,34 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Prisma/lint/typecheck; odaklı 10/10; tam 116/116; API+web build PASS
   - [x] GitHub Actions CI PASS (run `33482197125`) ve PR #15 merge (`39699eb`)
 
+--- Issue #17 — Resend Test Sandbox, Send Attempts ve Signed Webhook Receipts (Phase 5) ---
+- Öncelik: HIGH / RISK C
+- Sorumlu: Codex; iki bağımsız salt-okunur güvenlik/veri incelemesi zorunlu
+- Durum: REVIEW (PR #18 run `33534095475` PASS; Risk C merge onayı pending)
+- Bağımlılıklar: Issue #14 DONE; gerçek müşteri iletişimi için ayrıca açık kullanıcı onayı
+- Acceptance criteria:
+  - [x] Gerçek müşteri adresi/içeriği kabul etmeyen sabit Resend test-simulation adapter'i
+  - [x] Default-disabled ve doğrulanmış env capability'sine bağlı yürütme; public send route yok
+  - [x] Approved exact revision/hash + current permission/suppression gate yeniden kontrolü
+  - [x] Stable idempotency key, UNKNOWN sonucu ve stale dispatch recovery
+  - [x] Exact provider payload hash set-once; config/body değişen retry provider öncesi bloklanır
+  - [x] Kalıcı `invalid_idempotent_request` ile retryable concurrent 409 ayrımı
+  - [x] Exact raw body ile signed webhook doğrulaması; duplicate/unordered event koruması
+  - [x] Erken webhook/provider-response yarışında tag + exact test-recipient korelasyonu
+  - [x] Bounce/complaint yalnız test recipient için suppression üretir
+  - [x] Inbound `email.received` persistent receipt/Reply/business event oluşturmaz
+  - [x] Receipt UPDATE/DELETE, SendAttempt DELETE ve invalid state rewrite DB guard'ları
+  - [x] PostgreSQL + ayrık test/sandbox/ci DB adı zorunluluğu
+  - [x] Canonical PREPARED INSERT ve null-safe durum şekli DB guard'ları
+  - [x] 15 migration hem mevcut veriyi koruyarak hem sıfırdan PASS
+  - [x] Prisma/lint/typecheck; odaklı 31/31; tam test 135/135 PASS
+  - [x] API+web build ve iki bağımsız yeniden inceleme; blocking bulgu yok
+  - [x] Final diff/secret scan
+  - [x] Commit `eb00ac8`, push, PR #18 ve GitHub Actions run `33534095475` PASS
+  - [ ] Risk C `main` merge için kullanıcı açık onayı
+- Kapsam dışı: gerçek provider çağrısı, secret/domain kurulumu, müşteri e-postası,
+  inbound reply işleme, auth/public deploy ve sosyal hesap yayını.
+
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
 ================================================================

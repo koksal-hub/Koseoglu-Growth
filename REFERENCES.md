@@ -228,3 +228,30 @@ WHEN TO CONSIDER: Faz 8 provider adapteri; maliyet uygun olduğunda.
 DO NOT COPY BLINDLY: Pay-per-use/API maliyetleri Cost Router ve channel ROI ile birlikte
 izlenmelidir.
 LICENSE / SECURITY / COMPLEXITY CHECK REQUIRED: Evet — maliyet, OAuth, rate limits.
+
+---
+
+## Resend Email API ve Webhooks
+
+https://resend.com/docs/api-reference/emails/send-email
+https://resend.com/docs/api-reference/errors
+https://resend.com/docs/dashboard/emails/send-test-emails
+https://resend.com/docs/dashboard/emails/idempotency-keys
+https://resend.com/docs/dashboard/emails/tags
+https://resend.com/docs/webhooks/introduction
+https://resend.com/docs/webhooks/verify-webhooks-requests
+https://resend.com/docs/webhooks/event-types
+https://resend.com/docs/dashboard/domains/introduction
+https://resend.com/docs/dashboard/receiving/introduction
+
+PURPOSE: Phase 5 test-simulation adapter'i, fixed test recipients, stable
+idempotency, attempt tag korelasyonu, Svix imza doğrulaması ve duplicate/unordered
+webhook threat model'i için resmi provider sözleşmesi.
+WHEN TO CONSIDER: Yalnız internal/test mailbox teknik zinciri; gerçek müşteri
+gönderimi, domain doğrulama ve secret kurulumu ayrı kullanıcı onayı ve authz kapısı ister.
+DO NOT COPY BLINDLY: Provider `accepted` cevabı delivery değildir. Webhook at-least-once
+ve sırasız kabul edilir; inbound content bu aşamada işlenmez. Test adresi sözleşmesi
+gerçek recipient alanını açmak için kullanılamaz.
+LICENSE / SECURITY / COMPLEXITY CHECK REQUIRED: Evet — API key, webhook secret,
+domain ownership, SPF/DKIM/DMARC, rate limit ve veri işleme şartları go-live öncesi
+güncel resmi dokümandan yeniden doğrulanmalıdır.
