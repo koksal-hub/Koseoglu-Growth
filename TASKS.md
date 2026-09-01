@@ -251,7 +251,8 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
 --- Issue #25 — Social Command Center Foundation (Phase 8A, safe/no provider) ---
 - Öncelik: HIGH / RISK C
 - Sorumlu: Codex
-- Durum: REVIEW (fresh DB/CI/merge kapısı bekleniyor)
+- Durum: DONE (PR #26 CI run `33542256835` PASS; squash merge `d399100`;
+  Issue #25 kapalı)
 - Bağımlılıklar: Issue #23 DONE; gerçek OAuth veya publish için ayrıca açık onay
 - Acceptance criteria:
   - [x] Dokuz hedef platform için enum ve credential-free SocialConnection metadata
@@ -261,7 +262,24 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
   - [x] Provider-neutral adapter interface/registry; concrete network adapter yok
   - [x] Credential-shaped media/scopes ve token değerleri reddediliyor
   - [x] Local unit policy tests 5/5; lint/typecheck PASS
-  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #25 kapanışı
+  - [x] Fresh DB migration, full test/build, CI PASS ve Issue #25 kapanışı
+
+--- Issue #27 — Social Composer, Approval API ve Publish-Job Scheduling (Phase 8B) ---
+- Öncelik: HIGH / RISK C
+- Sorumlu: Codex
+- Durum: REVIEW (fresh DB/CI/merge kapısı bekleniyor)
+- Bağımlılıklar: Issue #25 DONE; gerçek provider/publish için ayrıca açık onay
+- Acceptance criteria:
+  - [x] Private master content create/list ve review/approval endpoint'leri
+  - [x] Platform variant validation, content hash ve idempotency API'si
+  - [x] Author != reviewer approval guard ve açık status geçişleri
+  - [x] Approved schedule yalnız `SOCIAL_PUBLISH` Job enqueue eder; network yok
+  - [x] Web composer MVP dokuz platform ve safe-mode sınırını gösterir
+  - [x] API/web typecheck ve lint kanıtı; local DB kanıtı Docker yokluğu nedeniyle
+    açıkça NOT_RUN
+  - [ ] Phase 8B UI/API unit testleri ve web build (OneDrive worktree erişim
+    hatası nedeniyle localde NOT_RUN; CI kapısı zorunlu)
+  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #27 kapanışı
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)

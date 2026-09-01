@@ -480,3 +480,33 @@ Queue/worker altyapısı ileride publish idempotency için reuse edilir. Auth yo
 nedeniyle bu metadata ve approval yüzeyi public/multi-user deploy edilemez.
 
 STATUS: ACCEPTED FOR SAFE FOUNDATION ONLY
+
+---
+
+## ADR-020 — Social Composer Approval'dan Internal Publish Job'a Güvenli Geçiş
+
+DECISION: Phase 8B private API'si master içerik ve platform varyantlarını
+`DRAFT → IN_REVIEW → APPROVED` insan onayıyla ilerletir. Yalnız APPROVED varyant
+gelecekte yayınlanmak üzere `scheduledAt` alabilir; scheduling, variant content
+hash'inden türetilen stable idempotency key ile yalnız `SOCIAL_PUBLISH` internal
+Job oluşturur ve `SCHEDULED` state yazar. Job handler veya provider adapter bu
+fazda kayıtlı değildir; hiçbir network/publish/DM çağrısı yapılmaz. Web composer
+aynı sözleşmeyi local preview olarak gösterir.
+
+WHY: Onay ile dış platformda geri alınamaz yayın arasında açık ve gözlemlenebilir
+bir sınır gerekir. Queue'yu yeniden kullanmak duplicate schedule riskini azaltır,
+ancak worker'ın provider çağrısı yapması için ayrı OAuth, platform policy ve risk
+onayı gereklidir. UI'nin yalnız workflow preview göstermesi auth olmadan yanlış
+bir "yayınlandı" algısı oluşmasını engeller.
+
+ALTERNATIVES: Approval endpoint'inden doğrudan provider publish; approved olmayan
+varyantı schedule etmek; her çağrıda yeni publish job; browser'dan provider API'lerini
+çağırmak; UI state'ini DB/job state'i yerine tek doğru saymak.
+
+CONSEQUENCES: `SOCIAL_PUBLISH` payload yalnız variant id/platform/content hash/policy
+version taşır; raw contact, token veya medya binary'si taşımaz. Duplicate scheduling
+aynı variant state'i nedeniyle 409 döner. API/private UI auth yokluğu nedeniyle
+public deploy değildir. Concrete adapters, token refresh, media upload, schedule/
+publish, inbox/DM ve analytics attribution sonraki ayrı risk dilimleridir.
+
+STATUS: ACCEPTED FOR SAFE SCHEDULING ONLY

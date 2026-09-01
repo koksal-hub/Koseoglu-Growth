@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T21:12:00+03:00
-last_actor: Codex (Issue #25 social foundation)
+last_update: 2026-09-01T21:22:00+03:00
+last_actor: Codex (Issue #27 social composer/approval API)
 
-CURRENT PHASE: PHASE 8A SOCIAL COMMAND CENTER FOUNDATION — CI/REVIEW GATE
-ACTIVE ISSUE: #25 — Social Command Center foundation (safe/no provider)
-ACTIVE BRANCH: `codex/phase8-social-foundation-v1` (`main` `8e07273` tabanı)
+CURRENT PHASE: PHASE 8B SOCIAL COMPOSER / APPROVAL / SCHEDULING — CI/REVIEW GATE
+ACTIVE ISSUE: #27 — Social composer, approval API ve publish-job scheduling
+ACTIVE BRANCH: `codex/phase8b-social-composer-v1` (`main` `d399100` tabanı)
 
 ## Uygulanan dar kapsam
 
@@ -64,6 +64,12 @@ ACTIVE BRANCH: `codex/phase8-social-foundation-v1` (`main` `8e07273` tabanı)
   zorunlu kılar; DRAFT → IN_REVIEW → APPROVED akışı dış publish olmadan tutulur.
 - Provider-neutral `SocialProviderAdapter` interface/registry tanımlandı; kayıtlı
   adapter yoksa 503 döner ve bu fazda connect/refresh/upload/publish çağrısı yoktur.
+- Private composer API'si master content create/list, platform variant create/validate,
+  review ve bağımsız approval geçişlerini sunar. Approved variant schedule edilince
+  yalnız `SOCIAL_PUBLISH` internal Job oluşur; adapter/publish çağrısı yoktur.
+- Web composer MVP'si dokuz kanalın policy limitlerini, varyant matrisini, review/
+  approval/scheduled durumlarını ve güvenli-mod sınırını görünür kılar; UI provider
+  ağına bağlanmaz.
 
 ## Taze yerel kanıt
 
@@ -94,6 +100,13 @@ ACTIVE BRANCH: `codex/phase8-social-foundation-v1` (`main` `8e07273` tabanı)
 - Phase 8A policy/adapter unit testleri: PASS — 5/5. Docker daemon kapalı olduğu
   için Phase 8A'nın local DB migration/full integration testi henüz çalıştırılamadı;
   bu durum CI kapısında yeniden doğrulanacak.
+- Phase 8A PR #26 merge: CI run `33542256835` SUCCESS; squash commit `d399100`;
+  Issue #25 CLOSED.
+- Phase 8B DB integration testleri Docker daemon kapalı olduğundan localde henüz
+  çalıştırılamadı; CI migration/full suite bu eksik kanıtın merge kapısıdır.
+- Phase 8B local Vitest ve web build, OneDrive worktree reparse erişim hatası
+  (`esbuild` config dizinine erişemiyor) nedeniyle çalıştırılamadı; bu iki
+  doğrulama da CI kapısında yeniden koşulmalıdır.
 - Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
   migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
 - Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
@@ -129,7 +142,7 @@ ACTIVE BRANCH: `codex/phase8-social-foundation-v1` (`main` `8e07273` tabanı)
 
 ## Sonraki adım
 
-Issue #25 için fresh DB migration/full integration testi, CI ve PR merge kapısını
+Issue #27 için fresh DB migration/full integration testi, CI ve PR merge kapısını
 tamamla. Gerçek OAuth/token refresh, medya yükleme, sosyal yayın/DM, AI çağrısı,
 Resend API çağrısı, müşteri gönderimi, inbound reply, auth/public deploy hâlâ
 kapsam dışıdır; bunlar ayrı açık güvenlik/operasyon onayı gerektirir.
