@@ -80,6 +80,27 @@ async function addCandidate(
   return response;
 }
 
+async function addEvidence(candidateId: string, sourceUrl: string, overrides: Record<string, unknown> = {}) {
+  return server.inject({
+    method: 'POST',
+    url: `/api/research-candidates/${candidateId}/evidence`,
+    payload: {
+      evidence: {
+        sourceUrl,
+        sourceName: 'Independent registry fixture',
+        accessedAt: new Date().toISOString(),
+        observedAt: new Date(Date.now() - 1000).toISOString(),
+        claimKey: 'company.primary_activity',
+        freshnessStatus: 'CURRENT',
+        summary: 'Independent source confirms the company activity.',
+        confidence: 0.85,
+        ...overrides
+      },
+      actor: 'verification-test'
+    }
+  });
+}
+
 beforeAll(async () => {
   server = buildServer().server;
   await prisma.$connect();
@@ -186,6 +207,9 @@ describe('Research Mission API', () => {
     expect(candidate.companyId).toBeNull();
     expect(candidate.evidences[0].summary).toContain('Ignore prior instructions');
 
+    const secondEvidence = await addEvidence(candidate.id, `https://registry-${RUN_ID}.example.org/company`);
+    expect(secondEvidence.statusCode).toBe(201);
+
     const decision = await server.inject({
       method: 'POST',
       url: `/api/research-candidates/${candidate.id}/decision`,
@@ -218,6 +242,66 @@ describe('Research Mission API', () => {
     );
   });
 
+  it('runs deterministic discovery → second-source verification → human acceptance', async () => {
+    const missionResponse = await createMission({ name: `Automatic extraction mission ${RUN_ID}` });
+    const mission = payload<{ id: string }>(missionResponse);
+    const sourceUrl = `https://discovery-${RUN_ID}.example.com/about`;
+    const discovered = await server.inject({
+      method: 'POST',
+      url: `/api/research-missions/${mission.id}/discover`,
+      payload: {
+        sourceUrl,
+        sourceName: 'Synthetic public company page',
+        accessedAt: new Date().toISOString(),
+        actor: 'deterministic-research-worker',
+        content: `
+          <title>Discovery Freight ${RUN_ID} | About</title>
+          <h1>Discovery Freight ${RUN_ID}</h1>
+          <p>We provide cross-border logistics and freight services from Hamburg.</p>
+          <p>Contact: hello@discovery-${RUN_ID}.example.com +49 40 555 1234</p>
+        `
+      }
+    });
+    expect(discovered.statusCode).toBe(201);
+    const candidate = payload<{
+      id: string;
+      proposedName: string;
+      domain: string;
+      sector: string;
+      activity: string;
+      city: string;
+      emailDomain: string;
+      evidences: Array<{ summary: string; claimKey: string }>;
+    }>(discovered);
+    candidateIds.push(candidate.id);
+    expect(candidate.proposedName).toContain('Discovery Freight');
+    expect(candidate.domain).toBe(`discovery-${RUN_ID}.example.com`);
+    expect(candidate.sector).toBe('Logistics and freight');
+    expect(candidate.activity).toContain('We provide cross-border logistics');
+    expect(candidate.city).toBe('Hamburg');
+    expect(candidate.emailDomain).toBe(`discovery-${RUN_ID}.example.com`);
+    expect(candidate.evidences[0].claimKey).toBe('company.research_signals');
+
+    const verification = await addEvidence(candidate.id, `https://registry-${RUN_ID}.example.org/company`);
+    expect(verification.statusCode).toBe(201);
+
+    const accepted = await server.inject({
+      method: 'POST',
+      url: `/api/research-candidates/${candidate.id}/decision`,
+      payload: {
+        decision: 'ACCEPT',
+        resolution: 'CREATE_NEW',
+        reason: 'Two independent sources confirmed the extracted signals.',
+        decidedBy: 'test-owner'
+      }
+    });
+    expect(accepted.statusCode).toBe(200);
+    const acceptedBody = payload<{ companyId: string }>(accepted);
+    companyIds.push(acceptedBody.companyId);
+    const company = await prisma.company.findUniqueOrThrow({ where: { id: acceptedBody.companyId } });
+    expect(company.activity).toContain('We provide cross-border logistics');
+  });
+
   it('requires an explicit CREATE_NEW resolution for a candidate without a match', async () => {
     const missionResponse = await createMission({ name: `Explicit resolution mission ${RUN_ID}` });
     const mission = payload<{ id: string }>(missionResponse);
@@ -240,6 +324,48 @@ describe('Research Mission API', () => {
     expect(await prisma.company.count({ where: { domain } })).toBe(0);
   });
 
+  it('requires two independent evidence origins before accepting a high-confidence candidate', async () => {
+    const missionResponse = await createMission({ name: `Second source policy ${RUN_ID}` });
+    const mission = payload<{ id: string }>(missionResponse);
+    const domain = `second-source-${RUN_ID}.example.com`;
+    const candidateResponse = await addCandidate(
+      mission.id,
+      {},
+      { name: `Second Source ${RUN_ID}`, domain, website: `https://${domain}` },
+      { sourceUrl: `https://${domain}/about` }
+    );
+    const candidate = payload<{ id: string }>(candidateResponse);
+
+    const blocked = await server.inject({
+      method: 'POST',
+      url: `/api/research-candidates/${candidate.id}/decision`,
+      payload: {
+        decision: 'ACCEPT',
+        resolution: 'CREATE_NEW',
+        reason: 'One source is not enough.',
+        decidedBy: 'test-owner'
+      }
+    });
+    expect(blocked.statusCode).toBe(409);
+    expect(payload<{ error: { message: string } }>(blocked).error.message).toContain('2 independent');
+
+    const secondEvidence = await addEvidence(candidate.id, `https://registry-${RUN_ID}.example.org/company`);
+    expect(secondEvidence.statusCode).toBe(201);
+
+    const accepted = await server.inject({
+      method: 'POST',
+      url: `/api/research-candidates/${candidate.id}/decision`,
+      payload: {
+        decision: 'ACCEPT',
+        resolution: 'CREATE_NEW',
+        reason: 'Two independent sources reviewed by a human.',
+        decidedBy: 'test-owner'
+      }
+    });
+    expect(accepted.statusCode).toBe(200);
+    companyIds.push(payload<{ companyId: string }>(accepted).companyId);
+  });
+
   it('allows only one winner when two CREATE_NEW decisions race for the same candidate', async () => {
     const missionResponse = await createMission({ name: `Concurrent decision mission ${RUN_ID}` });
     const mission = payload<{ id: string }>(missionResponse);
@@ -251,6 +377,8 @@ describe('Research Mission API', () => {
       { sourceUrl: `https://evidence-${RUN_ID}.example.com/about` }
     );
     const candidate = payload<{ id: string }>(candidateResponse);
+    const secondEvidence = await addEvidence(candidate.id, `https://registry-${RUN_ID}.example.org/concurrent`);
+    expect(secondEvidence.statusCode).toBe(201);
     const request = () =>
       server.inject({
         method: 'POST',
@@ -299,6 +427,9 @@ describe('Research Mission API', () => {
     expect(candidate.matchedCompanyId).toBe(canonical.id);
     expect(candidate.matchedBy).toBe('DOMAIN');
     expect(candidate.matchConfidence).toBe(0.95);
+
+    const secondEvidence = await addEvidence(candidate.id, `https://registry-${RUN_ID}.example.org/duplicate`);
+    expect(secondEvidence.statusCode).toBe(201);
 
     const missingResolution = await server.inject({
       method: 'POST',

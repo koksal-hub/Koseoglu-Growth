@@ -80,6 +80,7 @@ enum EventType {
   RESEARCH_CANDIDATE_ACCEPTED
   RESEARCH_CANDIDATE_REJECTED
   RESEARCH_CANDIDATE_NEEDS_EVIDENCE
+  RESEARCH_EVIDENCE_ADDED
   CONTACT_POINT_COLLECTED
   CONTACT_POINT_VERIFIED
   COMMUNICATION_PERMISSION_RECORDED
@@ -277,6 +278,7 @@ model Company {
   city           String?
   address        String?
   sector         String?
+  activity       String?
   website        String?
   status         CompanyStatus  @default(ACTIVE)
   /// 0..1 — how confident Growth is that this record is accurate. Manually
@@ -361,6 +363,7 @@ model ResearchCandidate {
   city             String?
   address          String?
   sector           String?
+  activity         String?
   website          String?
   reason           String
   status           ResearchCandidateStatus @default(PROPOSED)

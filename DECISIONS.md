@@ -354,3 +354,32 @@ yazılmaz. Authentication, domain doğrulama ve gerçek customer send ayrı kara
 açık kullanıcı onayı ister.
 
 STATUS: ACCEPTED FOR TEST-SIMULATION ONLY
+
+---
+
+## ADR-016 — Deterministic Research Extraction ve İkinci Kaynak Kapısı
+
+DECISION: Research discovery ilk otomatik dilimde ağ erişimi veya LLM çağrısı
+yapmaz. Worker'ın sağladığı bounded public-page snapshot'ı yalnız veri olarak
+sanitize edilir; sektör, faaliyet, lokasyon, domain ve iletişim sinyalleri sabit
+kurallarla çıkarılır. Aday kabulü, aynı host üzerindeki farklı sayfaları bağımsız
+saymayan en az iki farklı source origin kanıtı gerektirir. İkinci kanıt yalnız nihai
+karardan önce append-only Evidence kaydı olarak eklenebilir.
+
+WHY: Dış sayfa içeriği prompt-injection ve hallucination taşıyabilir; crawler veya
+LLM'yi doğrudan aksiyon katmanına bağlamak güven sınırını büyütür. Tek kaynağa
+dayalı şirket/iletişim iddiası yanlış lead ve yanlış outreach üretebilir. Deterministic
+extractor test edilebilir ve AI maliyeti/latency'si yaratmaz; ileride AI eklenirse
+receipt sözleşmesi ayrıca uygulanır.
+
+ALTERNATIVES: Serbest biçimli LLM extraction; aynı web sitesindeki iki URL'yi iki
+kaynak saymak; tek kanıtla otomatik Company kabul etmek; crawler'ın doğrudan
+provider veya outreach katmanına yazması.
+
+CONSEQUENCES: `POST /research-missions/:id/discover` yalnız bounded snapshot kabul
+eder ve hiçbir gerçek web çağrısı yapmaz. `POST /research-candidates/:id/evidence`
+ile ek kanıt eklenir; `ACCEPT` kararı source-origin sayısı ikiye ulaşmadan reddedilir.
+Ham snapshot, e-posta adresi veya secret kalıcı audit verisi olarak çoğaltılmaz;
+çıkarılan candidate/company alanları insan kararı olmadan kanonik Company oluşturmaz.
+
+STATUS: ACCEPTED FOR DETERMINISTIC RESEARCH SLICE

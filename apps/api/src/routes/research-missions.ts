@@ -2,8 +2,10 @@ import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import {
   addResearchCandidate,
+  addResearchEvidence,
   createResearchMission,
   decideResearchCandidate,
+  discoverResearchCandidate,
   getResearchMission,
   listResearchMissions,
   ResearchWorkflowError
@@ -94,11 +96,35 @@ const addCandidateSchema = z
         city: optionalShortText,
         address: z.string().trim().min(1).max(1000).optional(),
         sector: optionalShortText,
+        activity: z.string().trim().min(1).max(500).optional(),
         website: httpUrl.optional()
       })
       .strict(),
     reason: z.string().trim().min(1).max(2000),
     confidence: z.number().min(0).max(1),
+    evidence: evidenceInputSchema,
+    actor: actorText
+  })
+  .strict();
+
+const discoverSchema = z
+  .object({
+    sourceUrl: httpUrl,
+    sourceName: optionalShortText,
+    accessedAt: z.coerce.date(),
+    content: z.string().trim().min(1).max(100_000),
+    actor: actorText
+  })
+  .strict()
+  .superRefine((value, context) => {
+    const allowedClockSkewMs = 5 * 60 * 1000;
+    if (value.accessedAt.getTime() > Date.now() + allowedClockSkewMs) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ['accessedAt'], message: 'accessedAt cannot be in the future' });
+    }
+  });
+
+const addEvidenceSchema = z
+  .object({
     evidence: evidenceInputSchema,
     actor: actorText
   })
@@ -141,6 +167,7 @@ const candidateResponseSchema = z.object({
   city: z.string().nullable(),
   address: z.string().nullable(),
   sector: z.string().nullable(),
+  activity: z.string().nullable(),
   website: z.string().nullable(),
   reason: z.string(),
   status: z.enum(['PROPOSED', 'NEEDS_MORE_EVIDENCE', 'ACCEPTED', 'REJECTED']),
@@ -201,6 +228,7 @@ type CandidateRecord = {
   city: string | null;
   address: string | null;
   sector: string | null;
+  activity: string | null;
   website: string | null;
   reason: string;
   status: 'PROPOSED' | 'NEEDS_MORE_EVIDENCE' | 'ACCEPTED' | 'REJECTED';
@@ -305,11 +333,25 @@ const researchMissionRoutes: FastifyPluginAsync = async (server) => {
     return reply.send(response);
   });
 
+  server.post('/research-missions/:id/discover', async (request, reply) => {
+    const { id } = parseRequest(idParamsSchema, request.params);
+    const input = parseRequest(discoverSchema, request.body);
+    const candidate = await discoverResearchCandidate({ missionId: id, ...input });
+    return reply.status(201).send(serializeCandidate(candidate));
+  });
+
   server.post('/research-missions/:id/candidates', async (request, reply) => {
     const { id } = parseRequest(idParamsSchema, request.params);
     const input = parseRequest(addCandidateSchema, request.body);
     const candidate = await addResearchCandidate({ missionId: id, ...input });
     return reply.status(201).send(serializeCandidate(candidate));
+  });
+
+  server.post('/research-candidates/:id/evidence', async (request, reply) => {
+    const { id } = parseRequest(idParamsSchema, request.params);
+    const input = parseRequest(addEvidenceSchema, request.body);
+    const evidence = await addResearchEvidence({ candidateId: id, ...input });
+    return reply.status(201).send(serializeEvidence(evidence));
   });
 
   server.post('/research-candidates/:id/decision', async (request, reply) => {
