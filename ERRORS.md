@@ -377,3 +377,15 @@ oluşturulmaz.
   regresyonları ile malformed email/phone negatifleri eklendi.
 - status: FIXED LOCALLY. İkinci yeni temiz DB'de dört migration PASS; odaklı
   26/26, tam 97/97, lint/typecheck/build PASS; DB katalog doğrulaması PASS.
+
+---
+
+- id: ranking-test-nonexistent-company-status
+- tarih: 2026-09-01T09:33:00+03:00
+- yer: apps/api/test/ranking.test.ts ilk odaklı koşu
+- kısa: Ranking odaklı ilk koşu 8/9 oldu; fixture `CompanyStatus` içinde olmayan
+  `INACTIVE` değerini kullanınca Prisma validation yazımdan önce reddetti.
+- root_cause: Test, repo şemasındaki gerçek enum (`ACTIVE`, `ARCHIVED`, `MERGED`)
+  okunmadan genel bir status değeri varsaymıştı; ranking uygulama yolu çalışmıyordu.
+- düzeltme: Non-rankable fixture kanonik `ARCHIVED` durumuna çevrildi.
+- status: FIXED. Sonraki odaklı koşular 9/9 ve tam suite 106/106 PASS.

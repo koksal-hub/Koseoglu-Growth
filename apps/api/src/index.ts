@@ -9,6 +9,7 @@ import { prisma } from './lib/prisma';
 import healthRoutes from './routes/health';
 import researchMissionRoutes from './routes/research-missions';
 import contactPointRoutes from './routes/contact-points';
+import rankingRoutes from './routes/ranking';
 
 export function buildServer(): { server: FastifyInstance; env: Env } {
   // validate env on startup
@@ -44,6 +45,7 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
   // approved and implemented. They must not be exposed in a public deployment.
   server.register(researchMissionRoutes, { prefix: '/api' });
   server.register(contactPointRoutes, { prefix: '/api' });
+  server.register(rankingRoutes, { prefix: '/api' });
 
   // basic swagger/OpenAPI could be added here in the future
 

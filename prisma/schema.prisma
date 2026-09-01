@@ -84,6 +84,7 @@ enum EventType {
   CONTACT_POINT_VERIFIED
   COMMUNICATION_PERMISSION_RECORDED
   COMMUNICATION_SUPPRESSED
+  COMPANY_RANKING_RECORDED
 }
 
 enum ResearchMissionStatus {
@@ -181,6 +182,15 @@ enum RecipientCategory {
   UNKNOWN
 }
 
+enum DailyActionType {
+  VERIFY_COMPANY
+  COLLECT_EVIDENCE
+  VERIFY_CONTACT_POINT
+  REVIEW_COMMUNICATION_PERMISSION
+  HONOR_SUPPRESSION
+  READY_FOR_HUMAN_OUTREACH_REVIEW
+}
+
 /// A B2B company Growth has discovered, researched, or sold to.
 /// `domain`, `taxNumber` and `normalizedName` are expected to be normalized
 /// (see apps/api/src/lib/entity-resolution.ts) before being written here.
@@ -218,8 +228,9 @@ model Company {
   leads                     Lead[]
   opportunities             Opportunity[]
   evidences                 Evidence[]
-  researchCandidates        ResearchCandidate[] @relation("ResearchCandidateAcceptedCompany")
-  matchedResearchCandidates ResearchCandidate[] @relation("ResearchCandidateMatchedCompany")
+  rankingReceipts           CompanyRankingReceipt[]
+  researchCandidates        ResearchCandidate[]     @relation("ResearchCandidateAcceptedCompany")
+  matchedResearchCandidates ResearchCandidate[]     @relation("ResearchCandidateMatchedCompany")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -418,6 +429,36 @@ model SuppressionEntry {
 
   @@unique([channel, recipientHash])
   @@index([createdAt])
+}
+
+/// Immutable, deterministic scoring receipt. Component scores are integers so
+/// the database can enforce both their bounds and the exact total.
+model CompanyRankingReceipt {
+  id                     String          @id @default(cuid())
+  companyId              String
+  company                Company         @relation(fields: [companyId], references: [id])
+  algorithmVersion       String
+  policyVersion          String
+  inputHash              String
+  context                Json
+  evidenceReceipt        Json
+  contactReceipt         Json
+  icpFitScore            Int
+  companyConfidenceScore Int
+  evidenceScore          Int
+  contactScore           Int
+  permissionScore        Int
+  totalScore             Int
+  reasonCodes            Json
+  nextAction             DailyActionType
+  evaluatedAt            DateTime
+  createdBy              String
+  createdAt              DateTime        @default(now())
+
+  @@unique([companyId, algorithmVersion, inputHash])
+  @@index([policyVersion, evaluatedAt])
+  @@index([totalScore])
+  @@index([nextAction])
 }
 
 /// A sales lead: a Company (and optionally a specific Contact) Growth is

@@ -1,11 +1,11 @@
 STATUS — Kısa, güncel durum (master ajanın okuması için)
 
-last_update: 2026-09-01T09:17:00+03:00
-last_actor: Codex (Aşama 2 ContactPoint / permission gate kapanışı)
+last_update: 2026-09-01T09:38:00+03:00
+last_actor: Codex (Aşama 3 deterministic ranking / Daily Action)
 
-CURRENT PHASE: PHASE 2 — DISCOVERY / VERIFICATION
-ACTIVE ISSUE: Issue #8 — DONE; sıradaki Phase 3 ranking/Daily Action Issue'u henüz açılmadı
-ACTIVE BRANCH: main (`4272840`); dokümantasyon senkronu ayrı PR'da
+CURRENT PHASE: PHASE 3 — RANKING
+ACTIVE ISSUE: Issue #11 — Deterministic ranking ve Daily Action API
+ACTIVE BRANCH: codex/ranking-daily-action-v1 (origin/main `0423c4a` tabanı)
 
 CURRENT CODEX CHECKPOINT (2026-09-01):
 - Research Mission ilk dikey dilimi PR #7 CI PASS sonrası `main` üzerine
@@ -32,6 +32,19 @@ CURRENT CODEX CHECKPOINT (2026-09-01):
   `33476774205` içindeki migration/lint/typecheck/test/build ve cleanup
   adımlarının tamamı SUCCESS olduktan sonra beklenen head SHA kilidiyle
   squash-merge edildi. `main` HEAD `4272840`; Issue #8 completed olarak kapandı.
+- PR #10 kapanış belge senkronu run `33477220349` PASS sonrası `0423c4a`
+  olarak merge edildi. Issue #11 açıldı ve güncel `main` tabanlı ayrı worktree kuruldu.
+- `CompanyRankingReceipt`, `DailyActionType` ve `COMPANY_RANKING_RECORDED` additive
+  şema/migration'ı eklendi. Algoritma ICP, company confidence, current evidence,
+  verified contact ve communication permission için beş ayrı 0..20 tamsayı
+  üretir; DB 0..100 exact sum, hash/version/actor ve FK constraint'lerini uygular.
+- `POST /api/daily-actions/refresh` en çok 100 açık company id için immutable,
+  idempotent receipt üretir ve score/name/id ile sıralar. `GET
+  /api/companies/:id/ranking-receipts` 1..100 limitlidir.
+- Evidence yalnız CURRENT, confidence >=0.7, future olmayan ve en çok 90 günlükse
+  puan verir. Contact mevcut permission gate'ini tekrar kullanır. Suppression
+  `HONOR_SUPPRESSION`; en ileri durum yalnız `READY_FOR_HUMAN_OUTREACH_REVIEW` olur.
+  Lead/Activity/Outreach/send/provider çağrısı yoktur.
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
@@ -106,31 +119,33 @@ CURRENT QUALITY STATUS (gerçek, doğrulanmış — bu branch):
 - pnpm install: PASS
 - pnpm lint: PASS
 - pnpm typecheck: PASS
-- pnpm test: PASS — 97/97 (8 dosya; ContactPoint için 26 API/DB testi)
+- pnpm test: PASS — 106/106 (9 dosya; Ranking için 9 API/DB testi)
 - pnpm build: PASS (api + web)
 - prisma format / validate / generate: PASS
-- prisma migrate deploy/status: PASS — dört migration yeni temiz izole DB'ye sıfırdan uygulandı
-- DB security/data check: 24 gerçek constraint katalogda doğrulandı; test sonrası
-  ContactPoint/CommunicationPermission/SuppressionEntry/Phase2 Event sayıları 0
+- prisma migrate deploy/status: PASS — beş migration `growth_ranking_v1_final_20260901`
+  temiz DB'sine sıfırdan uygulandı
+- Ranking DB check: 8 gerçek receipt constraint katalogda doğrulandı; test sonrası
+  CompanyRankingReceipt ve Ranking Event sayıları 0
 - docker compose up (db+migrate+api): PASS, health/ready 200, SIGTERM'de
   graceful shutdown exit 0
-- GitHub Actions CI: PASS — PR #9 run `33476774205`, tüm job adımları SUCCESS
+- GitHub Actions CI: Aşama 3 branch'i için BEKLENİYOR; son main kanıtı PR #10
+  run `33477220349` SUCCESS
 - Uçtan uca test (Devin testing agent): PASS — health/ready + DB kesinti/
   geri dönüş, SIGTERM graceful shutdown (exit 0), helmet/rate-limit/CORS,
   DB CHECK kısıtları, web + /api dev proxy, lang="tr". Detay: PR #5 yorumu.
 
 OPEN BLOCKERS:
-- Aşama 2 kod/yerel kalite/CI blocker'ı yok; PR #9 merge edildi.
-- Authentication/authorization hâlâ yoktur. ContactPoint ve permission API'leri
+- Aşama 3 yerel kod/kalite blocker'ı yok; commit/push/PR/CI henüz bekleniyor.
+- Authentication/authorization hâlâ yoktur. Business API'leri
   yalnız private/local geliştirme içindir; public veya multi-user deploy edilemez.
 - Bilinen, bu dilimi bloklamayan teknik borç: Vite 5 CJS Node API deprecation
   uyarısı ve merkezi error handler'ın beklenen 4xx workflow/validation hatalarını
   error seviyesinde `Unhandled error` diye loglaması. ERRORS.md içinde açıkça kayıtlıdır.
 
 NEXT ACTION:
-- Önce Phase 3 için şeffaf ranking + Daily Action API Issue/scope/acceptance
-  criteria oluştur; sonra `main` tabanlı ayrı branch/worktree'de uygula.
-- Gerçek gönderim, müşteri iletişimi veya public deploy yapma.
+- Son diff için full kalite/security taraması; exact-file commit/push ve Issue #11 PR.
+- CI/head/mergeability PASS sonrası merge. Gerçek gönderim, müşteri iletişimi veya
+  public deploy yapma.
 
 notes:
 - Her ajan bu dosyayı okuyup iş devralmalıdır. Değişiklik yapmadan önce TASKS.md
