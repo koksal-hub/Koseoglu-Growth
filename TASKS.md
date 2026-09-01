@@ -112,7 +112,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #3 — Research / Verification / Evidence (Phase 2) ---
 - Öncelik: MEDIUM
 - Sorumlu: Codex
-- Durum: IN_PROGRESS (Aşama 1 yerel kapılar PASS; commit/push/PR/CI bekleniyor)
+- Durum: IN_PROGRESS (PR #7 açık; yerel kapılar PASS, GitHub CI/merge bekleniyor)
 - Bağımlılıklar: Issue #2 DONE olmalı
 - Acceptance criteria:
   - [x] Manuel/fixture tabanlı Company Discovery iskeleti çalışır

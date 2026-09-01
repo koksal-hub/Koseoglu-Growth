@@ -1,11 +1,11 @@
 STATUS — Kısa, güncel durum (master ajanın okuması için)
 
-last_update: 2026-09-01T08:40:30+03:00
+last_update: 2026-09-01T08:43:00+03:00
 last_actor: Codex (Aşama 1 Research Mission dikey dilimi)
 
 CURRENT PHASE: PHASE 2 — DISCOVERY / VERIFICATION
 ACTIVE ISSUE: Issue #3 — Research, Verification ve Evidence pipeline
-ACTIVE BRANCH: codex/research-mission-v1 (PR henüz açılmadı)
+ACTIVE BRANCH: codex/research-mission-v1 (PR #7 açık)
 
 CURRENT CODEX CHECKPOINT (2026-09-01):
 - PR #6, GitHub Actions run `33472791803` PASS sonrası `main` üzerine
@@ -23,8 +23,8 @@ CURRENT CODEX CHECKPOINT (2026-09-01):
 - `growth_research_mission_v1_verify_20260901` boş DB'sine üç migration sıfırdan
   uygulandı. Yerel lint/typecheck PASS; test 71/71 (7 dosya) PASS; API+web build
   PASS. Odaklı Research Mission testi 15/15 PASS ve trace açık koşuda `pg`
-  concurrent query uyarısı giderilmiş durumdadır. Commit/push/PR/GitHub CI
-  henüz bekleniyor.
+  concurrent query uyarısı giderilmiş durumdadır. Kod commit'i `b386f8d` olarak
+  push edildi ve PR #7 açıldı; GitHub CI henüz bekleniyor.
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
@@ -118,7 +118,7 @@ OPEN BLOCKERS:
   error seviyesinde `Unhandled error` diye loglaması. ERRORS.md içinde açıkça kayıtlıdır.
 
 NEXT ACTION:
-- Aşama 1 diff/security kontrolü, commit/push, PR açılması ve GitHub CI.
+- PR #7 GitHub CI ve head/mergeability kontrolü.
 - CI PASS ve review sonrası merge; ancak ondan sonra Aşama 2 ContactPoint /
   permission / suppression modeline geçilir.
 
