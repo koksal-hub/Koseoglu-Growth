@@ -10,6 +10,7 @@ import healthRoutes from './routes/health';
 import researchMissionRoutes from './routes/research-missions';
 import contactPointRoutes from './routes/contact-points';
 import rankingRoutes from './routes/ranking';
+import outreachDraftRoutes from './routes/outreach-drafts';
 
 export function buildServer(): { server: FastifyInstance; env: Env } {
   // validate env on startup
@@ -46,6 +47,7 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
   server.register(researchMissionRoutes, { prefix: '/api' });
   server.register(contactPointRoutes, { prefix: '/api' });
   server.register(rankingRoutes, { prefix: '/api' });
+  server.register(outreachDraftRoutes, { prefix: '/api' });
 
   // basic swagger/OpenAPI could be added here in the future
 

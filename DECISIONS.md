@@ -279,3 +279,38 @@ aksiyon `HONOR_SUPPRESSION` olur. En ileri durum dahi yalnız
 oluşmaz.
 
 STATUS: ACCEPTED
+
+---
+
+## ADR-014 — Outreach Approval İçerik Receipt'idir, Gönderim Yetkisi Değildir
+
+DECISION: Phase 4 yalnız `HUMAN_AUTHORED` e-posta taslağı, append-only içerik
+revizyonları ve bağımsız insan kararı üretir. Akış `DRAFT → IN_REVIEW →
+APPROVED | REJECTED | EXPIRED` ile sınırlıdır. Taslak yalnız güncel
+`READY_FOR_HUMAN_OUTREACH_REVIEW` ranking receipt'i ve o anda ALLOW veren
+communication gate ile açılır; gate inceleme ve karar anında yeniden çalışır.
+Approval, tam revizyon/content hash'i, permission/policy ve gate snapshot'ına
+bağlanır fakat her yanıtta `sendAuthorized=false` kalır.
+
+WHY: Taslak metni ile gerçekten gönderilen ileti birbirinden farklı
+artefaktlardır. Revizyon sonrası eski onayı geçerli saymak, taslak yazarıyla
+onaylayanı birleştirmek veya create-time permission sonucuna güvenmek; yanlış
+içeriğin ya da sonradan opt-out olan alıcının aksiyon katmanına geçmesine yol
+açar. Ham e-posta değerini audit/event receipt'lerinde çoğaltmak veri riskini
+gereksiz büyütür.
+
+ALTERNATIVES: Onayı Draft üzerindeki değiştirilebilir boolean olarak tutmak;
+approval sonrası içeriği düzenlemek; public adresi otomatik izin saymak; provider
+send çağrısını approval endpoint'ine eklemek; recipient değerini bütün receipt ve
+event'lere kopyalamak.
+
+CONSEQUENCES: Recipient snapshot yalnız ContactPoint id + deterministik recipient
+hash ve sınıflandırma taşır; DB raw/normalized recipient anahtarlarını reddeder.
+Approval content hash'i DB foreign key'iyle seçili revizyona bağlanır. İçerik
+yazarlarının hiçbiri onaylayamaz. PostgreSQL trigger'ları izin verilmeyen status
+geçişlerini ve revision/approval UPDATE işlemlerini reddeder. Permission/suppression
+yazımıyla approval aynı ContactPoint row lock'ını kullanır. Bu güvence yalnız uygulama veri yolu içindir;
+auth eklenmeden public/multi-user deploy yapılmaz ve provider/send Phase 5'te
+ayrı kullanıcı onayı + güvenlik checkpoint'i ister.
+
+STATUS: ACCEPTED

@@ -164,6 +164,24 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Temiz DB'de beş migration; Prisma/lint/typecheck; odaklı 9/9; tam 106/106; build PASS
   - [x] GitHub Actions CI PASS (run `33478818433`) ve PR #12 merge
 
+--- Issue #14 — Outreach Draft ve Bağımsız İnsan Onayı (Phase 4) ---
+- Öncelik: HIGH
+- Sorumlu: Codex
+- Durum: REVIEW (`codex/outreach-draft-v1`; yerel kapılar PASS, PR/CI bekleniyor)
+- Bağımlılıklar: Issue #11 DONE
+- Acceptance criteria:
+  - [x] Yalnız güncel `READY_FOR_HUMAN_OUTREACH_REVIEW` ranking receipt'i draft açar
+  - [x] Recipient snapshot ham değer yerine pseudonymous SHA-256 hash taşır
+  - [x] İnsan-yazarlı içerik revision/content hash geçmişi append-only korunur
+  - [x] `DRAFT → IN_REVIEW → APPROVED | REJECTED | EXPIRED` geçişleri uygulanır
+  - [x] Review ve karar anında permission/policy/suppression gate yeniden çalışır
+  - [x] İçerik yazarlarının hiçbiri approval kararı veremez
+  - [x] Approval hash'i DB foreign key'iyle exact revision'a bağlanır
+  - [x] Provider/send/Lead/Activity yok; approval dahi `sendAuthorized=false`
+  - [x] Sekiz migration temiz DB'ye sıfırdan uygulandı; 29 constraint/FK + 3 trigger doğrulandı
+  - [x] Prisma/lint/typecheck; odaklı 10/10; tam 116/116; API+web build PASS
+  - [ ] GitHub Actions CI PASS ve PR merge
+
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
 ================================================================

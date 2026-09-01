@@ -300,3 +300,27 @@ teknik bilgi yazılır.
   teknik olarak açmasa da operatöre izni yeniden arama yönünde yanlış sinyal verir.
 - etkisi: Global suppression/opt-out algılanınca next action doğrudan
   `HONOR_SUPPRESSION` olur; yüksek diğer bileşenler bu yönlendirmeyi değiştiremez.
+
+- tarih: 2026-09-01T10:15:49+03:00
+- konu: Approval içerik receipt'idir, gerçek gönderim yetkisi değildir
+- açıklama: Bir taslağın insan tarafından uygun bulunması; recipient, permission,
+  suppression veya içeriğin gönderim anına kadar değişmediğini kanıtlamaz.
+- etkisi: Approval tam revision/content hash, permission/policy ve karar-anı gate
+  receipt'ine bağlanır; yine de `sendAuthorized=false` kalır. Phase 5 gerçek send
+  kapısı aynı şartları yeniden kontrol etmek ve ayrı kullanıcı onayı almak zorundadır.
+
+- tarih: 2026-09-01T10:15:49+03:00
+- konu: Audit snapshot gerekli veriyi çoğaltmadan kimliği sabitlemelidir
+- açıklama: Ham normalize e-postayı Draft, Approval ve Event içinde tekrar etmek
+  silme/retention yüzeyini genişletir; yalnız ContactPoint'te tutmak yeterlidir.
+- etkisi: Recipient snapshot ContactPoint id ve kanal+normalize değer SHA-256
+  hash'ini taşır. DB `rawValue`/`normalizedValue` anahtarlarını ve
+  `rawRecipientStored=true` değerini reddeder; hash pseudonymous kabul edilir.
+
+- tarih: 2026-09-01T10:15:49+03:00
+- konu: Opt-out ile approval aynı alıcı kilidi üzerinde seri hale gelmelidir
+- açıklama: Gate'i okuyup daha sonra approval yazmak arasında opt-out oluşursa
+  create-time veya review-time ALLOW sonucu artık geçerli değildir.
+- etkisi: Uygulama yolundaki permission/suppression yazımı ve karar-anı gate'i
+  aynı ContactPoint satırını `FOR UPDATE` ile kilitler. Bu, DB'ye uygulama dışı
+  doğrudan yazma yetkisi verilmemesi gereğini ortadan kaldırmaz.

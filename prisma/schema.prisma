@@ -85,6 +85,11 @@ enum EventType {
   COMMUNICATION_PERMISSION_RECORDED
   COMMUNICATION_SUPPRESSED
   COMPANY_RANKING_RECORDED
+  OUTREACH_DRAFT_CREATED
+  OUTREACH_DRAFT_REVISED
+  OUTREACH_REVIEW_REQUESTED
+  OUTREACH_APPROVAL_RECORDED
+  OUTREACH_DRAFT_EXPIRED
 }
 
 enum ResearchMissionStatus {
@@ -191,6 +196,19 @@ enum DailyActionType {
   READY_FOR_HUMAN_OUTREACH_REVIEW
 }
 
+enum OutreachDraftStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum OutreachApprovalDecision {
+  APPROVED
+  REJECTED
+}
+
 /// A B2B company Growth has discovered, researched, or sold to.
 /// `domain`, `taxNumber` and `normalizedName` are expected to be normalized
 /// (see apps/api/src/lib/entity-resolution.ts) before being written here.
@@ -229,6 +247,7 @@ model Company {
   opportunities             Opportunity[]
   evidences                 Evidence[]
   rankingReceipts           CompanyRankingReceipt[]
+  outreachDrafts            OutreachDraft[]
   researchCandidates        ResearchCandidate[]     @relation("ResearchCandidateAcceptedCompany")
   matchedResearchCandidates ResearchCandidate[]     @relation("ResearchCandidateMatchedCompany")
 
@@ -376,7 +395,8 @@ model ContactPoint {
   retentionUntil      DateTime?
   deletedAt           DateTime?
 
-  permissions CommunicationPermission[]
+  permissions    CommunicationPermission[]
+  outreachDrafts OutreachDraft[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -410,6 +430,8 @@ model CommunicationPermission {
   reviewedBy          String
   reason              String
   createdAt           DateTime                      @default(now())
+
+  outreachApprovals OutreachApproval[]
 
   @@index([contactPointId, channel, purpose, jurisdictionCountry])
   @@index([status])
@@ -455,10 +477,95 @@ model CompanyRankingReceipt {
   createdBy              String
   createdAt              DateTime        @default(now())
 
+  outreachDrafts OutreachDraft[]
+
   @@unique([companyId, algorithmVersion, inputHash])
   @@index([policyVersion, evaluatedAt])
   @@index([totalScore])
   @@index([nextAction])
+}
+
+/// Human-authored email content that is deliberately separate from delivery.
+/// Recipient data is snapshotted pseudonymously; the raw normalized value stays
+/// in ContactPoint and is never copied into approval/event receipts.
+model OutreachDraft {
+  id                    String                @id @default(cuid())
+  companyId             String
+  company               Company               @relation(fields: [companyId], references: [id])
+  contactPointId        String
+  contactPoint          ContactPoint          @relation(fields: [contactPointId], references: [id])
+  rankingReceiptId      String
+  rankingReceipt        CompanyRankingReceipt @relation(fields: [rankingReceiptId], references: [id])
+  channel               CommunicationChannel
+  purpose               CommunicationPurpose
+  jurisdictionCountry   String
+  policyVersion         String
+  templateKey           String
+  templateVersion       String
+  generationMethod      String                @default("HUMAN_AUTHORED")
+  author                String
+  recipientSnapshot     Json
+  status                OutreachDraftStatus   @default(DRAFT)
+  currentRevisionNumber Int                   @default(1)
+  expiresAt             DateTime
+  submittedAt           DateTime?
+  submittedBy           String?
+
+  revisions OutreachDraftRevision[]
+  approval  OutreachApproval?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([contactPointId])
+  @@index([rankingReceiptId])
+  @@index([expiresAt])
+}
+
+/// Append-only content history. Editing a draft creates a new row and content
+/// hash; no route updates or deletes an existing revision.
+model OutreachDraftRevision {
+  id             String        @id @default(cuid())
+  draftId        String
+  draft          OutreachDraft @relation(fields: [draftId], references: [id])
+  revisionNumber Int
+  subject        String
+  body           String
+  contentHash    String
+  editedBy       String
+  editReason     String
+  createdAt      DateTime      @default(now())
+
+  approval OutreachApproval?
+
+  @@unique([draftId, revisionNumber])
+  @@unique([id, draftId])
+  @@unique([id, draftId, contentHash])
+  @@index([contentHash])
+}
+
+/// Append-only independent human decision. An APPROVED receipt is still not a
+/// send instruction: no provider, message id, or delivery state exists here.
+model OutreachApproval {
+  id             String                   @id @default(cuid())
+  draftId        String                   @unique
+  draft          OutreachDraft            @relation(fields: [draftId], references: [id])
+  revisionId     String                   @unique
+  revision       OutreachDraftRevision    @relation(fields: [revisionId], references: [id])
+  decision       OutreachApprovalDecision
+  decisionReason String
+  reviewedBy     String
+  policyVersion  String
+  permissionId   String?
+  permission     CommunicationPermission? @relation(fields: [permissionId], references: [id])
+  gateReceipt    Json
+  contentHash    String
+  decidedAt      DateTime
+  createdAt      DateTime                 @default(now())
+
+  @@index([decision, decidedAt])
+  @@index([permissionId])
 }
 
 /// A sales lead: a Company (and optionally a specific Contact) Growth is

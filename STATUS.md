@@ -1,11 +1,11 @@
 STATUS — Kısa, güncel durum (master ajanın okuması için)
 
-last_update: 2026-09-01T09:45:20+03:00
-last_actor: Codex (Aşama 3 merge ve kapanış kanıtı)
+last_update: 2026-09-01T10:15:49+03:00
+last_actor: Codex (Aşama 4 outreach draft / bağımsız insan onayı)
 
-CURRENT PHASE: PHASE 3 — RANKING (COMPLETE)
-ACTIVE ISSUE: Yok — Issue #11 completed
-ACTIVE BRANCH: codex/ranking-daily-action-v1-docs (`main` `8d47703` tabanı)
+CURRENT PHASE: PHASE 4 — OUTREACH DRAFT + HUMAN APPROVAL
+ACTIVE ISSUE: Issue #14 — Outreach Draft ve bağımsız insan onayı
+ACTIVE BRANCH: codex/outreach-draft-v1 (`main` `240ce72` tabanı)
 
 CURRENT CODEX CHECKPOINT (2026-09-01):
 - Research Mission ilk dikey dilimi PR #7 CI PASS sonrası `main` üzerine
@@ -49,6 +49,16 @@ CURRENT CODEX CHECKPOINT (2026-09-01):
   `33478818433` içindeki migration/lint/typecheck/test/build ve cleanup
   adımlarının tamamı SUCCESS olduktan sonra beklenen head SHA kilidiyle
   squash-merge edildi. `main` HEAD `8d47703`; Issue #11 completed olarak kapandı.
+- PR #13 kapanış belge senkronu run `33479400646` PASS sonrası `240ce72`
+  olarak merge edildi. Issue #14 açıldı ve güncel `main` tabanlı worktree kuruldu.
+- `OutreachDraft`, `OutreachDraftRevision` ve `OutreachApproval` additive modelleri
+  eklendi. Yalnız `HUMAN_AUTHORED` e-posta taslağı vardır; content hash exact
+  revision'a bağlıdır ve recipient snapshot ham adres yerine pseudonymous hash taşır.
+- Draft yalnız son 24 saatteki en güncel `READY_FOR_HUMAN_OUTREACH_REVIEW`
+  receipt'i ve current ALLOW gate ile açılır. Gate review ve decision anında
+  yeniden çalışır; permission policy değişimi, suppression veya opt-out bloklar.
+- İçerik yazarları karar veremez. Approval/rejection append-only receipt bırakır;
+  approval dahi `sendAuthorized=false` ve hiçbir provider/send/Lead/Activity üretmez.
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
@@ -123,23 +133,26 @@ CURRENT QUALITY STATUS (gerçek, doğrulanmış — bu branch):
 - pnpm install: PASS
 - pnpm lint: PASS
 - pnpm typecheck: PASS
-- pnpm test: PASS — 106/106 (9 dosya; Ranking için 9 API/DB testi)
+- pnpm test: PASS — 116/116 (10 dosya; Outreach için 10 API/DB testi)
 - pnpm build: PASS (api + web)
 - prisma format / validate / generate: PASS
-- prisma migrate deploy/status: PASS — beş migration `growth_ranking_v1_final_20260901`
+- prisma migrate deploy/status: PASS — sekiz migration `growth_outreach_v1_final_20260901`
   temiz DB'sine sıfırdan uygulandı
+- Outreach DB check: 29 gerçek CHECK/FK/PK constraint ve 3 trigger katalogda doğrulandı; test
+  sonrası Draft/Revision/Approval/Outreach Event sayıları 0
 - Ranking DB check: 8 gerçek receipt constraint katalogda doğrulandı; test sonrası
   CompanyRankingReceipt ve Ranking Event sayıları 0
 - docker compose up (db+migrate+api): PASS, health/ready 200, SIGTERM'de
   graceful shutdown exit 0
 - GitHub Actions CI: PASS — PR #12 run `33478818433`; migration/lint/typecheck/
   test/build ve cleanup adımlarının tamamı SUCCESS
+- GitHub Actions CI: Aşama 4 branch'i için BEKLENİYOR
 - Uçtan uca test (Devin testing agent): PASS — health/ready + DB kesinti/
   geri dönüş, SIGTERM graceful shutdown (exit 0), helmet/rate-limit/CORS,
   DB CHECK kısıtları, web + /api dev proxy, lang="tr". Detay: PR #5 yorumu.
 
 OPEN BLOCKERS:
-- Aşama 3 için açık kod/kalite/CI blocker'ı yoktur; Issue #11 kapanmıştır.
+- Aşama 4 yerel kod/kalite blocker'ı yoktur; commit/push/PR/CI bekleniyor.
 - Authentication/authorization hâlâ yoktur. Business API'leri
   yalnız private/local geliştirme içindir; public veya multi-user deploy edilemez.
 - Bilinen, bu dilimi bloklamayan teknik borç: Vite 5 CJS Node API deprecation
@@ -147,8 +160,8 @@ OPEN BLOCKERS:
   error seviyesinde `Unhandled error` diye loglaması. ERRORS.md içinde açıkça kayıtlıdır.
 
 NEXT ACTION:
-- Aşama 4 için yalnız outreach draft + insan onayı kapsamını ayrı Issue/branch'te
-  tasarla; provider/send entegrasyonu ekleme.
+- Aşama 4 exact-file commit/push, Issue #14 PR ve GitHub CI/head kontrolü.
+- CI PASS sonrası beklenen head SHA ile merge ve kapanış belge senkronu.
 - Authentication/authorization çözülmeden public veya multi-user deploy yapma;
   gerçek gönderim ve müşteri iletişimi için ayrıca açık kullanıcı onayı bekle.
 
