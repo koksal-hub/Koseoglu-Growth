@@ -16,6 +16,7 @@ import resendWebhookRoutes from './routes/resend-webhooks';
 import reportingRoutes from './routes/reporting';
 import socialContentRoutes from './routes/social-content';
 import socialInboxRoutes from './routes/social-inbox';
+import visibilityAssetRoutes from './routes/visibility-assets';
 
 export function buildServer(): { server: FastifyInstance; env: Env } {
   // validate env on startup
@@ -66,6 +67,7 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
   server.register(reportingRoutes, { prefix: '/api' });
   server.register(socialContentRoutes, { prefix: '/api' });
   server.register(socialInboxRoutes, { prefix: '/api' });
+  server.register(visibilityAssetRoutes, { prefix: '/api' });
 
   // basic swagger/OpenAPI could be added here in the future
 

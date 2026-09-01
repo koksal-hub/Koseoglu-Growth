@@ -1,13 +1,23 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T22:25:00+03:00
-last_actor: Codex (Issue #37 provider onboarding gate)
+last_update: 2026-09-01T23:10:00+03:00
+last_actor: Codex (Issue #39 SEO/GEO visibility contract)
 
-CURRENT PHASE: PHASE 8G PROVIDER OAUTH ONBOARDING / PILOT APPROVAL GATE
-ACTIVE ISSUE: #37 — Provider OAuth onboarding and pilot approval gate
-ACTIVE BRANCH: `codex/phase8g-provider-onboarding-gate-v1` (`main` `1ea5883` tabanı)
+CURRENT PHASE: PHASE 8H SEO/GEO VISIBILITY ASSET CONTRACT (SAFE MODE)
+ACTIVE ISSUE: #39 — SEO/GEO visibility asset contract
+ACTIVE BRANCH: `codex/phase8h-seo-geo-visibility-v1` (`origin/main` `5dc0cf2` tabanı)
 
 ## Uygulanan dar kapsam
+
+- SEO/GEO için credential-free `SearchVisibilityAsset` modeli ve additive migration
+  eklendi. Canonical URL yalnız HTTPS, credential/query/fragment olmadan kabul
+  edilir; title/description/intent/structured-data product guardrail'ları bounded
+  ve versioned receipt ile saklanır.
+- Private visibility API'si asset create/list, idempotent assetKey reuse, review,
+  bağımsız approval ve readiness uçlarını sunar. `DRAFT → IN_REVIEW → APPROVED`
+  geçişi zorunludur; provider/indexing kanıtı `NOT_RUN`, execution disabled kalır.
+- SEO/GEO katmanı canlı search API, crawler, Search Console, analytics veya AI
+  provider çağrısı yapmaz; ham web sayfa içeriğini DB'ye kopyalamaz.
 
 - Gerçek müşteri alıcısı veya serbest içerik kabul etmeyen Resend test-simulation
   adapter'i eklendi. Yalnız provider'ın sabit test adresleri ve sabit sentetik
@@ -91,6 +101,16 @@ ACTIVE BRANCH: `codex/phase8g-provider-onboarding-gate-v1` (`main` `1ea5883` tab
 
 ## Taze yerel kanıt
 
+- `prisma validate`: PASS
+- `prisma generate`: PASS
+- `pnpm run lint`: PASS
+- `pnpm run typecheck`: PASS
+- `pnpm --filter @growth/api run build`: PASS
+- `git diff --check`: PASS
+- Phase 8H focused Vitest: NOT_RUN — OneDrive worktree/esbuild reparse-point erişim
+  hatası; Docker/DB integration kanıtı da bu checkout'ta mevcut değil. CI kapısı
+  yeniden doğrulamalıdır.
+
 - `pnpm lint`: PASS
 - `pnpm typecheck`: PASS
 - Odaklı testler: PASS — 31/31; Phase 5 dosyası 17/17
@@ -155,8 +175,9 @@ ACTIVE BRANCH: `codex/phase8g-provider-onboarding-gate-v1` (`main` `1ea5883` tab
   public-page snapshot'ını deterministic olarak işler. Bu aşamada AI çağrısı yoktur.
 - Gerçek müşteriye/potansiyel müşteriye e-posta gönderilmedi; telefon veya sosyal
   medya hesabına dış aksiyon alınmadı.
-- Authentication/authorization hâlâ yoktur. Business API'leri private/local
-  geliştirme sınırındadır; public veya multi-user deploy edilemez.
+- Internal API auth boundary vardır: production'da `GROWTH_INTERNAL_API_KEY` zorunlu,
+  business route'lar `x-api-key` ile korunur; bu kullanıcı/rol/SSO sistemi değildir
+  ve public veya multi-user deploy için yeterli sayılmaz.
 - `Reply` yalnız ilerideki metadata sözleşmesi için ayrılmıştır; inbound reply
   işleme Phase 5'te özellikle kapalıdır.
 - Bilinen non-blocking borçlar: Vite 5 CJS Node API uyarısı ve beklenen 4xx
@@ -170,7 +191,8 @@ ACTIVE BRANCH: `codex/phase8g-provider-onboarding-gate-v1` (`main` `1ea5883` tab
 
 ## Sonraki adım
 
-Issue #37 için kullanıcıdan seçili provider/pilot hesap, scope, secret-manager ve
+Issue #39 için CI ve fresh disposable migration kanıtı bekleniyor. Ardından Issue
+#37 için kullanıcıdan seçili provider/pilot hesap, exact scope, secret-manager ve
 sandbox/paper onayı gerekir. Bu kanıt gelene kadar gerçek OAuth/token refresh,
-medya yükleme, sosyal yayın/DM, AI çağrısı, Resend API çağrısı, müşteri gönderimi
-ve inbound reply kapsam dışıdır.
+medya yükleme, sosyal yayın/DM, search/indexing API, AI çağrısı, Resend API çağrısı,
+müşteri gönderimi ve inbound reply kapsam dışıdır.

@@ -346,6 +346,19 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
   - [ ] Sandbox/paper adapter contract testleri ve rollback/delivery monitor hazır
   - [ ] Ayrı go-live kararı olmadan live publish/DM/customer contact disabled
 
+--- Issue #39 — SEO/GEO Visibility Asset Contract (Phase 8H) ---
+- Öncelik: HIGH / RISK B
+- Sorumlu: Codex
+- Durum: IN_PROGRESS (safe mode; provider/search execution disabled)
+- Bağımlılıklar: Phase 8 sosyal güvenlik/auth sınırları; dış provider için ayrıca explicit approval
+- Acceptance criteria:
+  - [ ] HTTPS canonical URL, locale, title/description ve target intent validator'ı
+  - [ ] Credential-shaped structured metadata ve query/tracking URL reddi
+  - [ ] Additive `SearchVisibilityAsset` migration ve idempotent assetKey sözleşmesi
+  - [ ] `DRAFT → IN_REVIEW → APPROVED` ve author != reviewer guard'ı
+  - [ ] Readiness açıkça `NOT_RUN` / execution disabled döner; search provider çağrısı yok
+  - [ ] Lint, typecheck, focused tests, build ve CI kanıtı
+
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
 ================================================================
