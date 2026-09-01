@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Prisma, type Company } from '@prisma/client';
 import { prisma } from '../src/lib/prisma';
+import { ActivityValidationError, createActivity } from '../src/lib/activity';
 
 // Integration tests against a real Postgres database (docker/docker-compose.yml).
 // Every record created here uses a run-unique marker and is deleted in
@@ -32,7 +33,14 @@ describe('Prisma data foundation models', () => {
     await prisma.evidence.deleteMany({ where: { companyId: { in: companyIds } } });
     await prisma.event.deleteMany({ where: { entityId: { in: companyIds } } });
     await prisma.followUp.deleteMany({ where: { lead: { companyId: { in: companyIds } } } });
-    await prisma.activity.deleteMany({ where: { lead: { companyId: { in: companyIds } } } });
+    await prisma.activity.deleteMany({
+      where: {
+        OR: [
+          { lead: { companyId: { in: companyIds } } },
+          { contact: { companyId: { in: companyIds } } }
+        ]
+      }
+    });
     await prisma.opportunity.deleteMany({ where: { companyId: { in: companyIds } } });
     await prisma.lead.deleteMany({ where: { companyId: { in: companyIds } } });
     await prisma.contact.deleteMany({ where: { companyId: { in: companyIds } } });
@@ -228,5 +236,94 @@ describe('Prisma data foundation models', () => {
       include: { mergedFrom: true }
     });
     expect(canonicalWithMerges.mergedFrom.map((c) => c.id)).toContain(duplicate.id);
+  });
+
+  it('rejects an Activity with neither leadId nor contactId (helper + DB CHECK constraint)', async () => {
+    // Application layer: createActivity fails fast with a validation error.
+    await expect(createActivity({ type: 'NOTE', note: 'orphan activity' })).rejects.toThrow(
+      ActivityValidationError
+    );
+
+    // Defense in depth: writing directly via Prisma is rejected by the
+    // "Activity_lead_or_contact_required" CHECK constraint in Postgres.
+    await expect(
+      prisma.activity.create({ data: { type: 'NOTE', note: 'orphan activity' } })
+    ).rejects.toThrow();
+  });
+
+  it('creates an Activity through createActivity when a contact is referenced', async () => {
+    const company = await createTestCompany({
+      name: `Helper Co ${RUN_ID}`,
+      normalizedName: `HELPER CO ${RUN_ID}`,
+      domain: `helper-co-${RUN_ID}.example.com`
+    });
+    const contact = await prisma.contact.create({
+      data: { companyId: company.id, fullName: 'Helper Contact', email: `helper-${RUN_ID}@example.com` }
+    });
+
+    const activity = await createActivity({ type: 'NOTE', contactId: contact.id, note: 'via helper' });
+    expect(activity.contactId).toBe(contact.id);
+  });
+
+  it('rejects Company.confidence values outside 0..1 (DB CHECK constraint)', async () => {
+    await expect(
+      createTestCompany({
+        name: `Overconfident ${RUN_ID}`,
+        normalizedName: `OVERCONFIDENT ${RUN_ID}`,
+        domain: `overconfident-${RUN_ID}.example.com`,
+        confidence: 1.5
+      })
+    ).rejects.toThrow();
+
+    await expect(
+      createTestCompany({
+        name: `Underconfident ${RUN_ID}`,
+        normalizedName: `UNDERCONFIDENT ${RUN_ID}`,
+        domain: `underconfident-${RUN_ID}.example.com`,
+        confidence: -1
+      })
+    ).rejects.toThrow();
+  });
+
+  it('rejects Evidence.confidence values outside 0..1 (DB CHECK constraint)', async () => {
+    const company = await createTestCompany({
+      name: `Evidence Range Co ${RUN_ID}`,
+      normalizedName: `EVIDENCE RANGE CO ${RUN_ID}`,
+      domain: `evidence-range-${RUN_ID}.example.com`
+    });
+
+    await expect(
+      prisma.evidence.create({
+        data: {
+          companyId: company.id,
+          sourceUrl: `https://example.com/range-${RUN_ID}`,
+          summary: 'out of range confidence',
+          confidence: 1.5
+        }
+      })
+    ).rejects.toThrow();
+  });
+
+  it('allows multiple Contacts with NULL email in the same company (documented edge case)', async () => {
+    // Postgres treats NULLs as distinct in unique indexes, so the
+    // @@unique([companyId, email]) constraint does NOT apply to contacts
+    // without an email. This test pins down that (intentional) behavior —
+    // see the NOTE on the Contact model in prisma/schema.prisma.
+    const company = await createTestCompany({
+      name: `Null Email Co ${RUN_ID}`,
+      normalizedName: `NULL EMAIL CO ${RUN_ID}`,
+      domain: `null-email-${RUN_ID}.example.com`
+    });
+
+    await prisma.contact.create({
+      data: { companyId: company.id, fullName: 'No Email One' }
+    });
+    await prisma.contact.create({
+      data: { companyId: company.id, fullName: 'No Email Two' }
+    });
+
+    const contacts = await prisma.contact.findMany({ where: { companyId: company.id } });
+    expect(contacts).toHaveLength(2);
+    expect(contacts.every((c) => c.email === null)).toBe(true);
   });
 });

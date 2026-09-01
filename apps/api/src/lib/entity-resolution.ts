@@ -113,6 +113,46 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   return hasPlus ? `+${digits}` : digits;
 }
 
+/**
+ * Free/generic email providers whose domain identifies a person, not a
+ * company. Two companies whose contacts both use e.g. gmail.com addresses
+ * are NOT the same company, so EMAIL_DOMAIN matching must skip these.
+ */
+const FREE_EMAIL_PROVIDERS = new Set([
+  'gmail.com',
+  'googlemail.com',
+  'hotmail.com',
+  'hotmail.com.tr',
+  'outlook.com',
+  'outlook.com.tr',
+  'live.com',
+  'msn.com',
+  'yahoo.com',
+  'yahoo.com.tr',
+  'ymail.com',
+  'icloud.com',
+  'me.com',
+  'mac.com',
+  'aol.com',
+  'proton.me',
+  'protonmail.com',
+  'yandex.com',
+  'yandex.com.tr',
+  'yandex.ru',
+  'mail.com',
+  'gmx.com',
+  'gmx.net',
+  'zoho.com',
+  'mynet.com',
+  'superonline.com'
+]);
+
+/** True when the (normalized) domain belongs to a free/generic email provider. */
+export function isFreeEmailProvider(domain: string | null | undefined): boolean {
+  const normalized = normalizeDomain(domain);
+  return normalized !== null && FREE_EMAIL_PROVIDERS.has(normalized);
+}
+
 function normalizeAddress(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const value = raw.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -188,8 +228,16 @@ export type CompanyMatchResult = {
 
 /**
  * Deterministic duplicate-company lookup, checked in priority order:
- * tax number -> domain -> phone -> email domain -> address ->
+ * tax number -> domain -> email domain -> address -> phone ->
  * normalized name -> fuzzy name similarity -> (AI, not implemented here).
+ *
+ * EMAIL_DOMAIN matching is skipped for free/generic providers (gmail.com,
+ * hotmail.com, ...) — those domains identify a person, not a company.
+ *
+ * PHONE is deliberately a low-confidence supporting signal (0.5), not a
+ * high-confidence identifier: shared switchboard/reception numbers (e.g. an
+ * office building or a holding's central line) can be listed by multiple
+ * distinct companies, so a phone match alone must not merge records.
  *
  * Returns the first/strongest match found, or null if `input` looks like a
  * genuinely new company.
@@ -215,12 +263,7 @@ export function findDuplicateCompany(
     if (match) return { candidate: match, reason: 'DOMAIN', confidence: 0.95 };
   }
 
-  if (phone) {
-    const match = existing.find((c) => normalizePhone(c.phone) === phone);
-    if (match) return { candidate: match, reason: 'PHONE', confidence: 0.85 };
-  }
-
-  if (emailDomain) {
+  if (emailDomain && !isFreeEmailProvider(emailDomain)) {
     const match = existing.find((c) => normalizeDomain(c.emailDomain) === emailDomain);
     if (match) return { candidate: match, reason: 'EMAIL_DOMAIN', confidence: 0.8 };
   }
@@ -228,6 +271,12 @@ export function findDuplicateCompany(
   if (address) {
     const match = existing.find((c) => normalizeAddress(c.address) === address);
     if (match) return { candidate: match, reason: 'ADDRESS', confidence: 0.7 };
+  }
+
+  // Supporting signal only — see the shared-switchboard caveat above.
+  if (phone) {
+    const match = existing.find((c) => normalizePhone(c.phone) === phone);
+    if (match) return { candidate: match, reason: 'PHONE', confidence: 0.5 };
   }
 
   if (normalizedName) {
