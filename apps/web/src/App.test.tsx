@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 import App from './App';
+
+afterEach(() => cleanup());
 
 describe('App', () => {
   it('renders the application heading', () => {
