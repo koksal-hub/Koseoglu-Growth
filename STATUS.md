@@ -1,11 +1,11 @@
 STATUS — Kısa, güncel durum (master ajanın okuması için)
 
-last_update: 2026-09-01T09:12:00+03:00
-last_actor: Codex (Aşama 2 ContactPoint / permission gate)
+last_update: 2026-09-01T09:17:00+03:00
+last_actor: Codex (Aşama 2 ContactPoint / permission gate kapanışı)
 
 CURRENT PHASE: PHASE 2 — DISCOVERY / VERIFICATION
-ACTIVE ISSUE: Issue #8 — ContactPoint, permission ve suppression gate
-ACTIVE BRANCH: codex/contact-point-v1 (yerel doğrulama)
+ACTIVE ISSUE: Issue #8 — DONE; sıradaki Phase 3 ranking/Daily Action Issue'u henüz açılmadı
+ACTIVE BRANCH: main (`4272840`); dokümantasyon senkronu ayrı PR'da
 
 CURRENT CODEX CHECKPOINT (2026-09-01):
 - Research Mission ilk dikey dilimi PR #7 CI PASS sonrası `main` üzerine
@@ -28,6 +28,10 @@ CURRENT CODEX CHECKPOINT (2026-09-01):
   savunması eklendi. `growth_contact_point_v1_final2_20260901` adlı yeni boş
   DB'ye dört migration sıfırdan uygulandı; schema up to date. Odaklı API/DB
   regresyonları 26/26 PASS; tam suite 97/97 ve API+web build PASS.
+- Kod commit'i `8c35d65` olarak push edildi. PR #9, GitHub Actions run
+  `33476774205` içindeki migration/lint/typecheck/test/build ve cleanup
+  adımlarının tamamı SUCCESS olduktan sonra beklenen head SHA kilidiyle
+  squash-merge edildi. `main` HEAD `4272840`; Issue #8 completed olarak kapandı.
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
@@ -110,13 +114,13 @@ CURRENT QUALITY STATUS (gerçek, doğrulanmış — bu branch):
   ContactPoint/CommunicationPermission/SuppressionEntry/Phase2 Event sayıları 0
 - docker compose up (db+migrate+api): PASS, health/ready 200, SIGTERM'de
   graceful shutdown exit 0
-- GitHub Actions CI: BU BRANCH İÇİN BEKLENİYOR (PR #7 run `33474733845` PASS ve merge)
+- GitHub Actions CI: PASS — PR #9 run `33476774205`, tüm job adımları SUCCESS
 - Uçtan uca test (Devin testing agent): PASS — health/ready + DB kesinti/
   geri dönüş, SIGTERM graceful shutdown (exit 0), helmet/rate-limit/CORS,
   DB CHECK kısıtları, web + /api dev proxy, lang="tr". Detay: PR #5 yorumu.
 
 OPEN BLOCKERS:
-- Kod/yerel kalite blocker'ı yok. GitHub PR/CI henüz oluşturulmadı.
+- Aşama 2 kod/yerel kalite/CI blocker'ı yok; PR #9 merge edildi.
 - Authentication/authorization hâlâ yoktur. ContactPoint ve permission API'leri
   yalnız private/local geliştirme içindir; public veya multi-user deploy edilemez.
 - Bilinen, bu dilimi bloklamayan teknik borç: Vite 5 CJS Node API deprecation
@@ -124,10 +128,9 @@ OPEN BLOCKERS:
   error seviyesinde `Unhandled error` diye loglaması. ERRORS.md içinde açıkça kayıtlıdır.
 
 NEXT ACTION:
-- Issue #8 branch'ini exact-file commit/push et, PR aç, CI/head/mergeability
-  kontrolü sonrası merge et.
-- Gerçek gönderim, müşteri iletişimi veya public deploy yapma. Sonraki ürün dilimi
-  şeffaf ranking + Daily Action API'dir.
+- Önce Phase 3 için şeffaf ranking + Daily Action API Issue/scope/acceptance
+  criteria oluştur; sonra `main` tabanlı ayrı branch/worktree'de uygula.
+- Gerçek gönderim, müşteri iletişimi veya public deploy yapma.
 
 notes:
 - Her ajan bu dosyayı okuyup iş devralmalıdır. Değişiklik yapmadan önce TASKS.md
