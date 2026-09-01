@@ -269,3 +269,20 @@ oluşturulmaz.
   test PASS (46/46) ve build PASS. Kullanıcı 2026-09-01'de commit/push ve
   CI başarılıysa PR #5 merge işlemini onayladı; uzak CI/merge sonucu STATUS.md
   içinde ayrıca kaydedilecektir.
+
+---
+
+- id: pino-fastify-major-surum-uyusmazligi
+- tarih: 2026-09-01T08:11:56+03:00
+- yer: apps/api/package.json, apps/api/test/logger.test.ts
+- kısa: Gerçek redaction testi eklenince typecheck, doğrudan `pino` v8 tipi ile
+  Fastify logger sözleşmesinin kullandığı Pino v9 tipinin uyuşmadığını gösterdi.
+- detay: `TS2345: FastifyLoggerOptions & PinoLoggerOptions is not assignable to
+  LoggerOptions`; hata iki ayrı `pino@8.21.0` ve `pino@9.14.0` tip yolunu gösterdi.
+- root_cause: API doğrudan `pino: ^8.17.0` bildirirken güncel Fastify bağımlılık
+  ağacı Pino v9 tiplerini kullanıyordu. Böylece test logger'ı ile sunucu logger'ı
+  aynı major sözleşmeyi paylaşmıyordu.
+- düzeltme: Doğrudan bağımlılık `pino: ^9.14.0` olarak hizalandı ve kilit dosyası
+  yenilendi. Gerçek JSON log çıktısı üzerinde dört hassas başlığın maskelenmesi
+  regresyon testiyle doğrulandı.
+- status: FIXED LOCALLY. lint/typecheck/test (56/56)/build PASS; GitHub CI bekleniyor.

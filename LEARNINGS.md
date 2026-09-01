@@ -214,3 +214,15 @@ teknik bilgi yazılır.
   Migration ve entegrasyon testleri o branch'in migrationlarıyla sıfırdan
   hazırlanmış izole DB üzerinde çalıştırılmalı; yeşil CI veya ortak dev DB tek
   başına başka worktree için kanıt sayılmamalı.
+
+- tarih: 2026-09-01T08:11:56+03:00
+- konu: Güvenlik ayarının varlığı, güvenlik davranışının kanıtı değildir
+- açıklama: Logger testinde yalnız redaction path listesini kontrol etmek,
+  gerçek serializer'ın path söz dizimini uyguladığını veya sırları çıktıda
+  kaldırdığını kanıtlamıyordu. Ayrıca doğrudan Pino ile Fastify'nin Pino major
+  sürümleri ayrışmıştı; davranış testi bu tip ayrışmasını görünür yaptı.
+- etkisi: Secret-redaction gibi güvenlik sözleşmeleri gerçek serileştirilmiş
+  çıktıda negatif assertion ile doğrulanmalı; framework ile doğrudan logger
+  bağımlılıkları aynı major sürümde tutulmalı. Dışarıdan taşınan correlation id
+  değerleri log enjeksiyonu ve kaynak tüketimi riskine karşı karakter ve uzunluk
+  sınırından geçirilmelidir.

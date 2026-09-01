@@ -48,8 +48,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #2 — Data Models (Phase 1) ---
 - Öncelik: HIGH
 - Sorumlu: Claude Code / Codex review
-- Durum: IN_PROGRESS (schema + entity resolution + testler lokalde PASS;
-  CI PASS doğrulanınca DONE)
+- Durum: DONE (PR #5 CI PASS sonrası `main` üzerine merge edildi; Issue #2 kapatıldı)
 - Bağımlılıklar: Issue #1 DONE olmalı (DONE — CI PASS ile doğrulandı)
 - Acceptance criteria:
   - [x] Prisma şemasına çekirdek modeller eklendi: Company, Contact, Lead,
@@ -63,13 +62,12 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
     address → normalized name → similarity), 22 unit test ile doğrulandı
   - [x] Event Store: Event modeli (entityType/entityId polimorfik referans,
     metadata JSON) + Evidence modeli (Company/Lead/Event ile ilişkili)
-  - [ ] GitHub Actions CI PASS (Postgres servisiyle) — bekleniyor, bkz.
-    STATUS.md
+  - [x] GitHub Actions CI PASS (Postgres servisiyle)
 
 --- Issue #2b — Phase 0/1 Hardening (Öncelik 0-4 kapanış planı) ---
 - Öncelik: HIGH
 - Sorumlu: Devin
-- Durum: REVIEW (PR #5 açık, CI PASS — merge bekliyor)
+- Durum: DONE (PR #5 merge commit `8a6e2ec`)
 - Bağımlılıklar: Issue #2
 - Acceptance criteria:
   - [x] `.github/workflows/ci.yml` repoda mevcut (Postgres service +
@@ -97,6 +95,19 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 - NOT: İyileştirme maddeleri (22-26: central logging, ER ölçeklenebilirlik,
   hata sözleşmesi + metrics, coverage threshold, frontend MVP) ayrı
   PR'larda ele alınacak.
+
+--- İyileştirme 22 — Central Logging ---
+- Öncelik: HIGH
+- Sorumlu: Codex review
+- Durum: REVIEW (PR #6; yerel kapılar PASS, push/CI bekleniyor)
+- Bağımlılıklar: Issue #2 DONE
+- Acceptance criteria:
+  - [x] Her istekte correlation id var ve response `x-request-id` başlığında dönüyor
+  - [x] Dış request id yalnız sınırlı, log-safe sözleşmeyi sağlarsa kabul ediliyor
+  - [x] Authorization, cookie, x-api-key ve set-cookie gerçek log çıktısında maskeleniyor
+  - [x] Pino doğrudan bağımlılığı Fastify logger tipiyle aynı major sürümde
+  - [x] İzole DB üzerinde lint/typecheck/test (56/56)/build PASS
+  - [ ] GitHub Actions CI PASS ve PR #6 merge
 
 --- Issue #3 — Research / Verification / Evidence (Phase 2) ---
 - Öncelik: MEDIUM
