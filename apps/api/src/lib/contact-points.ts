@@ -103,6 +103,8 @@ const contactPointInclude = {
   permissions: { orderBy: [{ checkedAt: 'desc' as const }, { createdAt: 'desc' as const }] }
 };
 
+type ContactPointDatabase = Prisma.TransactionClient | typeof prisma;
+
 export function normalizeContactPointValue(type: ContactPointType, raw: string): string {
   if (type === 'EMAIL') {
     const email = normalizeEmail(raw);
@@ -154,8 +156,8 @@ function supportsChannel(type: ContactPointType, channel: CommunicationChannel):
   return type === 'EMAIL' ? channel === 'EMAIL' : channel !== 'EMAIL';
 }
 
-export async function getContactPoint(id: string) {
-  const contactPoint = await prisma.contactPoint.findUnique({ where: { id }, include: contactPointInclude });
+export async function getContactPoint(id: string, database: ContactPointDatabase = prisma) {
+  const contactPoint = await database.contactPoint.findUnique({ where: { id }, include: contactPointInclude });
   if (!contactPoint) throw new ContactPolicyError(404, 'Contact point not found');
   return contactPoint;
 }
@@ -330,6 +332,11 @@ export async function recordCommunicationPermission(input: RecordPermissionInput
   const recipientHash = buildRecipientHash(input.channel, contactPoint.normalizedValue);
 
   const permissionId = await prisma.$transaction(async (tx) => {
+    // Approval decisions take the same row lock before re-evaluating the gate.
+    // This prevents an application-path opt-out from racing an approval.
+    await tx.$queryRaw(
+      Prisma.sql`SELECT "id" FROM "ContactPoint" WHERE "id" = ${input.contactPointId} FOR UPDATE`
+    );
     const permission = await tx.communicationPermission.create({
       data: {
         contactPointId: input.contactPointId,
@@ -396,9 +403,12 @@ export async function recordCommunicationPermission(input: RecordPermissionInput
   return prisma.communicationPermission.findUniqueOrThrow({ where: { id: permissionId } });
 }
 
-export async function evaluateCommunicationGate(input: CommunicationGateInput) {
+export async function evaluateCommunicationGate(
+  input: CommunicationGateInput,
+  database: ContactPointDatabase = prisma
+) {
   const evaluatedAt = input.evaluatedAt ?? new Date();
-  const contactPoint = await getContactPoint(input.contactPointId);
+  const contactPoint = await getContactPoint(input.contactPointId, database);
   const reasons: string[] = [];
 
   if (!supportsChannel(contactPoint.type, input.channel)) reasons.push('CHANNEL_MISMATCH');
@@ -416,7 +426,7 @@ export async function evaluateCommunicationGate(input: CommunicationGateInput) {
   }
 
   const recipientHash = buildRecipientHash(input.channel, contactPoint.normalizedValue);
-  const globalSuppression = await prisma.suppressionEntry.findUnique({
+  const globalSuppression = await database.suppressionEntry.findUnique({
     where: { channel_recipientHash: { channel: input.channel, recipientHash } }
   });
   if (globalSuppression) reasons.push('GLOBAL_SUPPRESSION');

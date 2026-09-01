@@ -389,3 +389,43 @@ oluşturulmaz.
   okunmadan genel bir status değeri varsaymıştı; ranking uygulama yolu çalışmıyordu.
 - düzeltme: Non-rankable fixture kanonik `ARCHIVED` durumuna çevrildi.
 - status: FIXED. Sonraki odaklı koşular 9/9 ve tam suite 106/106 PASS.
+
+---
+
+- id: outreach-baseline-sandbox-and-postinstall-environment
+- tarih: 2026-09-01T09:57:00+03:00
+- yer: yeni `codex/outreach-draft-v1` worktree baseline doğrulaması
+- kısa: İlk sandbox koşusunda `pnpm exec prisma` store erişimi nedeniyle
+  çözülemedi; Vitest/Vite üst dizin okumasında erişim reddi verdi. Önceki docs
+  worktree kurulumunda da `DATABASE_URL` olmadan Prisma postinstall durmuştu.
+- root_cause: Yeni worktree dependency linkleri kullanıcı pnpm store'una ve
+  Prisma config zorunlu DB URL'sine bağlı; sandbox bu yolları okuyamadı.
+- düzeltme: Secret kopyalamadan disposable yerel DB URL'si process env olarak
+  verildi ve aynı baseline komutları gerekli dosya erişimiyle yeniden çalıştırıldı.
+- status: RESOLVED ENVIRONMENTALLY. Değişiklik öncesi 5 migration, lint,
+  typecheck, 106/106 test ve iki build PASS; ilk başarısız koşu PASS sayılmadı.
+
+---
+
+- id: outreach-test-invalid-email-fixture
+- tarih: 2026-09-01T10:08:00+03:00
+- yer: apps/api/test/outreach-drafts.test.ts ilk odaklı koşu
+- kısa: İlk Aşama 4 odaklı koşu 0/10 oldu; tüm testler akışa girmeden fixture
+  e-posta local-part'ındaki boşluk nedeniyle contact validation'da durdu.
+- root_cause: İnsan-okunur test etiketi doğrudan e-posta adresine eklenmişti.
+- düzeltme: Fixture etiketi yalnız `[a-z0-9-]` local-part biçimine normalize edildi.
+- status: FIXED. Sonraki odaklı koşular 10/10, final tam suite 116/116 PASS.
+
+---
+
+- id: outreach-interactive-transaction-relation-read-warning
+- tarih: 2026-09-01T10:10:00+03:00
+- yer: apps/api/src/lib/outreach-drafts.ts mutation transaction projection
+- kısa: İlk geçen odaklı koşuda pg, aynı client üzerinde devam eden query varken
+  ikinci query çağrısının pg 9'da kaldırılacağı deprecation uyarısını verdi.
+- root_cause: Mutation transaction içinde çok ilişkili `include` projection'ı
+  Prisma adapter tarafından aynı bağlantıda paralel relation okumalarına ayrıldı.
+- düzeltme: Mutation yolu Draft ve revision'ları aynı transaction içinde ardışık
+  sorgularla okuyor; zengin response projection commit sonrasında yapılıyor.
+- status: FIXED. Sonraki lint/typecheck ve 10/10 odaklı koşuda uyarı tekrar etmedi;
+  final 116/116 suite ve build PASS.
