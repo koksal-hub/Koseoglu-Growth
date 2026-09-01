@@ -1,13 +1,29 @@
 STATUS — Kısa, güncel durum (master ajanın okuması için)
 
-last_update: 2026-08-14T00:15:00+03:00
-last_actor: Devin (Phase 0/1 Hardening — Öncelik 0-4 kapanış planı)
+last_update: 2026-09-01T07:56:25+03:00
+last_actor: Codex (PR #5 bağımsız doğrulama ve test DB izolasyonu)
 
 CURRENT PHASE: PHASE 1 — DATA FOUNDATION (hardening)
 ACTIVE ISSUE: Phase 0/1 sağlamlaştırma (Köksal'ın önceliklendirilmiş kapanış
 planı; Faz 2+ iş akışları bilinçli olarak kapsam dışı)
 ACTIVE BRANCH: devin/1786664161-phase01-hardening (PR #5:
 https://github.com/koksal-hub/Koseoglu-Growth/pull/5)
+
+CURRENT CODEX CHECKPOINT (2026-09-01):
+- PR #5 head `897e111` ayrı detached review worktree'sinde doğrulanıyor;
+  kullanıcının `agents/system-resource-versions-report` worktree'si değişmedi.
+- GitHub Actions run `31755637266`: PASS; PR #5 hâlâ açık ve merge edilmemiş.
+- İlk yerel tekrar ortak `growth_db` üzerinde 43/44 FAIL verdi. Kök neden
+  başka branch'ten uygulanmış, PR #5 ağacında bulunmayan domain-index migrationı
+  nedeniyle worktree'ler arası schema drift idi.
+- `vitest.config.ts` artık `TEST_DATABASE_URL` ile worktree'ye özel izole DB
+  seçebiliyor; `.env.example` güncellendi ve resolver regresyon testi eklendi.
+- PR #5'in iki migrationı `growth_phase01_review_20260901` test DB'sine
+  sıfırdan başarıyla uygulandı.
+- Güncel yerel kalite kanıtı: lint PASS; typecheck PASS; test PASS (46/46,
+  5 dosya); API + web build PASS. Bu yeni diff için GitHub CI henüz yoktur.
+- Kullanıcı 2026-09-01'de commit/push ve yeni CI başarılıysa PR #5 merge
+  işlemini açıkça onayladı. Uzak CI ve merge sonucu henüz bekleniyor.
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
