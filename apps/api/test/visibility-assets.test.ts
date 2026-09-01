@@ -38,7 +38,7 @@ describe('SEO/GEO visibility asset contract', () => {
     const first = validateVisibilityAsset(input);
     const second = validateVisibilityAsset(input);
     expect(first.contentHash).toBe(second.contentHash);
-    expect(first.canonicalUrl).toBe(input.canonicalUrl + '/');
+    expect(first.canonicalUrl).toBe(input.canonicalUrl);
     expect(first.validationReceipt).toMatchObject({ providerEvidence: 'NOT_RUN', indexingEvidence: 'NOT_RUN' });
   });
 
