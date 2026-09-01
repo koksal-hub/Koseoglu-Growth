@@ -383,3 +383,34 @@ Ham snapshot, e-posta adresi veya secret kalıcı audit verisi olarak çoğaltı
 çıkarılan candidate/company alanları insan kararı olmadan kanonik Company oluşturmaz.
 
 STATUS: ACCEPTED FOR DETERMINISTIC RESEARCH SLICE
+
+---
+
+## ADR-017 — Durable Internal Job Queue ve Crash Recovery
+
+DECISION: Phase 6 iç işler için PostgreSQL-backed `Job` modeli ve bounded
+in-process worker/scheduler kullanır. Her iş stable `idempotencyKey` ve canonical
+JSON `payloadHash` ile tekilleştirilir; aynı anahtarda type veya payload değişimi
+409 conflict'tir. Claim işlemi `FOR UPDATE SKIP LOCKED` ile atomiktir ve worker
+lease'i `lockedAt/lockedBy` ile tutulur. Hatalar exponential backoff ve
+`maxAttempts` sınırıyla retryable olur; limit aşımı `DEAD_LETTER`'a gider. Lease
+stale olduğunda attempt sayısı korunarak yeniden kuyruğa alınır veya dead-letter
+edilir.
+
+WHY: Scheduler/worker state'ini yalnız process memory'sinde tutmak crash sonrası
+iş kaybı ve duplicate execution riskini artırır. İdempotency conflict guard'ı,
+aynı anahtarın farklı payload ile sessizce yeniden kullanılmasını engeller;
+SKIP LOCKED paralel worker'ların aynı işi almasını önler. Retry ve dead-letter
+durumları insan incelemesi ve ölçülebilir operasyon için açık kalır.
+
+ALTERNATIVES: Sadece in-memory queue; row lock olmadan polling; sonsuz retry;
+başarısız işleri sessizce düşürmek; job handler'ını provider veya müşteri
+gönderimine doğrudan bağlamak.
+
+CONSEQUENCES: `payload` untrusted JSON olarak kalır ve kod çalıştırmaz. Handler
+registry deterministiktir; kayıtlı handler yoksa iş dış aksiyon almadan retry veya
+dead-letter olur. Bu faz gerçek e-posta, sosyal medya, telefon veya müşteri
+iletişimi çalıştırmaz. Queue gözlemlenebilirliği operasyonel Job state'inde,
+işletme audit'i ise append-only Event tablosunda tutulur.
+
+STATUS: ACCEPTED FOR INTERNAL WORK ONLY

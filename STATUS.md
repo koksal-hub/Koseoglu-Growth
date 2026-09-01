@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T20:27:49+03:00
-last_actor: Codex (Issue #3 deterministic discovery extraction)
+last_update: 2026-09-01T20:46:00+03:00
+last_actor: Codex (Issue #21 durable queue/worker)
 
-CURRENT PHASE: PHASE 2 RESEARCH EXTRACTION — CI/REVIEW GATE
-ACTIVE ISSUE: #3 — Research, Verification ve Evidence pipeline
-ACTIVE BRANCH: `codex/research-extraction-v2` (`main` `3991d33` tabanı)
+CURRENT PHASE: PHASE 6 QUEUE / WORKER / SCHEDULER — CI/REVIEW GATE
+ACTIVE ISSUE: #21 — Queue, worker, scheduler ve crash recovery
+ACTIVE BRANCH: `codex/phase6-queue-v1` (`main` `805fd45` tabanı)
 
 ## Uygulanan dar kapsam
 
@@ -39,18 +39,29 @@ ACTIVE BRANCH: `codex/research-extraction-v2` (`main` `3991d33` tabanı)
   çıkarır; kaynak metni çalıştırmaz veya ham içerik olarak saklamaz.
 - İkinci kaynak endpoint'i (`POST /research-candidates/:id/evidence`) yalnızca nihai
   karardan önce kanıt ekler. Kabul için en az iki farklı source origin zorunludur.
+- Additive `Job` modeli; stable idempotency key + canonical payload hash conflict guard,
+  `QUEUED → RUNNING → RETRYABLE_FAILED/SUCCEEDED/DEAD_LETTER` durumları ve DB check
+  constraint'leri eklendi.
+- `FOR UPDATE SKIP LOCKED` ile atomik claim, worker lease, stale crash recovery,
+  exponential backoff/max-attempts ve deterministic in-process handler registry
+  uygulandı. Handler yoksa iş yalnız retry/dead-letter olur; dış provider çağrısı yoktur.
 
 ## Taze yerel kanıt
 
 - `pnpm lint`: PASS
 - `pnpm typecheck`: PASS
 - Odaklı testler: PASS — 31/31; Phase 5 dosyası 17/17
-- Tam test paketi: PASS — 141/141, 12 dosya
+- Tam test paketi (Phase 5 baseline): PASS — 141/141, 12 dosya
+- Phase 6 sonrası tam test paketi: PASS — 147/147, 13 dosya
 - Prisma validate/generate: PASS
 - `pnpm build`: PASS — API + web production build
 - Baseline DB: 15 migration up to date; mevcut `Company` sayısı 1 olarak korundu
 - Fresh DB: `growth_research_extraction_test_20260901` sıfırdan 16/16 migration PASS;
   research activity kolonları ve `RESEARCH_EVIDENCE_ADDED` event tipi uygulandı.
+- Fresh DB: `growth_phase6_queue_test_20260901` sıfırdan 17/17 migration PASS; Job
+  tablosu, enum, unique idempotency index ve attempts/maxAttempts CHECK doğrulandı.
+- Phase 6 odaklı queue testleri: PASS — 6/6 (idempotency, concurrent SKIP LOCKED
+  claim, completion, retry/backoff, dead-letter, stale lease, handler tick).
 - Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
   migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
 - Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
@@ -86,7 +97,7 @@ ACTIVE BRANCH: `codex/research-extraction-v2` (`main` `3991d33` tabanı)
 
 ## Sonraki adım
 
-Issue #3 değişiklikleri için migration/lint/typecheck/test/build CI'sini, bağımsız
-güvenlik/veri incelemesini ve PR merge kapısını tamamla. Gerçek web crawler, AI çağrısı,
-Resend API çağrısı, müşteri gönderimi, inbound reply, auth/public deploy veya sosyal
-hesap yayını hâlâ kapsam dışıdır; bunlar ayrı faz ve onay gerektirir.
+Issue #21 için migration/lint/typecheck/test/build CI'sini ve PR merge kapısını
+tamamla. Gerçek web crawler, AI çağrısı, Resend API çağrısı, müşteri gönderimi,
+inbound reply, auth/public deploy veya sosyal hesap yayını hâlâ kapsam dışıdır;
+bunlar ayrı faz ve açık güvenlik/operasyon onayı gerektirir.
