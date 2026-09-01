@@ -68,6 +68,44 @@ enum JobStatus {
   DEAD_LETTER
 }
 
+enum SocialPlatform {
+  LINKEDIN
+  INSTAGRAM
+  FACEBOOK
+  X
+  THREADS
+  TIKTOK
+  YOUTUBE
+  GOOGLE_BUSINESS
+  PINTEREST
+}
+
+enum SocialConnectionStatus {
+  DISCONNECTED
+  CONNECTED
+  REAUTH_REQUIRED
+  REVOKED
+}
+
+enum SocialMasterContentStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  ARCHIVED
+}
+
+enum SocialContentVariantStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  DEAD_LETTER
+  CANCELLED
+}
+
 enum OpportunityStage {
   QUALIFICATION
   PROPOSAL
@@ -895,6 +933,72 @@ model ManagementReport {
 
   @@unique([reportDate, timezone])
   @@index([periodStart, periodEnd])
+}
+
+/// Credential-free social account metadata. `secretManagerRef` is only an
+/// opaque future reference; OAuth access/refresh tokens never enter Growth DB.
+model SocialConnection {
+  id               String                 @id @default(cuid())
+  platform         SocialPlatform
+  accountKey       String
+  accountLabel     String?
+  status           SocialConnectionStatus @default(DISCONNECTED)
+  secretManagerRef String?
+  scopes           Json?
+  tokenExpiresAt   DateTime?
+  lastValidatedAt  DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  @@unique([platform, accountKey])
+  @@index([platform, status])
+}
+
+/// One human-owned source of truth from which platform variants are derived.
+/// No provider call or automatic publication is implied by this record.
+model MasterContent {
+  id         String                     @id @default(cuid())
+  title      String
+  body       String
+  campaignKey String?
+  status     SocialMasterContentStatus  @default(DRAFT)
+  author     String
+  approvedBy String?
+  approvedAt DateTime?
+  variants   SocialContentVariant[]
+  createdAt  DateTime                   @default(now())
+  updatedAt  DateTime                   @updatedAt
+
+  @@index([status, createdAt])
+  @@index([campaignKey])
+}
+
+/// Platform-specific content and the future publish idempotency boundary.
+/// `mediaManifest` is metadata only; binaries and provider tokens stay out.
+model SocialContentVariant {
+  id               String                    @id @default(cuid())
+  masterContentId  String
+  masterContent    MasterContent             @relation(fields: [masterContentId], references: [id])
+  platform         SocialPlatform
+  body             String
+  mediaManifest    Json?
+  contentHash      String
+  policyVersion    String
+  validationReceipt Json
+  status           SocialContentVariantStatus @default(DRAFT)
+  author           String
+  approvedBy       String?
+  approvedAt       DateTime?
+  scheduledAt      DateTime?
+  publishedAt      DateTime?
+  providerPostId   String?
+  idempotencyKey   String                    @unique
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  @@unique([masterContentId, platform])
+  @@index([platform, status, scheduledAt])
+  @@index([contentHash])
 }
 
 /// A Growth sales opportunity. Not a MYLojistik operational record.

@@ -234,7 +234,8 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
 --- Issue #23 — Reporting, Observability ve Cost Attribution (Phase 7) ---
 - Öncelik: HIGH
 - Sorumlu: Codex
-- Durum: REVIEW (PR/CI merge kapısı bekleniyor)
+- Durum: DONE (PR #24 CI run `33541029393` PASS; squash merge `8e07273`;
+  Issue #23 kapalı)
 - Bağımlılıklar: Issue #21 DONE; auth/public deploy hâlâ kapsam dışı
 - Acceptance criteria:
   - [x] Europe/Istanbul günlük window ve additive idempotent `ManagementReport`
@@ -245,7 +246,22 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
   - [x] Receipt yoksa AI kullanımı `0`; provider/AI çağrısı başlatılmıyor
   - [x] Private management report endpoint'i ve invalid date/metadata reddi
   - [x] Fresh disposable DB 18/18 migration ve odaklı reporting 4/4 PASS
-  - [ ] Tam test/build, secret scan, PR CI PASS ve Issue #23 kapanışı
+  - [x] Tam test/build, secret scan, PR CI PASS ve Issue #23 kapanışı
+
+--- Issue #25 — Social Command Center Foundation (Phase 8A, safe/no provider) ---
+- Öncelik: HIGH / RISK C
+- Sorumlu: Codex
+- Durum: REVIEW (fresh DB/CI/merge kapısı bekleniyor)
+- Bağımlılıklar: Issue #23 DONE; gerçek OAuth veya publish için ayrıca açık onay
+- Acceptance criteria:
+  - [x] Dokuz hedef platform için enum ve credential-free SocialConnection metadata
+  - [x] MasterContent + platform-specific SocialContentVariant + stable publish key
+  - [x] Versioned deterministic content policy/hash/validation receipt
+  - [x] Human approval status transition ve author != reviewer guard
+  - [x] Provider-neutral adapter interface/registry; concrete network adapter yok
+  - [x] Credential-shaped media/scopes ve token değerleri reddediliyor
+  - [x] Local unit policy tests 5/5; lint/typecheck PASS
+  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #25 kapanışı
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
