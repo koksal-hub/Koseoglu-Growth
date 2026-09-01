@@ -26,6 +26,8 @@ vadede entegrasyon karmaşıklığı biraz artar, uzun vadede blast radius küç
 
 STATUS: ACCEPTED
 
+---
+
 ## ADR-002 — GitHub Tek Doğruluk Kaynağı
 
 DECISION: Proje durumu, görev kuyruğu ve karar geçmişi GitHub üzerinden
@@ -245,5 +247,35 @@ iletişim için yalnız açık rıza + explicit-consent receipt ALLOWED olabilir
 Türkiye'ye özgü tacir/esnaf istisnası başka ülke kararında kullanılamaz.
 Mevcut gate yalnız dry-run'dır ve gerçek gönderim yapmaz; ileride provider send
 işlemi eklenirse aynı kapı gönderim anında atomik olarak yeniden değerlendirilir.
+
+STATUS: ACCEPTED
+
+---
+
+## ADR-013 — Deterministik Ranking, Immutable Input Receipt ve Güvenli Next Action
+
+DECISION: Phase 3 ranking ilk sürümü LLM/ML kullanmaz. Beş ayrı 0–20 tamsayı
+bileşeni (ICP fit, company confidence, current evidence, verified contact,
+communication permission) sabit `deterministic-ranking-v1` algoritmasıyla toplanır.
+Her sonuç business policy version, normalize ICP bağlamı, evaluation zamanı,
+company input'u, evidence/contact/gate receipt'leri, reason code'ları ve SHA-256
+input hash'iyle immutable `CompanyRankingReceipt` olarak saklanır.
+
+WHY: Tek bir opak skor, hangi kanıtın kullanıldığını ve sonucun neden değiştiğini
+göstermez. Floating-point ağırlıklar DB'de exact toplamı zorlaştırır. Ayrıca yüksek
+puan, outreach veya send yetkisi değildir; veri eksikliği ve suppression güvenli
+aksiyon yönlendirmesine yansımalıdır.
+
+ALTERNATIVES: Kara kutu ML/LLM skoru; yalnız son skoru Company/Lead üzerinde
+mutasyona uğrayan alan olarak tutmak; permission durumunu ranking dışında bırakmak;
+skor hesaplanınca otomatik Lead veya outreach üretmek.
+
+CONSEQUENCES: DB her bileşeni 0..20, toplamı 0..100 ve toplam eşitliğini zorunlu
+kılar. Aynı kanonik input aynı hash/receipt'i idempotent döndürür. CURRENT, en çok
+90 günlük ve confidence >=0.7 evidence dışında hiçbir kanıt evidence puanı vermez.
+Public/unverified contact permission sayılmaz. Global suppression varsa terminal
+aksiyon `HONOR_SUPPRESSION` olur. En ileri durum dahi yalnız
+`READY_FOR_HUMAN_OUTREACH_REVIEW` üretir; Lead, draft, send veya dış servis çağrısı
+oluşmaz.
 
 STATUS: ACCEPTED

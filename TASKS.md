@@ -146,6 +146,23 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Tam lint/typecheck/test (97/97)/build ve güvenlik/veri taraması PASS
   - [x] GitHub Actions CI PASS ve PR #9 merge
 
+--- Issue #11 — Deterministic Ranking ve Daily Action API (Phase 3) ---
+- Öncelik: HIGH
+- Sorumlu: Codex
+- Durum: REVIEW (`codex/ranking-daily-action-v1`; yerel kapılar PASS, PR/CI bekleniyor)
+- Bağımlılıklar: Issue #8 DONE
+- Acceptance criteria:
+  - [x] Aynı kanonik input + policy version aynı input hash/score/receipt üretir
+  - [x] Beş bileşen 0..20, total 0..100 ve exact sum DB constraint ile korunur
+  - [x] Stale/unknown/low-confidence/future/90 günden eski evidence puan vermez
+  - [x] Public/unverified veya permission'sız contact outreach-ready sayılmaz
+  - [x] Global suppression terminal `HONOR_SUPPRESSION` aksiyonu üretir
+  - [x] Reason/evidence/contact/gate source-time receipt'i ve algorithm/policy version saklanır
+  - [x] Daily Action sonuçları score + deterministic name/id tie-breaker ile sıralanır
+  - [x] Otomatik Lead/Activity/Outreach/send/provider çağrısı yoktur
+  - [x] Temiz DB'de beş migration; Prisma/lint/typecheck; odaklı 9/9; tam 106/106; build PASS
+  - [ ] GitHub Actions CI PASS ve PR merge
+
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
 ================================================================

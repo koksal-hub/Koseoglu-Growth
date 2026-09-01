@@ -284,3 +284,19 @@ teknik bilgi yazılır.
 - etkisi: Bu aşama yalnız `actualSendPerformed=false` sonucu üretir. Gerçek send
   eklendiğinde gate, onay ve idempotent send yazımı aynı yürütme sınırında yeniden
   kontrol edilmelidir.
+
+- tarih: 2026-09-01T09:38:00+03:00
+- konu: Açıklanabilir ranking yalnız score breakdown değil, input receipt ister
+- açıklama: Aynı toplam puan farklı evidence, freshness veya permission
+  durumlarından gelebilir. Yalnız bileşen puanlarını saklamak sonucun neden
+  değiştiğini yeniden üretmeye yetmez.
+- etkisi: Ranking receipt algoritma/policy version, normalize context, company
+  input, source-time evidence ve contact/gate snapshot'ları ile input hash taşır;
+  aynı kanonik input idempotent aynı receipt'i döndürür.
+
+- tarih: 2026-09-01T09:38:00+03:00
+- konu: Suppression puanı düşürmekten öte terminal aksiyon değiştirmelidir
+- açıklama: Suppressed alıcıya `REVIEW_COMMUNICATION_PERMISSION` önermek gate'i
+  teknik olarak açmasa da operatöre izni yeniden arama yönünde yanlış sinyal verir.
+- etkisi: Global suppression/opt-out algılanınca next action doğrudan
+  `HONOR_SUPPRESSION` olur; yüksek diğer bileşenler bu yönlendirmeyi değiştiremez.
