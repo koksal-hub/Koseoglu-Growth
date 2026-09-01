@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T19:51:02+03:00
-last_actor: Codex (Aşama 5 PR/CI kanıtı ve merge-onay kapısı)
+last_update: 2026-09-01T20:05:02+03:00
+last_actor: Codex (Aşama 5 merge sonrası dokümantasyon senkronu)
 
-CURRENT PHASE: PHASE 5 PR/CI PASS — RISK C MERGE APPROVAL GATE
-ACTIVE ISSUE: #17 — Phase 5: Resend test sandbox, send attempts ve signed webhook receipts
-ACTIVE BRANCH: `codex/issue-17-email-sandbox` (`main` `edd492b` tabanı)
+CURRENT PHASE: PHASE 5 COMPLETE — POST-MERGE DOCUMENTATION SYNC
+ACTIVE ISSUE: #17 CLOSED — Phase 5 PR #18 main'e merge edildi
+ACTIVE BRANCH: `codex/issue-17-email-sandbox` (merge sonrası `main` `7c32841`)
 
 ## Uygulanan dar kapsam
 
@@ -54,8 +54,9 @@ ACTIVE BRANCH: `codex/issue-17-email-sandbox` (`main` `edd492b` tabanı)
 - İki bağımsız salt-okunur güvenlik/migration yeniden incelemesi: blocking
   kritik/yüksek/orta bulgu yok; düşük operasyonel riskler aşağıda açık
 - Final `git diff --check`: PASS; high-confidence secret-shaped literal taraması: PASS
-- Kod commit'i `eb00ac8`; PR #18 açık ve GitHub Actions run `33534095475`
-  migration/lint/typecheck/test/build adımlarının tamamında SUCCESS
+- Kod commit'i `eb00ac8`; PR #18 squash merge commit'i `7c328413262d130aca0b6e8ddaede873a051a42c`
+  olarak `main`'e alındı. GitHub Actions run `33534095475` migration/lint/typecheck/test/build
+  adımlarının tamamında SUCCESS verdi.
 
 ## Açık sınırlar
 
@@ -76,8 +77,8 @@ ACTIVE BRANCH: `codex/issue-17-email-sandbox` (`main` `edd492b` tabanı)
   operasyonel eşleşmesi ve inbound event aboneliğinin kapalı oluşu go-live'da ayrıca
   doğrulanmalıdır; stale recovery zamanı kullanıcı girdisine bağlanmamalıdır.
 
-## Sonraki tek adım
+## Sonraki adım
 
-Docs-only senkron commit'ini push edip PR #18'in yeni head CI sonucunu doğrula; Risk C
-gereği `main` merge öncesinde dur ve kullanıcıdan açık onay iste. Gerçek müşteri
-gönderimi bu merge onayına dahil değildir; ayrıca ve daha sonra açık onay gerektirir.
+Bu docs-only senkron PR'ı Phase 5 kayıtlarını merge sonrası gerçekle eşitler. Gerçek
+Resend API çağrısı, müşteri gönderimi, inbound reply, auth/public deploy veya sosyal
+hesap yayını hâlâ kapsam dışıdır; bunlar için ayrı plan ve açık onay gerekir.
