@@ -267,7 +267,8 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
 --- Issue #27 — Social Composer, Approval API ve Publish-Job Scheduling (Phase 8B) ---
 - Öncelik: HIGH / RISK C
 - Sorumlu: Codex
-- Durum: REVIEW (fresh DB/CI/merge kapısı bekleniyor)
+- Durum: DONE (PR #28 CI run `33543718681` PASS; squash merge `03b3374`;
+  Issue #27 kapalı)
 - Bağımlılıklar: Issue #25 DONE; gerçek provider/publish için ayrıca açık onay
 - Acceptance criteria:
   - [x] Private master content create/list ve review/approval endpoint'leri
@@ -277,9 +278,21 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
   - [x] Web composer MVP dokuz platform ve safe-mode sınırını gösterir
   - [x] API/web typecheck ve lint kanıtı; local DB kanıtı Docker yokluğu nedeniyle
     açıkça NOT_RUN
-  - [ ] Phase 8B UI/API unit testleri ve web build (OneDrive worktree erişim
-    hatası nedeniyle localde NOT_RUN; CI kapısı zorunlu)
-  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #27 kapanışı
+  - [x] Phase 8B UI/API unit testleri ve web build CI'da PASS (159 test)
+  - [x] Fresh DB migration, full test/build, CI PASS ve Issue #27 kapanışı
+
+--- Issue #29 — Social Connection Lifecycle ve Fail-Closed Publish Gate (Phase 8C) ---
+- Öncelik: HIGH / RISK C
+- Sorumlu: Codex
+- Durum: REVIEW (fresh DB/CI/merge kapısı bekleniyor)
+- Bağımlılıklar: Issue #27 DONE; gerçek provider/OAuth için ayrıca açık onay
+- Acceptance criteria:
+  - [x] Credential-free connection metadata create/list endpoint'leri
+  - [x] Kontrollü status transition; private route `CONNECTED` üretemez
+  - [x] Publish readiness bütün blocker'ları raporlar ve execution disabled iken
+    daima `ready: false` döner
+  - [x] Credential-shaped scopes/ref input persistence öncesi reddedilir
+  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #29 kapanışı
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)

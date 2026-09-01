@@ -6,10 +6,14 @@ import {
   createMasterContent,
   createSocialVariant,
   listMasterContent,
+  listSocialConnections,
+  evaluateSocialPublishReadiness,
   scheduleSocialVariant,
   SocialContentPolicyError,
   submitMasterForReview,
   submitVariantForReview,
+  transitionSocialConnection,
+  createSocialConnection,
 } from '../lib/social-content';
 
 const platformSchema = z.enum([
@@ -45,6 +49,16 @@ const createVariantSchema = z
 const reviewerSchema = z.object({ reviewedBy: actorSchema }).strict();
 const scheduleSchema = z.object({ scheduledAt: z.coerce.date() }).strict();
 const listQuerySchema = z.object({ limit: z.coerce.number().int().min(1).max(100).default(50) }).strict();
+const connectionStatusSchema = z.object({ status: z.enum(['DISCONNECTED', 'CONNECTED', 'REAUTH_REQUIRED', 'REVOKED']) }).strict();
+const createConnectionSchema = z
+  .object({
+    platform: platformSchema,
+    accountKey: actorSchema,
+    accountLabel: z.string().trim().min(1).max(200).optional(),
+    secretManagerRef: z.string().trim().min(1).max(200).optional(),
+    scopes: z.unknown().optional(),
+  })
+  .strict();
 
 function parse<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
@@ -63,6 +77,22 @@ const socialContentRoutes: FastifyPluginAsync = async (server) => {
   server.get('/social/master-content', async (request) => {
     const query = parse(listQuerySchema, request.query);
     return listMasterContent(query.limit);
+  });
+
+  server.post('/social/connections', async (request, reply) => {
+    const connection = await createSocialConnection(parse(createConnectionSchema, request.body));
+    return reply.status(201).send(connection);
+  });
+
+  server.get('/social/connections', async (request) => {
+    const query = parse(listQuerySchema, request.query);
+    return listSocialConnections(query.limit);
+  });
+
+  server.post('/social/connections/:id/status', async (request) => {
+    const { id } = parse(idParamsSchema, request.params);
+    const { status } = parse(connectionStatusSchema, request.body);
+    return transitionSocialConnection(id, status);
   });
 
   server.post('/social/master-content/:id/submit-review', async (request) => {
@@ -98,6 +128,11 @@ const socialContentRoutes: FastifyPluginAsync = async (server) => {
     const { id } = parse(idParamsSchema, request.params);
     const { scheduledAt } = parse(scheduleSchema, request.body);
     return scheduleSocialVariant(id, scheduledAt);
+  });
+
+  server.get('/social/variants/:id/publish-readiness', async (request) => {
+    const { id } = parse(idParamsSchema, request.params);
+    return evaluateSocialPublishReadiness(id);
   });
 };
 

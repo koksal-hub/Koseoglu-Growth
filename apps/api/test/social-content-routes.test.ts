@@ -93,6 +93,18 @@ describe('social composer approval and scheduling API', () => {
     expect(scheduledBody.job.type).toBe('SOCIAL_PUBLISH');
     expect(scheduledBody.job.idempotencyKey).toMatch(/^social-publish:/);
 
+    const readiness = await server.inject({
+      method: 'GET',
+      url: `/api/social/variants/${variant.id}/publish-readiness`,
+    });
+    expect(readiness.statusCode).toBe(200);
+    const readinessBody = body<{ ready: boolean; blockers: string[]; adapterRegistered: boolean }>(readiness.payload);
+    expect(readinessBody.ready).toBe(false);
+    expect(readinessBody.adapterRegistered).toBe(false);
+    expect(readinessBody.blockers).toEqual(
+      expect.arrayContaining(['NO_CONNECTED_ACCOUNT', 'NO_PROVIDER_ADAPTER', 'PUBLISH_EXECUTION_DISABLED'])
+    );
+
     const duplicateSchedule = await server.inject({
       method: 'POST',
       url: `/api/social/variants/${variant.id}/schedule`,
