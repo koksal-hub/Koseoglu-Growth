@@ -149,7 +149,8 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #11 — Deterministic Ranking ve Daily Action API (Phase 3) ---
 - Öncelik: HIGH
 - Sorumlu: Codex
-- Durum: REVIEW (`codex/ranking-daily-action-v1`; yerel kapılar PASS, PR/CI bekleniyor)
+- Durum: DONE (PR #12 CI PASS sonrası `main` üzerine `8d47703` ile merge edildi;
+  Issue #11 kapatıldı)
 - Bağımlılıklar: Issue #8 DONE
 - Acceptance criteria:
   - [x] Aynı kanonik input + policy version aynı input hash/score/receipt üretir
@@ -161,7 +162,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Daily Action sonuçları score + deterministic name/id tie-breaker ile sıralanır
   - [x] Otomatik Lead/Activity/Outreach/send/provider çağrısı yoktur
   - [x] Temiz DB'de beş migration; Prisma/lint/typecheck; odaklı 9/9; tam 106/106; build PASS
-  - [ ] GitHub Actions CI PASS ve PR merge
+  - [x] GitHub Actions CI PASS (run `33478818433`) ve PR #12 merge
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)

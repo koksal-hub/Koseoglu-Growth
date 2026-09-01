@@ -1,11 +1,11 @@
 STATUS — Kısa, güncel durum (master ajanın okuması için)
 
-last_update: 2026-09-01T09:38:00+03:00
-last_actor: Codex (Aşama 3 deterministic ranking / Daily Action)
+last_update: 2026-09-01T09:45:20+03:00
+last_actor: Codex (Aşama 3 merge ve kapanış kanıtı)
 
-CURRENT PHASE: PHASE 3 — RANKING
-ACTIVE ISSUE: Issue #11 — Deterministic ranking ve Daily Action API
-ACTIVE BRANCH: codex/ranking-daily-action-v1 (origin/main `0423c4a` tabanı)
+CURRENT PHASE: PHASE 3 — RANKING (COMPLETE)
+ACTIVE ISSUE: Yok — Issue #11 completed
+ACTIVE BRANCH: codex/ranking-daily-action-v1-docs (`main` `8d47703` tabanı)
 
 CURRENT CODEX CHECKPOINT (2026-09-01):
 - Research Mission ilk dikey dilimi PR #7 CI PASS sonrası `main` üzerine
@@ -45,6 +45,10 @@ CURRENT CODEX CHECKPOINT (2026-09-01):
   puan verir. Contact mevcut permission gate'ini tekrar kullanır. Suppression
   `HONOR_SUPPRESSION`; en ileri durum yalnız `READY_FOR_HUMAN_OUTREACH_REVIEW` olur.
   Lead/Activity/Outreach/send/provider çağrısı yoktur.
+- Kod commit'i `91bb5d6` olarak push edildi. PR #12 GitHub Actions run
+  `33478818433` içindeki migration/lint/typecheck/test/build ve cleanup
+  adımlarının tamamı SUCCESS olduktan sonra beklenen head SHA kilidiyle
+  squash-merge edildi. `main` HEAD `8d47703`; Issue #11 completed olarak kapandı.
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
@@ -128,14 +132,14 @@ CURRENT QUALITY STATUS (gerçek, doğrulanmış — bu branch):
   CompanyRankingReceipt ve Ranking Event sayıları 0
 - docker compose up (db+migrate+api): PASS, health/ready 200, SIGTERM'de
   graceful shutdown exit 0
-- GitHub Actions CI: Aşama 3 branch'i için BEKLENİYOR; son main kanıtı PR #10
-  run `33477220349` SUCCESS
+- GitHub Actions CI: PASS — PR #12 run `33478818433`; migration/lint/typecheck/
+  test/build ve cleanup adımlarının tamamı SUCCESS
 - Uçtan uca test (Devin testing agent): PASS — health/ready + DB kesinti/
   geri dönüş, SIGTERM graceful shutdown (exit 0), helmet/rate-limit/CORS,
   DB CHECK kısıtları, web + /api dev proxy, lang="tr". Detay: PR #5 yorumu.
 
 OPEN BLOCKERS:
-- Aşama 3 yerel kod/kalite blocker'ı yok; commit/push/PR/CI henüz bekleniyor.
+- Aşama 3 için açık kod/kalite/CI blocker'ı yoktur; Issue #11 kapanmıştır.
 - Authentication/authorization hâlâ yoktur. Business API'leri
   yalnız private/local geliştirme içindir; public veya multi-user deploy edilemez.
 - Bilinen, bu dilimi bloklamayan teknik borç: Vite 5 CJS Node API deprecation
@@ -143,9 +147,10 @@ OPEN BLOCKERS:
   error seviyesinde `Unhandled error` diye loglaması. ERRORS.md içinde açıkça kayıtlıdır.
 
 NEXT ACTION:
-- Son diff için full kalite/security taraması; exact-file commit/push ve Issue #11 PR.
-- CI/head/mergeability PASS sonrası merge. Gerçek gönderim, müşteri iletişimi veya
-  public deploy yapma.
+- Aşama 4 için yalnız outreach draft + insan onayı kapsamını ayrı Issue/branch'te
+  tasarla; provider/send entegrasyonu ekleme.
+- Authentication/authorization çözülmeden public veya multi-user deploy yapma;
+  gerçek gönderim ve müşteri iletişimi için ayrıca açık kullanıcı onayı bekle.
 
 notes:
 - Her ajan bu dosyayı okuyup iş devralmalıdır. Değişiklik yapmadan önce TASKS.md
