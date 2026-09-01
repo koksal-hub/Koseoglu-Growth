@@ -563,3 +563,28 @@ bağı veya revenue attribution çalıştırmaz. Delivery state'leri açıkça
 entegrasyonu sonraki ayrı risk/onay dilimleridir.
 
 STATUS: ACCEPTED FOR OBSERVABILITY CONTRACT ONLY
+
+---
+
+## ADR-023 — Fail-Closed Internal API Authentication Boundary
+
+DECISION: `GROWTH_INTERNAL_API_KEY` production ortamında zorunludur. Konfigüre
+edildiğinde business route'ları yalnız `x-api-key` ile ve constant-time karşılaştırma
+sonrası çalışır; eksik anahtar 401, yanlış anahtar 403 döner. `/api/health`,
+`/api/ready` ve imzalı `/api/webhooks/resend` kendi amaçlarına uygun istisnalardır.
+Development/test ortamında anahtar yoksa local workflow korunur; bu durum public
+deploy izni değildir.
+
+WHY: Auth olmadan sosyal bağlantı, içerik approval, müşteri/contact ve rapor API'leri
+yanlışlıkla internete açılırsa veri değişikliği ve dış aksiyon riski oluşur. En küçük
+fail-closed sınır, gerçek kullanıcı/SSO tasarımı gelene kadar kazara public deploy'u
+engeller ve anahtarın loglanmamasını garanti eder.
+
+ALTERNATIVES: Her route'a ayrı kontrol kopyalamak; anahtarı query/body'de taşımak;
+production'da key yokken açık kalmak; health check'lerini de gizlemek.
+
+CONSEQUENCES: Bu bir kullanıcı/rol/SSO sistemi değildir. Key rotation, secret manager
+enjeksiyonu, multi-user identity, CSRF/cookie politikası ve provider OAuth sonraki
+ayrı güvenlik/onay dilimleridir. Gerçek anahtar repo'ya veya loglara yazılmaz.
+
+STATUS: ACCEPTED FOR INTERNAL BOUNDARY ONLY

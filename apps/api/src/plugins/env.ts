@@ -17,6 +17,13 @@ export const envSchema = z
       .default('info'),
     /** Comma-separated allowlist of origins allowed to call the API cross-origin. */
     CORS_ORIGINS: z.string().default(''),
+    /** Shared internal boundary for business routes; never log or return it. */
+    GROWTH_INTERNAL_API_KEY: z
+      .string()
+      .min(32)
+      .max(256)
+      .regex(/^[A-Za-z0-9._~+/=-]+$/)
+      .optional(),
     /** Provider calls are disabled unless both this mode and the explicit gate are enabled. */
     EMAIL_PROVIDER_MODE: z.enum(['DISABLED', 'RESEND_TEST']).default('DISABLED'),
     OUTREACH_TEST_DISPATCH_ENABLED: z
@@ -31,6 +38,13 @@ export const envSchema = z
     EMAIL_FROM_ADDRESS: z.string().email().optional(),
   })
   .superRefine((value, context) => {
+    if (value.NODE_ENV === 'production' && !value.GROWTH_INTERNAL_API_KEY) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['GROWTH_INTERNAL_API_KEY'],
+        message: 'is required in production',
+      });
+    }
     if (!value.OUTREACH_TEST_DISPATCH_ENABLED) return;
     if (value.EMAIL_PROVIDER_MODE !== 'RESEND_TEST') {
       context.addIssue({

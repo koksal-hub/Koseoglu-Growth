@@ -298,14 +298,27 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
 --- Issue #31 — Social Delivery Monitor ve UTM Attribution Receipt (Phase 8D) ---
 - Öncelik: HIGH / RISK C
 - Sorumlu: Codex
-- Durum: REVIEW (fresh DB/CI/merge kapısı bekleniyor)
+- Durum: DONE (PR #32 CI run `33545554867` PASS; squash merge `800e3b5`;
+  Issue #31 kapalı)
 - Bağımlılıklar: Issue #29 DONE; gerçek provider/site analytics için ayrıca açık onay
 - Acceptance criteria:
   - [x] Internal SOCIAL_PUBLISH job ve variant state için provider-unverified delivery view
   - [x] HTTPS destination + UTM validation ve credential-shaped query rejection
   - [x] Immutable/idempotent attribution receipt; farklı payload conflict
   - [x] Attribution metadata ham ziyaret/lead/quote/satış iddiası oluşturmaz
-  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #31 kapanışı
+  - [x] Fresh DB migration, full test/build, CI PASS ve Issue #31 kapanışı
+
+--- Issue #33 — Fail-Closed Internal API Authentication Boundary (Phase 8E) ---
+- Öncelik: HIGH / RISK A
+- Sorumlu: Codex
+- Durum: REVIEW (CI/merge kapısı bekleniyor)
+- Bağımlılıklar: Business API'leri public/multi-user deploy edilmeden önce auth zorunlu
+- Acceptance criteria:
+  - [x] Production env'de `GROWTH_INTERNAL_API_KEY` yoksa startup validation fail
+  - [x] Configured key için constant-time `x-api-key` kontrolü ve 401/403 ayrımı
+  - [x] Development/test key'siz local uyumluluk; CORS preflight bloklanmıyor
+  - [x] Health/readiness ve signed Resend webhook istisnaları korunuyor
+  - [ ] Auth unit tests, full CI PASS ve Issue #33 kapanışı
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
