@@ -1,181 +1,80 @@
-STATUS — Kısa, güncel durum (master ajanın okuması için)
+# STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T10:30:56+03:00
-last_actor: Codex (Aşama 4 merge ve kanıt kapanışı)
+last_update: 2026-09-01T19:44:56+03:00
+last_actor: Codex (Aşama 5 yerel uygulama, migration ve bağımsız inceleme kapanışı)
 
-CURRENT PHASE: PHASE 4 COMPLETE — PHASE 5 PLANNING GATE
-ACTIVE ISSUE: None — Phase 5 provider/sandbox görevi henüz açılmadı
-ACTIVE BRANCH: codex/outreach-docs-sync (`main` `39699eb` tabanı)
+CURRENT PHASE: PHASE 5 LOCAL VERIFICATION — PR/CI PENDING
+ACTIVE ISSUE: #17 — Phase 5: Resend test sandbox, send attempts ve signed webhook receipts
+ACTIVE BRANCH: `codex/issue-17-email-sandbox` (`main` `edd492b` tabanı)
 
-CURRENT CODEX CHECKPOINT (2026-09-01):
-- Research Mission ilk dikey dilimi PR #7 CI PASS sonrası `main` üzerine
-  `4978d2f` ile squash-merge edildi. Issue #3, otomatik extraction ve ikinci
-  kaynak politikası henüz yapılmadığı için açık tutuldu.
-- `ContactPoint`, `CommunicationPermission` ve global pseudonymous
-  `SuppressionEntry` additive modelleri eklendi. Şirket genel, kişi-iş ve kişisel
-  iletişim noktaları; kaynak, zaman, doğrulama, confidence, retention, notice ve
-  data-processing basis bilgileri ayrı tutulur.
-- API, contact point create/list, human verification, append-only permission
-  receipt ve dry-run communication gate uçlarını içerir. Public kaynak izin
-  sayılmaz; `UNKNOWN`, unverified, düşük confidence, süresi geçmiş kayıt ve
-  suppression deny üretir.
-- PERSONAL ALLOWED yalnız açık rıza + explicit-consent receipt ile mümkündür.
-  Türkiye'ye özgü B2B tacir/esnaf istisnası başka jurisdiction için kaydedilemez.
-  Opt-out/suppression kanıt ister ve aynı normalize alıcı için firma değiştirerek
-  bypass edilemez.
-- Son güvenlik incelemesinden sonra timeline/country DB constraint'leri, daha
-  muhafazakâr email/telefon doğrulaması ve kişi verisi için permission-basis
-  savunması eklendi. `growth_contact_point_v1_final2_20260901` adlı yeni boş
-  DB'ye dört migration sıfırdan uygulandı; schema up to date. Odaklı API/DB
-  regresyonları 26/26 PASS; tam suite 97/97 ve API+web build PASS.
-- Kod commit'i `8c35d65` olarak push edildi. PR #9, GitHub Actions run
-  `33476774205` içindeki migration/lint/typecheck/test/build ve cleanup
-  adımlarının tamamı SUCCESS olduktan sonra beklenen head SHA kilidiyle
-  squash-merge edildi. `main` HEAD `4272840`; Issue #8 completed olarak kapandı.
-- PR #10 kapanış belge senkronu run `33477220349` PASS sonrası `0423c4a`
-  olarak merge edildi. Issue #11 açıldı ve güncel `main` tabanlı ayrı worktree kuruldu.
-- `CompanyRankingReceipt`, `DailyActionType` ve `COMPANY_RANKING_RECORDED` additive
-  şema/migration'ı eklendi. Algoritma ICP, company confidence, current evidence,
-  verified contact ve communication permission için beş ayrı 0..20 tamsayı
-  üretir; DB 0..100 exact sum, hash/version/actor ve FK constraint'lerini uygular.
-- `POST /api/daily-actions/refresh` en çok 100 açık company id için immutable,
-  idempotent receipt üretir ve score/name/id ile sıralar. `GET
-  /api/companies/:id/ranking-receipts` 1..100 limitlidir.
-- Evidence yalnız CURRENT, confidence >=0.7, future olmayan ve en çok 90 günlükse
-  puan verir. Contact mevcut permission gate'ini tekrar kullanır. Suppression
-  `HONOR_SUPPRESSION`; en ileri durum yalnız `READY_FOR_HUMAN_OUTREACH_REVIEW` olur.
-  Lead/Activity/Outreach/send/provider çağrısı yoktur.
-- Kod commit'i `91bb5d6` olarak push edildi. PR #12 GitHub Actions run
-  `33478818433` içindeki migration/lint/typecheck/test/build ve cleanup
-  adımlarının tamamı SUCCESS olduktan sonra beklenen head SHA kilidiyle
-  squash-merge edildi. `main` HEAD `8d47703`; Issue #11 completed olarak kapandı.
-- PR #13 kapanış belge senkronu run `33479400646` PASS sonrası `240ce72`
-  olarak merge edildi. Issue #14 açıldı ve güncel `main` tabanlı worktree kuruldu.
-- `OutreachDraft`, `OutreachDraftRevision` ve `OutreachApproval` additive modelleri
-  eklendi. Yalnız `HUMAN_AUTHORED` e-posta taslağı vardır; content hash exact
-  revision'a bağlıdır ve recipient snapshot ham adres yerine pseudonymous hash taşır.
-- Draft yalnız son 24 saatteki en güncel `READY_FOR_HUMAN_OUTREACH_REVIEW`
-  receipt'i ve current ALLOW gate ile açılır. Gate review ve decision anında
-  yeniden çalışır; permission policy değişimi, suppression veya opt-out bloklar.
-- İçerik yazarları karar veremez. Approval/rejection append-only receipt bırakır;
-  approval dahi `sendAuthorized=false` ve hiçbir provider/send/Lead/Activity üretmez.
-- Kod commit'i `93a5022` olarak push edildi. PR #15 GitHub Actions run
-  `33482197125` içindeki migration/lint/typecheck/test/build ve cleanup
-  adımlarının tamamı SUCCESS olduktan sonra beklenen head SHA kilidiyle
-  squash-merge edildi. `main` HEAD `39699eb`; Issue #14 completed olarak kapandı.
+## Uygulanan dar kapsam
 
-LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
+- Gerçek müşteri alıcısı veya serbest içerik kabul etmeyen Resend test-simulation
+  adapter'i eklendi. Yalnız provider'ın sabit test adresleri ve sabit sentetik
+  konu/gövde kullanılır.
+- Provider yürütmesi varsayılan olarak kapalıdır. Yalnız doğrulanmış env
+  capability'si; `RESEND_TEST`, explicit enable, API key, from address ve webhook
+  secret birlikte mevcutsa test çağrısı oluşturabilir. Public send route yoktur.
+- `SendAttempt`, `ProviderWebhookReceipt`, `DeliveryEvent` ve ileride kullanılacak
+  `Reply` metadata modeli veri-koruyan migration'larla eklendi. Ham recipient ve secret
+  audit tablolarına kopyalanmaz.
+- Hazırlık; exact approved revision/content hash, güncel permission/suppression
+  gate ve en fazla 23 saatlik approval ile sınırlandırıldı. İdempotency key aynı
+  denemede değişmez.
+- İmzalı webhook exact raw body üzerinden doğrulanır. Duplicate/unordered event,
+  erken webhook/provider-response yarışı ve UNKNOWN/stale dispatch için
+  `send_attempt_id` tag + exact test-recipient hash korelasyonu ile güvenli yakınsama vardır.
+- İlk provider denemesinde exact versioned request body hash'i set-once receipt olarak
+  yazılır. UNKNOWN retry'da config/body değişirse provider çağrısından önce durur;
+  Resend'in kalıcı ve eşzamanlı 409 idempotency cevapları ayrı sınıflandırılır.
+- Bounce/complaint yalnız test recipient hash'i için global suppression üretir.
+  Inbound `email.received` bu aşamada persistent receipt/Reply/iş olayı oluşturmadan
+  erken `IGNORED` döner.
+- Receipt UPDATE/DELETE işlemleri ve geçersiz SendAttempt durum/receipt yeniden
+  yazımları PostgreSQL trigger/constraint katmanında reddedilir.
+- Testler explicit `TEST_DATABASE_URL` ister ve yalnız adı test/sandbox/ci içeren
+  izole veritabanlarını kabul eder. CI veritabanı `growth_ci_test` olarak ayrıldı.
 
-Öncelik 0 — Operasyon/Altyapı:
-- `.github/workflows/ci.yml` REPOYA GERÇEKTEN EKLENDİ ve push EDİLDİ.
-  Önceki oturumlardaki `workflow` scope blocker'ı bu ortamın git
-  kimlik bilgisiyle OLUŞMADI — dosya artık repoda. İçerik: Postgres service
-  container + pnpm install + prisma migrate deploy + lint→typecheck→test→build.
-- Graceful shutdown (`apps/api/src/index.ts`): SIGTERM/SIGINT →
-  `server.close()` + `prisma.$disconnect()`. Docker'da SIGTERM ile exit code 0
-  doğrulandı.
-- Process-seviyesi hata yakalayıcılar: `unhandledRejection` +
-  `uncaughtException` → fatal log + kontrollü çıkış.
-- Health/readiness ayrımı: `/api/health` (liveness, DB'ye dokunmaz) +
-  `/api/ready` (Prisma `SELECT 1`; DB yoksa 503).
+## Taze yerel kanıt
 
-Öncelik 1 — Kod hataları:
-- `prisma.ts`: `process.env.DATABASE_URL ?? ''` bypass'ı kaldırıldı →
-  `requireDatabaseUrl` (env.ts) erken ve net hata fırlatıyor.
-- `createActivity` helper'ı (`apps/api/src/lib/activity.ts`): leadId ve
-  contactId ikisi de yoksa `ActivityValidationError`. Defense-in-depth:
-  additive migration `20260813234500_add_check_constraints` ile
-  `Activity_lead_or_contact_required` CHECK constraint.
-- `confidence` 0..1 aralığı DB'de CHECK constraint ile zorunlu
-  (`Company_confidence_range`, `Evidence_confidence_range`) — aynı additive
-  migration'da; hiçbir DROP/DELETE/TRUNCATE yok.
-- Entity resolution sertleştirildi: free/generic email sağlayıcı blacklist'i
-  (gmail, hotmail, outlook, yahoo, icloud, yandex, ...) — EMAIL_DOMAIN
-  eşleşmesi bu domainlerde atlanıyor (`isFreeEmailProvider`). PHONE eşleşmesi
-  düşük güvenli destekleyici sinyale indirildi (0.85 → 0.5) ve öncelik sırası
-  email domain/address'in ARKASINA alındı (ortak santral numarası riski,
-  kod içinde dokümante).
-- Nullable email + `@@unique([companyId, email])` edge-case'i bilinçli
-  davranış olarak şemada NOT ile dokümante edildi (Postgres NULL'ları unique
-  index'te ayrı sayar; kısıtlanacaksa partial unique index önerisi notta).
+- `pnpm lint`: PASS
+- `pnpm typecheck`: PASS
+- Odaklı testler: PASS — 31/31; Phase 5 dosyası 17/17
+- Tam test paketi: PASS — 135/135, 11 dosya
+- Prisma validate/generate: PASS
+- `pnpm build`: PASS — API + web production build
+- Baseline DB: 15 migration up to date; mevcut `Company` sayısı 1 olarak korundu
+- Fresh DB: `growth_email_sandbox_final15_20260901` sıfırdan 15/15 migration PASS;
+  4 Phase 5 tablosu, 9 trigger, 6 composite provenance FK ve null-safe state
+  constraint'i katalogda doğrulandı
+- Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
+  migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
+- Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
+  gösteriyor; Phase 5 drift'i veya eksik tablo/kolon/constraint önerisi yok
+- İki bağımsız salt-okunur güvenlik/migration yeniden incelemesi: blocking
+  kritik/yüksek/orta bulgu yok; düşük operasyonel riskler aşağıda açık
+- Final `git diff --check`: PASS; high-confidence secret-shaped literal taraması:
+  PASS; commit/PR ve GitHub CI: PENDING
 
-Öncelik 2 — Test kapsamı:
-- prisma-models.test.ts: Activity invariant'ı (helper + DB CHECK), aralık
-  dışı confidence (1.5 / -1, Company + Evidence), aynı şirkette iki NULL
-  email'in yazılabildiği edge-case testi eklendi.
-- entity-resolution.test.ts: gmail.com email-domain'inin EŞLEŞMEDİĞİ,
-  kurumsal domain'in eşleştiği, ortak telefon senaryosunun 0.5 güvenle ve
-  düşük öncelikle döndüğü negatif/riskli senaryo testleri eklendi.
-- Frontend test altyapısı kuruldu: vitest + jsdom + @testing-library/react;
-  `apps/web/src/App.test.tsx` render smoke testi (jsdom pragma ile).
+## Açık sınırlar
 
-Öncelik 3 — Frontend:
-- `index.html`: `lang="tr"`.
-- `main.tsx`: `#root` için null guard (non-null assertion kaldırıldı).
-- `apps/web/vite.config.ts`: `/api` → `http://localhost:3000` dev proxy.
+- Bu çalışma gerçek Resend API çağrısı yapmadı; API key, webhook secret, domain,
+  SPF/DKIM/DMARC ve gerçek mailbox kurulmadı.
+- Gerçek müşteriye/potansiyel müşteriye e-posta gönderilmedi; telefon veya sosyal
+  medya hesabına dış aksiyon alınmadı.
+- Authentication/authorization hâlâ yoktur. Business API'leri private/local
+  geliştirme sınırındadır; public veya multi-user deploy edilemez.
+- `Reply` yalnız ilerideki metadata sözleşmesi için ayrılmıştır; inbound reply
+  işleme Phase 5'te özellikle kapalıdır.
+- Bilinen non-blocking borçlar: Vite 5 CJS Node API uyarısı ve beklenen 4xx
+  hatalarının error seviyesinde loglanması.
+- Kalan düşük riskler: test DB koruması isim/protokol kapısıdır (ayrı düşük yetkili
+  test credential'ı daha güçlü olur); webhook secret'ın provider endpoint'iyle
+  operasyonel eşleşmesi ve inbound event aboneliğinin kapalı oluşu go-live'da ayrıca
+  doğrulanmalıdır; stale recovery zamanı kullanıcı girdisine bağlanmamalıdır.
 
-Öncelik 4 — Konfigürasyon:
-- Kök `package.json`: npm tarzı `workspaces` alanı kaldırıldı (tek kaynak:
-  `pnpm-workspace.yaml`); var olmayan `packages/*` referansı workspace
-  tanımından çıkarıldı; `engines` (node>=24, pnpm>=11) + `packageManager`
-  (pnpm@11.21.0) eklendi; `.nvmrc` (24) eklendi.
-- `.env.example` ↔ kod senkronu: `LOG_LEVEL` ve `CORS_ORIGINS` hem
-  `.env.example`'a hem `envSchema`'ya eklendi.
-- Env şeması sertleştirildi: `PORT` → `z.coerce.number()`, `NODE_ENV` →
-  `z.enum(['development','test','production'])`, `LOG_LEVEL` → pino level
-  enum'u.
-- Güvenlik plugin'leri: `@fastify/helmet`, `@fastify/cors` (env-tabanlı
-  `CORS_ORIGINS` allowlist; boşsa cross-origin reddedilir),
-  `@fastify/rate-limit` (100 istek/dk) `buildServer`'da kayıtlı.
-- `docker/docker-compose.yml` çalışır durumda: `db` + one-shot `migrate`
-  (prisma migrate deploy) + `api` servisleri; `env_file` artık opsiyonel
-  (`required: false`), `.env.example`'dan türetme talimatı dosyanın başında.
-  `docker/Dockerfile.api` + kök `.dockerignore` eklendi. Stack gerçekten
-  ayağa kaldırıldı: migrate PASS, `/api/health` ve `/api/ready` 200 döndü.
+## Sonraki tek adım
 
-CURRENT QUALITY STATUS (gerçek, doğrulanmış — bu branch):
-- pnpm install: PASS
-- pnpm lint: PASS
-- pnpm typecheck: PASS
-- pnpm test: PASS — 116/116 (10 dosya; Outreach için 10 API/DB testi)
-- pnpm build: PASS (api + web)
-- prisma format / validate / generate: PASS
-- prisma migrate deploy/status: PASS — sekiz migration `growth_outreach_v1_final_20260901`
-  temiz DB'sine sıfırdan uygulandı
-- Outreach DB check: 29 gerçek CHECK/FK/PK constraint ve 3 trigger katalogda doğrulandı; test
-  sonrası Draft/Revision/Approval/Outreach Event sayıları 0
-- Ranking DB check: 8 gerçek receipt constraint katalogda doğrulandı; test sonrası
-  CompanyRankingReceipt ve Ranking Event sayıları 0
-- docker compose up (db+migrate+api): PASS, health/ready 200, SIGTERM'de
-  graceful shutdown exit 0
-- GitHub Actions CI: PASS — PR #12 run `33478818433`; migration/lint/typecheck/
-  test/build ve cleanup adımlarının tamamı SUCCESS
-- GitHub Actions CI: PASS — PR #15 run `33482197125`; migration/lint/typecheck/
-  test/build ve cleanup adımlarının tamamı SUCCESS
-- Uçtan uca test (Devin testing agent): PASS — health/ready + DB kesinti/
-  geri dönüş, SIGTERM graceful shutdown (exit 0), helmet/rate-limit/CORS,
-  DB CHECK kısıtları, web + /api dev proxy, lang="tr". Detay: PR #5 yorumu.
-
-OPEN BLOCKERS:
-- Authentication/authorization hâlâ yoktur. Business API'leri
-  yalnız private/local geliştirme içindir; public veya multi-user deploy edilemez.
-- E-posta provider/sandbox connector'ı ve credentials henüz seçilmedi; gerçek
-  gönderim yetkisi ve müşteri iletişimi verilmedi.
-- Bilinen, bu dilimi bloklamayan teknik borç: Vite 5 CJS Node API deprecation
-  uyarısı ve merkezi error handler'ın beklenen 4xx workflow/validation hatalarını
-  error seviyesinde `Unhandled error` diye loglaması. ERRORS.md içinde açıkça kayıtlıdır.
-
-NEXT ACTION:
-- Aşama 5 için önce provider/sandbox, secret storage, idempotency, bounce/complaint/
-  opt-out receipt ve authz tehdit modelini dar bir GitHub Issue olarak tanımla.
-- Authentication/authorization çözülmeden public veya multi-user deploy yapma;
-  gerçek gönderim ve müşteri iletişimi için ayrıca açık kullanıcı onayı bekle.
-
-notes:
-- Her ajan bu dosyayı okuyup iş devralmalıdır. Değişiklik yapmadan önce TASKS.md
-  ve MASTER_PLAN.md okunmalıdır.
-- Bir dosya değiştiğinde SADECE ilgili görünen komutu değil, dört komutun
-  (lint/typecheck/test/build) TAMAMINI yeniden çalıştır (bkz. LEARNINGS.md).
-- Entegrasyon testleri için Postgres gerekli:
-  `docker compose -f docker/docker-compose.yml up -d db` +
-  `pnpm exec prisma migrate deploy`.
+Issue #17 için exact-file commit/push/PR ve GitHub CI kanıtı üret. Risk C gereği `main`
+merge öncesinde dur ve kullanıcıdan açık onay iste. Gerçek müşteri gönderimi bu
+merge onayına da dahil değildir; ayrıca ve daha sonra açık onay gerektirir.

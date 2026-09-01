@@ -429,3 +429,98 @@ oluşturulmaz.
   sorgularla okuyor; zengin response projection commit sonrasında yapılıyor.
 - status: FIXED. Sonraki lint/typecheck ve 10/10 odaklı koşuda uyarı tekrar etmedi;
   final 116/116 suite ve build PASS.
+
+---
+
+- id: email-sandbox-powershell-database-url-interpolation
+- tarih: 2026-09-01T19:22:46+03:00
+- yer: Phase 5 baseline migration komutu
+- kısa: İlk PowerShell komutunda `"$db?schema=public"` ifadesi değişken adını
+  yanlış yorumladı ve hedef database yerine hatalı URL üretti.
+- root_cause: Değişken sınırı `${db}` ile açık yazılmamıştı.
+- düzeltme: İzole database adları ve `${db}?schema=public`/literal URL kullanıldı;
+  hiçbir production veya ortak DB üzerinde işlem yapılmadı.
+- status: FIXED / DOCUMENTED.
+
+---
+
+- id: email-sandbox-hardening-migration-partial-apply
+- tarih: 2026-09-01T19:22:46+03:00
+- yer: `20260901191000_harden_email_sandbox_state_receipts/migration.sql`
+- kısa: İlk denemede PL/pgSQL `IF ... CASE` ifadesindeki eksik parantez syntax
+  hatası migration'ı durdurdu; Prisma/PostgreSQL yolu daha önceki ADD CONSTRAINT'i
+  transaction dışında uygulanmış halde bırakmıştı.
+- root_cause: Migration'ın tamamen atomik uygulanacağı varsayıldı ve ilk constraint
+  tekrar çalıştırılabilir değildi.
+- düzeltme: Başarısız migration `migrate resolve --rolled-back` ile işaretlendi;
+  constraint catalog-check'li idempotent `DO` bloğuna çevrildi, syntax düzeltildi ve
+  migration reset/drop olmadan yeniden uygulandı. Baseline Company sayısı 1 kaldı.
+- status: FIXED. Baseline/final up to date; reviewed boş DB'de 13/13 migration PASS.
+
+---
+
+- id: email-sandbox-test-database-parallelism
+- tarih: 2026-09-01T19:22:46+03:00
+- yer: `vitest.config.ts`, DB-backed test dosyaları
+- kısa: İlk tam suite koşusunda aynı PostgreSQL veritabanını paylaşan test dosyaları
+  SERIALIZABLE transaction'larda P2034 serialization abort üretti.
+- root_cause: Dosyalar paralel çalışırken bağımsız fixture'lar ortak DB satır/index
+  kilitlerinde çakışıyordu; test URL'sinin ortak `growth_db` fallback'i de drift riskiydi.
+- düzeltme: DB-backed dosyalar seri çalıştırıldı; `TEST_DATABASE_URL` zorunlu hale
+  geldi ve database adı test/sandbox/ci içermiyorsa koşu fail-fast ediyor.
+- status: FIXED. Final tam suite 132/132 PASS.
+
+---
+
+- id: email-sandbox-esbuild-and-prettier-resolution
+- tarih: 2026-09-01T19:22:46+03:00
+- yer: Windows worktree test/format komutları
+- kısa: Sandbox içindeki Vitest/esbuild üst dizin okumasında erişim reddi aldı;
+  `pnpm exec prettier` da local binary'yi PATH üzerinden çözemedi.
+- root_cause: Worktree pnpm link/store erişimi ve Windows executable resolution.
+- düzeltme: Test aynı komutla gerekli dosya erişimi altında tekrar çalıştırıldı;
+  Prettier check doğrudan `node_modules/.bin/prettier.cmd` ile yapıldı.
+- status: RESOLVED ENVIRONMENTALLY. İlk başarısız koşular PASS sayılmadı.
+
+---
+
+- id: email-sandbox-provider-race-and-capability-review
+- tarih: 2026-09-01T19:22:46+03:00
+- yer: send attempt dispatch, Resend webhook ve env execution gate
+- kısa: İlk bağımsız güvenlik incelemesi; provider response DB'ye yazılmadan gelen
+  geçerli webhook'un kalıcı IGNORED olabildiğini, inbound event'in Reply ürettiğini,
+  receipt DELETE'lerinin açık olduğunu ve execution boolean'ının caller-controlled
+  kaldığını buldu.
+- düzeltme: `send_attempt_id` tag korelasyonu, inbound IGNORE, receipt DELETE
+  trigger'ları ve yalnız doğrulanmış env'den kurulan config-bound dispatch service
+  eklendi. Stale lease ve P2034 yakınsama senaryoları ayrıca sertleştirildi.
+- status: FIXED. İki bağımsız salt-okunur yeniden incelemede blocking
+  kritik/yüksek/orta bulgu kalmadı; odaklı 31/31 ve tam suite 135/135 PASS.
+
+---
+
+- id: email-sandbox-append-only-test-event-shape
+- tarih: 2026-09-01T19:33:13+03:00
+- yer: `apps/api/test/email-sandbox.test.ts` append-only guard fixture
+- kısa: İnceleme düzeltmelerinden sonraki ilk odaklı koşu 30/31 oldu; doğrudan
+  oluşturulan test receipt'inin `fixture.guard` event tipi DB'deki `email.*`
+  CHECK sözleşmesini ihlal etti.
+- root_cause: Guard test fixture'ı mevcut provider event shape constraint'ini
+  kullanmadan yazılmıştı; uygulama webhook yolu çalışmadan DB doğru biçimde reddetti.
+- düzeltme: Sentetik event tipi `email.synthetic_guard` yapıldı.
+- status: FIXED. Sonraki odaklı koşu 31/31 ve tam suite 135/135 PASS.
+
+---
+
+- id: email-sandbox-send-attempt-insert-and-null-bypass
+- tarih: 2026-09-01T19:40:59+03:00
+- yer: SendAttempt state constraints ve DB trigger'ları
+- kısa: Son migration incelemesi UPDATE/DELETE korumasına rağmen doğrudan INSERT ile
+  terminal durum yazılabildiğini; nullable `testMessageSubmitted` üzerinde `= false`
+  kullanan CHECK/IF ifadelerinin PostgreSQL UNKNOWN sonucu nedeniyle NULL bypass'ına
+  açık olduğunu buldu.
+- düzeltme: Canonical PREPARED-only BEFORE INSERT guard eklendi. Tüm durumlar için
+  `IS FALSE`/`IS TRUE`/`IS NULL` kullanan additive null-safe constraint eklendi;
+  forged ACCEPTED insert, PREPARED+NULL insert ve DISPATCHING+NULL update regresyonları
+  yazıldı.
+- status: FIXED. Odaklı 31/31 PASS; bağımsız son re-review'da blocking bulgu yok.

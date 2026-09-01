@@ -35,7 +35,7 @@ kontrollü bir API üzerinden gerekli veri paylaşılabilir. Detay: [DECISIONS.m
 
 ## Current phase
 
-**PHASE 0 — Foundation.** Güncel operasyonel durum için [STATUS.md](STATUS.md).
+**PHASE 5 — provider test-sandbox yerel doğrulama.** Güncel operasyonel durum için [STATUS.md](STATUS.md).
 Tam roadmap için [MASTER_PLAN.md](MASTER_PLAN.md).
 
 ## Local development
@@ -55,11 +55,17 @@ commit edilmez.
 ```
 pnpm lint
 pnpm typecheck
+$env:TEST_DATABASE_URL='postgresql://postgres:postgres@localhost:5432/growth_local_sandbox_<benzersiz-ad>?schema=public'
 pnpm test
 pnpm build
 ```
 
 Bu dört komut GitHub Actions CI'da da çalışır ([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+DB-backed testler ortak `growth_db` üzerinde çalışmaz. Her worktree için yalnız
+test amacıyla oluşturulmuş, adında ayrı bir `test`, `sandbox` veya `ci` segmenti
+bulunan PostgreSQL database kullanın. Phase 5 receipt'leri append-only olduğu için
+test database'i fixture'ları bilinçli olarak saklar; production veya paylaşılan
+development database'i hedeflemeyin.
 
 ## GitHub workflow
 

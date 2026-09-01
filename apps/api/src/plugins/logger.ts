@@ -9,7 +9,8 @@ const REDACT_PATHS = [
   'req.headers.authorization',
   'req.headers.cookie',
   "req.headers['x-api-key']",
-  'res.headers["set-cookie"]'
+  "req.headers['svix-signature']",
+  'res.headers["set-cookie"]',
 ];
 
 const MAX_REQUEST_ID_LENGTH = 128;
@@ -18,7 +19,7 @@ const SAFE_REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 export function buildLogger(level?: string): FastifyLoggerOptions & PinoLoggerOptions {
   return {
     level: level || process.env.LOG_LEVEL || 'info',
-    redact: { paths: REDACT_PATHS, censor: '[REDACTED]' }
+    redact: { paths: REDACT_PATHS, censor: '[REDACTED]' },
   };
 }
 

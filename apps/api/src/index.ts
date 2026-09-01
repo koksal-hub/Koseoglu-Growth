@@ -11,6 +11,7 @@ import researchMissionRoutes from './routes/research-missions';
 import contactPointRoutes from './routes/contact-points';
 import rankingRoutes from './routes/ranking';
 import outreachDraftRoutes from './routes/outreach-drafts';
+import resendWebhookRoutes from './routes/resend-webhooks';
 
 export function buildServer(): { server: FastifyInstance; env: Env } {
   // validate env on startup
@@ -19,7 +20,7 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
   const server: FastifyInstance = Fastify({
     logger: buildLogger(env.LOG_LEVEL),
     genReqId,
-    disableRequestLogging: false
+    disableRequestLogging: false,
   });
 
   // expose the correlation id to clients so responses can be traced in logs
@@ -48,6 +49,10 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
   server.register(contactPointRoutes, { prefix: '/api' });
   server.register(rankingRoutes, { prefix: '/api' });
   server.register(outreachDraftRoutes, { prefix: '/api' });
+  server.register(resendWebhookRoutes, {
+    prefix: '/api',
+    webhookSecret: env.RESEND_WEBHOOK_SECRET,
+  });
 
   // basic swagger/OpenAPI could be added here in the future
 
@@ -84,11 +89,14 @@ if (require.main === module) {
     process.exit(1);
   });
 
-  server.listen({ port: env.PORT, host: '0.0.0.0' }).then(() => {
-    server.log.info({ port: env.PORT }, 'API server listening');
-  }).catch((err) => {
-    // startup errors should be visible
-    console.error('Failed to start server', err);
-    process.exit(1);
-  });
+  server
+    .listen({ port: env.PORT, host: '0.0.0.0' })
+    .then(() => {
+      server.log.info({ port: env.PORT }, 'API server listening');
+    })
+    .catch((err) => {
+      // startup errors should be visible
+      console.error('Failed to start server', err);
+      process.exit(1);
+    });
 }

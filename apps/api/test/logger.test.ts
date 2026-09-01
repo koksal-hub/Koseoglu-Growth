@@ -27,7 +27,7 @@ describe('buildLogger', () => {
       write(chunk, _encoding, callback) {
         lines.push(chunk.toString());
         callback();
-      }
+      },
     });
     const logger = pino(buildLogger('info'), destination);
 
@@ -36,10 +36,11 @@ describe('buildLogger', () => {
         headers: {
           authorization: 'Bearer auth-secret',
           cookie: 'session=cookie-secret',
-          'x-api-key': 'api-key-secret'
-        }
+          'x-api-key': 'api-key-secret',
+          'svix-signature': 'v1,webhook-signature-secret',
+        },
       },
-      res: { headers: { 'set-cookie': 'session=set-cookie-secret' } }
+      res: { headers: { 'set-cookie': 'session=set-cookie-secret' } },
     });
 
     const output = lines.join('');
@@ -50,10 +51,12 @@ describe('buildLogger', () => {
     expect(entry.req.headers.authorization).toBe('[REDACTED]');
     expect(entry.req.headers.cookie).toBe('[REDACTED]');
     expect(entry.req.headers['x-api-key']).toBe('[REDACTED]');
+    expect(entry.req.headers['svix-signature']).toBe('[REDACTED]');
     expect(entry.res.headers['set-cookie']).toBe('[REDACTED]');
     expect(output).not.toContain('auth-secret');
     expect(output).not.toContain('cookie-secret');
     expect(output).not.toContain('api-key-secret');
+    expect(output).not.toContain('webhook-signature-secret');
     expect(output).not.toContain('set-cookie-secret');
   });
 });
@@ -64,7 +67,7 @@ describe('request correlation id', () => {
     const res = await server.inject({
       method: 'GET',
       url: '/api/health',
-      headers: { 'x-request-id': 'trace-abc-123' }
+      headers: { 'x-request-id': 'trace-abc-123' },
     });
     expect(res.statusCode).toBe(200);
     expect(res.headers['x-request-id']).toBe('trace-abc-123');
@@ -87,10 +90,10 @@ describe('request correlation id', () => {
   it.each([
     ['an id containing spaces', 'unsafe request id'],
     ['an overlong id', `trace-${'a'.repeat(128)}`],
-    ['a repeated header', ['trace-one', 'trace-two']]
+    ['a repeated header', ['trace-one', 'trace-two']],
   ])('rejects %s and generates a UUID', (_description, incoming) => {
     const id = genReqId({
-      headers: { 'x-request-id': incoming }
+      headers: { 'x-request-id': incoming },
     } as unknown as Parameters<typeof genReqId>[0]);
     expect(id).toMatch(UUID_PATTERN);
     expect(id).not.toBe(incoming);
@@ -101,7 +104,7 @@ describe('request correlation id', () => {
     const res = await server.inject({
       method: 'GET',
       url: '/api/health',
-      headers: { 'x-request-id': 'unsafe request id' }
+      headers: { 'x-request-id': 'unsafe request id' },
     });
     expect(res.statusCode).toBe(200);
     expect(res.headers['x-request-id']).toMatch(UUID_PATTERN);
