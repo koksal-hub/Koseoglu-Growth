@@ -1,30 +1,33 @@
 STATUS — Kısa, güncel durum (master ajanın okuması için)
 
-last_update: 2026-09-01T08:43:00+03:00
-last_actor: Codex (Aşama 1 Research Mission dikey dilimi)
+last_update: 2026-09-01T09:12:00+03:00
+last_actor: Codex (Aşama 2 ContactPoint / permission gate)
 
 CURRENT PHASE: PHASE 2 — DISCOVERY / VERIFICATION
-ACTIVE ISSUE: Issue #3 — Research, Verification ve Evidence pipeline
-ACTIVE BRANCH: codex/research-mission-v1 (PR #7 açık)
+ACTIVE ISSUE: Issue #8 — ContactPoint, permission ve suppression gate
+ACTIVE BRANCH: codex/contact-point-v1 (yerel doğrulama)
 
 CURRENT CODEX CHECKPOINT (2026-09-01):
-- PR #6, GitHub Actions run `33472791803` PASS sonrası `main` üzerine
-  `2f6f11a` ile merge edildi.
-- `ResearchMission` ve `ResearchCandidate` additive modelleri eklendi; mevcut
-  `Evidence` provenance/freshness/claim alanları ve aday ilişkisiyle genişletildi.
-- API: mission create/list/detail, evidence-backed candidate intake ve insan
-  kararı endpoint'leri eklendi. Crawler, LLM, contact ve outreach yoktur.
-- Zod request/response doğrulaması source URL + accessedAt olmadan adayı engeller;
-  credential veya secret query parametresi taşıyan URL kabul edilmez.
-- Düşük confidence kabul edilemez. Deterministik `matchedCompanyId` yalnız öneri,
-  insan onaylı `companyId` ise kesin bağdır; açık `LINK_MATCH`/`CREATE_NEW`
-  kararı gerekir ve otomatik Lead/Outreach yaratılmaz. Koşullu DB update'i aynı
-  aday için eşzamanlı iki kabulden yalnız birinin kazanmasını sağlar.
-- `growth_research_mission_v1_verify_20260901` boş DB'sine üç migration sıfırdan
-  uygulandı. Yerel lint/typecheck PASS; test 71/71 (7 dosya) PASS; API+web build
-  PASS. Odaklı Research Mission testi 15/15 PASS ve trace açık koşuda `pg`
-  concurrent query uyarısı giderilmiş durumdadır. Kod commit'i `b386f8d` olarak
-  push edildi ve PR #7 açıldı; GitHub CI henüz bekleniyor.
+- Research Mission ilk dikey dilimi PR #7 CI PASS sonrası `main` üzerine
+  `4978d2f` ile squash-merge edildi. Issue #3, otomatik extraction ve ikinci
+  kaynak politikası henüz yapılmadığı için açık tutuldu.
+- `ContactPoint`, `CommunicationPermission` ve global pseudonymous
+  `SuppressionEntry` additive modelleri eklendi. Şirket genel, kişi-iş ve kişisel
+  iletişim noktaları; kaynak, zaman, doğrulama, confidence, retention, notice ve
+  data-processing basis bilgileri ayrı tutulur.
+- API, contact point create/list, human verification, append-only permission
+  receipt ve dry-run communication gate uçlarını içerir. Public kaynak izin
+  sayılmaz; `UNKNOWN`, unverified, düşük confidence, süresi geçmiş kayıt ve
+  suppression deny üretir.
+- PERSONAL ALLOWED yalnız açık rıza + explicit-consent receipt ile mümkündür.
+  Türkiye'ye özgü B2B tacir/esnaf istisnası başka jurisdiction için kaydedilemez.
+  Opt-out/suppression kanıt ister ve aynı normalize alıcı için firma değiştirerek
+  bypass edilemez.
+- Son güvenlik incelemesinden sonra timeline/country DB constraint'leri, daha
+  muhafazakâr email/telefon doğrulaması ve kişi verisi için permission-basis
+  savunması eklendi. `growth_contact_point_v1_final2_20260901` adlı yeni boş
+  DB'ye dört migration sıfırdan uygulandı; schema up to date. Odaklı API/DB
+  regresyonları 26/26 PASS; tam suite 97/97 ve API+web build PASS.
 
 LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
 
@@ -95,32 +98,36 @@ LAST COMPLETED TASK (Öncelik 0-4, tamamı bu branch'te):
   `docker/Dockerfile.api` + kök `.dockerignore` eklendi. Stack gerçekten
   ayağa kaldırıldı: migrate PASS, `/api/health` ve `/api/ready` 200 döndü.
 
-CURRENT QUALITY STATUS (gerçek, doğrulanmış — lokalde):
+CURRENT QUALITY STATUS (gerçek, doğrulanmış — bu branch):
 - pnpm install: PASS
 - pnpm lint: PASS
 - pnpm typecheck: PASS
-- pnpm test: PASS — 71/71 (7 dosya; Research Mission için +15 API/DB testi)
+- pnpm test: PASS — 97/97 (8 dosya; ContactPoint için 26 API/DB testi)
 - pnpm build: PASS (api + web)
 - prisma format / validate / generate: PASS
-- prisma migrate deploy: PASS — üç migration temiz izole DB'ye sıfırdan uygulandı
+- prisma migrate deploy/status: PASS — dört migration yeni temiz izole DB'ye sıfırdan uygulandı
+- DB security/data check: 24 gerçek constraint katalogda doğrulandı; test sonrası
+  ContactPoint/CommunicationPermission/SuppressionEntry/Phase2 Event sayıları 0
 - docker compose up (db+migrate+api): PASS, health/ready 200, SIGTERM'de
   graceful shutdown exit 0
-- GitHub Actions CI: BU BRANCH İÇİN BEKLENİYOR (son kanıt PR #6 run `33472791803` PASS)
+- GitHub Actions CI: BU BRANCH İÇİN BEKLENİYOR (PR #7 run `33474733845` PASS ve merge)
 - Uçtan uca test (Devin testing agent): PASS — health/ready + DB kesinti/
   geri dönüş, SIGTERM graceful shutdown (exit 0), helmet/rate-limit/CORS,
   DB CHECK kısıtları, web + /api dev proxy, lang="tr". Detay: PR #5 yorumu.
 
 OPEN BLOCKERS:
-- Yok. (Önceki "workflow scope" blocker'ı bu ortamda oluşmadı; ci.yml push
-  edildi. gh CLI hâlâ yok — Issue yönetimi manuel.)
+- Kod/yerel kalite blocker'ı yok. GitHub PR/CI henüz oluşturulmadı.
+- Authentication/authorization hâlâ yoktur. ContactPoint ve permission API'leri
+  yalnız private/local geliştirme içindir; public veya multi-user deploy edilemez.
 - Bilinen, bu dilimi bloklamayan teknik borç: Vite 5 CJS Node API deprecation
   uyarısı ve merkezi error handler'ın beklenen 4xx workflow/validation hatalarını
   error seviyesinde `Unhandled error` diye loglaması. ERRORS.md içinde açıkça kayıtlıdır.
 
 NEXT ACTION:
-- PR #7 GitHub CI ve head/mergeability kontrolü.
-- CI PASS ve review sonrası merge; ancak ondan sonra Aşama 2 ContactPoint /
-  permission / suppression modeline geçilir.
+- Issue #8 branch'ini exact-file commit/push et, PR aç, CI/head/mergeability
+  kontrolü sonrası merge et.
+- Gerçek gönderim, müşteri iletişimi veya public deploy yapma. Sonraki ürün dilimi
+  şeffaf ranking + Daily Action API'dir.
 
 notes:
 - Her ajan bu dosyayı okuyup iş devralmalıdır. Değişiklik yapmadan önce TASKS.md

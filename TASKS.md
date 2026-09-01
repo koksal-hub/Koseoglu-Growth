@@ -112,7 +112,8 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #3 — Research / Verification / Evidence (Phase 2) ---
 - Öncelik: MEDIUM
 - Sorumlu: Codex
-- Durum: IN_PROGRESS (PR #7 açık; yerel kapılar PASS, GitHub CI/merge bekleniyor)
+- Durum: IN_PROGRESS (ilk Research Mission dilimi PR #7 ile merge edildi;
+  otomatik extraction/ikinci-kaynak politikası henüz yapılmadı)
 - Bağımlılıklar: Issue #2 DONE olmalı
 - Acceptance criteria:
   - [x] Manuel/fixture tabanlı Company Discovery iskeleti çalışır
@@ -122,6 +123,26 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Dış özet untrusted data kalır; credential/secret taşıyan kaynak URL reddedilir
   - [x] Deterministik duplicate önerisi insan onaylı kanonik bağdan ayrıdır
   - [x] Yerel migration/lint/typecheck/test (71/71)/build PASS
+  - [x] İlk dikey dilim için GitHub Actions CI PASS ve PR #7 merge (`4978d2f`)
+  - [ ] Otomatik sektör/faaliyet/lokasyon/contact-signal extraction
+  - [ ] İkinci kaynak politikası; ileride AI kullanılırsa AI receipt
+
+--- Issue #8 — ContactPoint, Permission ve Suppression Gate (Phase 2b) ---
+- Öncelik: HIGH
+- Sorumlu: Codex
+- Durum: REVIEW (`codex/contact-point-v1`; yerel kapılar PASS, PR/CI bekleniyor)
+- Bağımlılıklar: Issue #3 Research Mission ilk dikey dilimi merge edilmiş olmalı
+- Acceptance criteria:
+  - [x] Şirket genel ve kişi iş/personal iletişim noktaları ayrı sınıflanır
+  - [x] Kaynak, toplama zamanı, verification receipt, confidence ve retention zorunlulukları
+  - [x] E-posta normalizasyonu ve sıkı E.164 telefon doğrulaması
+  - [x] Public kaynağın iletişim izni sayılmaması; `UNKNOWN`/unverified deny
+  - [x] Ülke, kanal, amaç, veri dayanağı ve iletişim kuralı ayrı receipt olarak saklanır
+  - [x] Global opt-out/suppression normalize alıcı hash'iyle bypass edilemez
+  - [x] Verified + reviewed ALLOWED için dry-run gate; gerçek gönderim yok
+  - [x] Additive migration temiz disposable DB'ye sıfırdan uygulandı
+  - [x] Odaklı API/DB regresyonları PASS (26/26)
+  - [x] Tam lint/typecheck/test (97/97)/build ve güvenlik/veri taraması PASS
   - [ ] GitHub Actions CI PASS ve PR merge
 
 ================================================================

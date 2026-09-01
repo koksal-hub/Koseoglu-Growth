@@ -80,6 +80,10 @@ enum EventType {
   RESEARCH_CANDIDATE_ACCEPTED
   RESEARCH_CANDIDATE_REJECTED
   RESEARCH_CANDIDATE_NEEDS_EVIDENCE
+  CONTACT_POINT_COLLECTED
+  CONTACT_POINT_VERIFIED
+  COMMUNICATION_PERMISSION_RECORDED
+  COMMUNICATION_SUPPRESSED
 }
 
 enum ResearchMissionStatus {
@@ -99,6 +103,81 @@ enum ResearchCandidateStatus {
 enum EvidenceFreshnessStatus {
   CURRENT
   STALE
+  UNKNOWN
+}
+
+enum ContactPointType {
+  EMAIL
+  PHONE
+}
+
+enum ContactPointClassification {
+  COMPANY_GENERAL
+  PERSON_WORK
+  PERSONAL
+  UNKNOWN
+}
+
+enum ContactPointVerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  INVALID
+  STALE
+}
+
+enum PrivacyNoticeStatus {
+  NOT_REQUIRED
+  PENDING
+  PROVIDED
+  EXEMPTION_RECORDED
+}
+
+enum DataProcessingBasis {
+  CONSENT
+  CONTRACT
+  LEGAL_OBLIGATION
+  LEGITIMATE_INTEREST
+  PUBLIC_INTEREST
+  VITAL_INTEREST
+  PUBLICIZED_BY_DATA_SUBJECT
+  LEGAL_CLAIM
+  NOT_PERSONAL_DATA
+  UNKNOWN
+}
+
+enum CommunicationChannel {
+  EMAIL
+  PHONE
+  SMS
+  WHATSAPP
+}
+
+enum CommunicationPurpose {
+  SALES_OUTREACH
+  MARKETING
+  CUSTOMER_SERVICE
+}
+
+enum CommunicationPermissionStatus {
+  ALLOWED
+  DENIED
+  OPTED_OUT
+  SUPPRESSED
+}
+
+enum CommunicationRule {
+  EXPLICIT_CONSENT
+  EXISTING_CUSTOMER
+  B2B_RECIPIENT_EXCEPTION
+  SOFT_OPT_IN
+  OTHER_REVIEWED
+  UNKNOWN
+}
+
+enum RecipientCategory {
+  LEGAL_ENTITY
+  TRADER_OR_CRAFTSMAN
+  CONSUMER
   UNKNOWN
 }
 
@@ -135,6 +214,7 @@ model Company {
   mergedFrom   Company[] @relation("CompanyMerge")
 
   contacts                  Contact[]
+  contactPoints             ContactPoint[]
   leads                     Lead[]
   opportunities             Opportunity[]
   evidences                 Evidence[]
@@ -237,9 +317,10 @@ model Contact {
   sourceChannel      SourceChannel?
   sourceDetail       String?
 
-  leads      Lead[]
-  activities Activity[]
-  followUps  FollowUp[]
+  leads         Lead[]
+  activities    Activity[]
+  followUps     FollowUp[]
+  contactPoints ContactPoint[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -251,7 +332,92 @@ model Contact {
   /// value that can collide. If this ever needs to be restricted, use a
   /// partial unique index instead of tightening this constraint.
   @@unique([companyId, email])
+  @@unique([id, companyId])
   @@index([companyId])
+}
+
+/// A sourced communication address. A public email/phone is discovery data,
+/// not permission to contact. Values are normalized before persistence.
+model ContactPoint {
+  id                  String                         @id @default(cuid())
+  companyId           String
+  company             Company                        @relation(fields: [companyId], references: [id])
+  contactId           String?
+  contact             Contact?                       @relation(fields: [contactId, companyId], references: [id, companyId])
+  type                ContactPointType
+  classification      ContactPointClassification
+  normalizedValue     String
+  countryCode         String
+  sourceUrl           String
+  sourceName          String?
+  sourceIsPublic      Boolean
+  collectedAt         DateTime
+  observedAt          DateTime?
+  verificationStatus  ContactPointVerificationStatus @default(UNVERIFIED)
+  verifiedAt          DateTime?
+  verifiedBy          String?
+  verificationReason  String?
+  confidence          Float
+  collectionPurpose   String
+  dataProcessingBasis DataProcessingBasis
+  noticeStatus        PrivacyNoticeStatus
+  noticeProvidedAt    DateTime?
+  retentionUntil      DateTime?
+  deletedAt           DateTime?
+
+  permissions CommunicationPermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, type, normalizedValue])
+  @@index([companyId])
+  @@index([contactId])
+  @@index([verificationStatus])
+  @@index([retentionUntil])
+}
+
+/// Append-only human/legal review receipt. An ALLOWED receipt is necessary
+/// but not sufficient: the dry-run gate also checks verification, retention,
+/// classification, channel compatibility, and global suppression.
+model CommunicationPermission {
+  id                  String                        @id @default(cuid())
+  contactPointId      String
+  contactPoint        ContactPoint                  @relation(fields: [contactPointId], references: [id])
+  channel             CommunicationChannel
+  purpose             CommunicationPurpose
+  jurisdictionCountry String
+  status              CommunicationPermissionStatus
+  dataProcessingBasis DataProcessingBasis
+  communicationRule   CommunicationRule
+  recipientCategory   RecipientCategory
+  consentReference    String?
+  evidenceUrl         String?
+  policyVersion       String
+  checkedAt           DateTime
+  expiresAt           DateTime?
+  reviewedBy          String
+  reason              String
+  createdAt           DateTime                      @default(now())
+
+  @@index([contactPointId, channel, purpose, jurisdictionCountry])
+  @@index([status])
+  @@index([checkedAt])
+}
+
+/// Global, append-only block keyed by a pseudonymous recipient hash. The hash
+/// is deterministic for matching, so it is pseudonymous rather than anonymous.
+model SuppressionEntry {
+  id            String               @id @default(cuid())
+  channel       CommunicationChannel
+  recipientHash String
+  reason        String
+  source        String
+  recordedBy    String
+  createdAt     DateTime             @default(now())
+
+  @@unique([channel, recipientHash])
+  @@index([createdAt])
 }
 
 /// A sales lead: a Company (and optionally a specific Contact) Growth is
