@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T20:58:00+03:00
-last_actor: Codex (Issue #23 reporting/observability)
+last_update: 2026-09-01T21:12:00+03:00
+last_actor: Codex (Issue #25 social foundation)
 
-CURRENT PHASE: PHASE 7 REPORTING / OBSERVABILITY / COST — CI/REVIEW GATE
-ACTIVE ISSUE: #23 — Reporting, observability ve cost attribution
-ACTIVE BRANCH: `codex/phase7-reporting-v1` (`main` `65abee6` tabanı)
+CURRENT PHASE: PHASE 8A SOCIAL COMMAND CENTER FOUNDATION — CI/REVIEW GATE
+ACTIVE ISSUE: #25 — Social Command Center foundation (safe/no provider)
+ACTIVE BRANCH: `codex/phase8-social-foundation-v1` (`main` `8e07273` tabanı)
 
 ## Uygulanan dar kapsam
 
@@ -55,6 +55,15 @@ ACTIVE BRANCH: `codex/phase7-reporting-v1` (`main` `65abee6` tabanı)
 - Private `GET /api/reports/management?date=YYYY-MM-DD` endpoint'i deterministik
   günlük snapshot üretir/reuse eder; malformed date ve credential-shaped metadata
   reddedilir.
+- `SocialPlatform`, credential-free `SocialConnection`, `MasterContent` ve
+  platform-specific `SocialContentVariant` modelleri additive olarak eklendi.
+  OAuth access/refresh token yerine yalnız gelecekteki secret-manager opaque ref'i
+  kabul edilir.
+- Versioned conservative content-policy validation, deterministic content hash ve
+  validation receipt'i eklendi. Human approval helper'ı author/reviewer ayrımını
+  zorunlu kılar; DRAFT → IN_REVIEW → APPROVED akışı dış publish olmadan tutulur.
+- Provider-neutral `SocialProviderAdapter` interface/registry tanımlandı; kayıtlı
+  adapter yoksa 503 döner ve bu fazda connect/refresh/upload/publish çağrısı yoktur.
 
 ## Taze yerel kanıt
 
@@ -80,6 +89,11 @@ ACTIVE BRANCH: `codex/phase7-reporting-v1` (`main` `65abee6` tabanı)
 - Phase 7 odaklı raporlama testleri: PASS — 4/4 (Istanbul window, usage receipt
   idempotency/conflict, KPI snapshot reuse, endpoint validation).
 - Phase 7 sonrası tam test paketi: PASS — 151/151, 14 dosya; API+web build PASS.
+- Phase 7 PR #24 merge: CI run `33541029393` SUCCESS; squash commit `8e07273`;
+  Issue #23 CLOSED.
+- Phase 8A policy/adapter unit testleri: PASS — 5/5. Docker daemon kapalı olduğu
+  için Phase 8A'nın local DB migration/full integration testi henüz çalıştırılamadı;
+  bu durum CI kapısında yeniden doğrulanacak.
 - Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
   migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
 - Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
@@ -115,7 +129,7 @@ ACTIVE BRANCH: `codex/phase7-reporting-v1` (`main` `65abee6` tabanı)
 
 ## Sonraki adım
 
-Issue #23 için tam migration/lint/typecheck/test/build CI'sini ve PR merge kapısını
-tamamla. Gerçek web crawler, AI/provider çağrısı, Resend API çağrısı, müşteri
-gönderimi, inbound reply, auth/public deploy veya sosyal hesap yayını hâlâ kapsam
-dışıdır; bunlar ayrı faz ve açık güvenlik/operasyon onayı gerektirir.
+Issue #25 için fresh DB migration/full integration testi, CI ve PR merge kapısını
+tamamla. Gerçek OAuth/token refresh, medya yükleme, sosyal yayın/DM, AI çağrısı,
+Resend API çağrısı, müşteri gönderimi, inbound reply, auth/public deploy hâlâ
+kapsam dışıdır; bunlar ayrı açık güvenlik/operasyon onayı gerektirir.

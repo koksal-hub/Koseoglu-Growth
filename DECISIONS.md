@@ -447,3 +447,36 @@ hash değiştiğinde row'u günceller; aynı input reuse olarak işaretlenir. Ge
 AI/provider, e-posta, telefon veya sosyal medya işlemi bu fazda çalıştırılmaz.
 
 STATUS: ACCEPTED FOR DETERMINISTIC REPORTING ONLY
+
+---
+
+## ADR-019 — Social Command Center Foundation: Provider-Neutral ve Human-Approved
+
+DECISION: Phase 8A sosyal medya temelinde dokuz platform ortak `SocialPlatform`
+enum'u, credential-free `SocialConnection` metadata'sı, bir `MasterContent` ve
+platform-specific `SocialContentVariant` kayıtları kullanır. Veritabanına OAuth
+access/refresh token, medya binary'si veya provider secret yazılmaz; yalnız ileride
+secret manager'a işaret eden opaque ref kabul edilebilir. Variant content hash'i ve
+versioned product policy receipt'i deterministiktir. DRAFT → IN_REVIEW → APPROVED
+geçişinde author ile reviewer aynı olamaz. Provider adapter interface'i ve in-process
+registry vardır, fakat kayıtlı concrete adapter yoksa hiçbir network/publish işlemi
+başlamaz.
+
+WHY: Tek master içeriği dokuz kanala körlemesine kopyalamak platform kuralları,
+marka doğruluğu ve spam riskini büyütür. OAuth tokenlarını uygulama DB'sinde tutmak
+credential sızıntısı ve refresh sorumluluğu doğurur. Human approval olmadan sosyal
+yayın geri alınamaz dış aksiyondur; önce veri sözleşmesi ve validation sınırı
+kanıtlanmalıdır.
+
+ALTERNATIVES: Her platform için ayrı iş mantığı; tokenı plaintext/JSON olarak DB'ye
+yazmak; master içeriği otomatik yayınlamak; provider SDK'sını domain modeline
+bağlamak; aynı author'ın kendi onayını kabul etmek.
+
+CONSEQUENCES: Bu faz yalnız içerik hazırlama/approval altyapısıdır; gerçek OAuth,
+token refresh, media upload, publish, schedule, DM/inbox veya yorum cevabı yoktur.
+Conservative character limitleri provider'ın canlı resmi limitleri değildir;
+versioned product guard olarak concrete adapter öncesi tekrar doğrulanacaktır.
+Queue/worker altyapısı ileride publish idempotency için reuse edilir. Auth yokluğu
+nedeniyle bu metadata ve approval yüzeyi public/multi-user deploy edilemez.
+
+STATUS: ACCEPTED FOR SAFE FOUNDATION ONLY
