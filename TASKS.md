@@ -324,14 +324,27 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
 --- Issue #35 — Safe Unified Inbox Receipts ve Human Classification (Phase 8F) ---
 - Öncelik: HIGH / RISK B
 - Sorumlu: Codex
-- Durum: REVIEW (CI/merge kapısı bekleniyor)
+- Durum: DONE (PR #36 CI run `33547278295` PASS; squash merge `1ea5883`;
+  Issue #35 kapalı)
 - Bağımlılıklar: Issue #33 DONE; provider inbox/DM için ayrıca açık onay
 - Acceptance criteria:
   - [x] Metadata-only inbound receipt; raw message body persistence yok
   - [x] Platform/account/external message key ile duplicate receipt idempotency
   - [x] Human classification: LEAD/CUSTOMER/QUESTION/COMPLAINT/SPAM/OTHER
   - [x] Credential-shaped sender/key input rejection
-  - [ ] Fresh DB migration, full test/build, CI PASS ve Issue #35 kapanışı
+  - [x] Fresh DB migration, full test/build, CI PASS ve Issue #35 kapanışı
+
+--- Issue #37 — Provider OAuth Onboarding ve Pilot Approval Gate (Phase 8G) ---
+- Öncelik: HIGH / RISK A
+- Sorumlu: Codex + kullanıcı explicit approval
+- Durum: WAITING_APPROVAL (kod/publish başlamaz)
+- Bağımlılıklar: Seçili provider hesabı, exact scopes, secret-manager ve sandbox/paper sınırı
+- Acceptance criteria:
+  - [ ] Hesap/platform sahipliği ve pilot kapsamı yazılı olarak onaylandı
+  - [ ] Güncel provider API/policy, rate limit ve app review koşulları doğrulandı
+  - [ ] Secret-manager ref/rotation/expiry sahibi belirlendi; token DB/log/job payload'a girmez
+  - [ ] Sandbox/paper adapter contract testleri ve rollback/delivery monitor hazır
+  - [ ] Ayrı go-live kararı olmadan live publish/DM/customer contact disabled
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)

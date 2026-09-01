@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T22:12:00+03:00
-last_actor: Codex (Issue #35 safe social inbox receipts)
+last_update: 2026-09-01T22:25:00+03:00
+last_actor: Codex (Issue #37 provider onboarding gate)
 
-CURRENT PHASE: PHASE 8F SAFE SOCIAL INBOX / HUMAN CLASSIFICATION — LOCAL REVIEW
-ACTIVE ISSUE: #35 — Safe Unified Inbox receipts and human classification
-ACTIVE BRANCH: `codex/phase8f-social-inbox-receipts-v1` (`main` `ccc5021` tabanı)
+CURRENT PHASE: PHASE 8G PROVIDER OAUTH ONBOARDING / PILOT APPROVAL GATE
+ACTIVE ISSUE: #37 — Provider OAuth onboarding and pilot approval gate
+ACTIVE BRANCH: `codex/phase8g-provider-onboarding-gate-v1` (`main` `1ea5883` tabanı)
 
 ## Uygulanan dar kapsam
 
@@ -84,6 +84,10 @@ ACTIVE BRANCH: `codex/phase8f-social-inbox-receipts-v1` (`main` `ccc5021` taban�
 - Unified Inbox metadata receipt'i provider dedup anahtarı, sender/thread handle,
   message hash ve alınma zamanı tutar; ham mesaj metni saklanmaz. Intent yalnız
   insan review endpoint'iyle sınıflandırılır; otomatik cevap/DM yoktur.
+- Phase 8F sonrası tüm dış provider işlemleri için onboarding kapısı açıldı:
+  seçili pilot hesap/platform, exact OAuth scopes, secret-manager/rotation sahibi,
+  sandbox/paper sınırı ve rollback/onay kanıtı olmadan adapter implementasyonu veya
+  publish etkinleştirilmeyecek.
 
 ## Taze yerel kanıt
 
@@ -129,6 +133,8 @@ ACTIVE BRANCH: `codex/phase8f-social-inbox-receipts-v1` (`main` `ccc5021` taban�
   typecheck ve API/web build); squash commit `800e3b5`; Issue #31 CLOSED.
 - Phase 8E PR #34 merge: CI run `33546195604` SUCCESS (auth tests, regression,
   lint, typecheck ve API/web build); squash commit `ccc5021`; Issue #33 CLOSED.
+- Phase 8F PR #36 merge: CI run `33547278295` SUCCESS (167 test, migration, lint,
+  typecheck ve API/web build); squash commit `1ea5883`; Issue #35 CLOSED.
 - Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
   migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
 - Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
@@ -164,7 +170,7 @@ ACTIVE BRANCH: `codex/phase8f-social-inbox-receipts-v1` (`main` `ccc5021` taban�
 
 ## Sonraki adım
 
-Issue #35 için inbox migration/integration testleri, CI ve PR merge kapısını
-tamamla. Gerçek OAuth/token refresh, medya yükleme, sosyal yayın/DM, AI çağrısı,
-Resend API çağrısı, müşteri gönderimi, inbound reply, auth/public deploy hâlâ
-kapsam dışıdır; bunlar ayrı açık güvenlik/operasyon onayı gerektirir.
+Issue #37 için kullanıcıdan seçili provider/pilot hesap, scope, secret-manager ve
+sandbox/paper onayı gerekir. Bu kanıt gelene kadar gerçek OAuth/token refresh,
+medya yükleme, sosyal yayın/DM, AI çağrısı, Resend API çağrısı, müşteri gönderimi
+ve inbound reply kapsam dışıdır.

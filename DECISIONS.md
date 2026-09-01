@@ -612,3 +612,28 @@ CRM link, assignment, reply veya DM göndermez. Connector, retention/consent, PI
 redaction ve human response workflow sonraki ayrı risk/onay dilimleridir.
 
 STATUS: ACCEPTED FOR METADATA-ONLY INBOX
+
+---
+
+## ADR-025 — Provider OAuth Onboarding Öncesi Açık Onay Kapısı
+
+DECISION: Provider adapter, OAuth callback/token refresh, media upload, publish,
+DM veya reply implementasyonu; kullanıcı tarafından seçili hesap/platform, exact
+scope, provider app sahipliği, secret-manager rotation/expiry sahibi, sandbox/paper
+sınırı, rollback/delivery policy ve yazılı onay kaydı olmadan başlamaz. Mevcut
+adapter registry/readiness yalnız fail-closed sözleşmedir; gerçek token hiçbir
+DB, log veya Job payload'ına giremez.
+
+WHY: Dokuz platformun izin, app review, fiyat, rate limit ve yayın davranışı
+aynı değildir. Hesap sahipliği ve scope belirsizken kodu canlıya bağlamak müşteri
+iletişimi, gizlilik ve geri alınamaz yayın riski doğurur.
+
+ALTERNATIVES: Tüm provider'ları tek seferde bağlamak; kullanıcı tokenını chat/env
+veya DB'ye kopyalamak; sandbox olmadan live publish açmak; approval'ı sonradan almak.
+
+CONSEQUENCES: Safe composer/inbox/attribution/monitor hazır kalır, fakat dış
+provider aksiyonu bilinçli olarak kapalıdır. Onboarding kanıtı geldiğinde önce
+tek bir pilot adapter ve paper/sandbox contract testleri yürütülür; live go-live
+ayrı karar olarak ele alınır.
+
+STATUS: ACCEPTED — IMPLEMENTATION WAITING FOR EXPLICIT PROVIDER SCOPE
