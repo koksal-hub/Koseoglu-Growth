@@ -254,3 +254,33 @@ teknik bilgi yazılır.
 - etkisi: Transaction sınırı yalnız birlikte commit/rollback olması gereken yazıları
   taşımalı. Zengin response projection atomik yazılar tamamlandıktan sonra okunarak
   hem tutarlılık korunmalı hem sürücünün concurrent-query yoluna girilmemelidir.
+
+- tarih: 2026-09-01T09:05:00+03:00
+- konu: Public iletişim verisi gönderim izni değildir
+- açıklama: Bir şirket sitesinde veya başka açık kaynakta e-posta/telefon bulunması,
+  o alıcıya belirli amaç ve kanalda mesaj göndermek için otomatik yetki üretmez.
+- etkisi: ContactPoint provenance/verification ile CommunicationPermission insan
+  kararı ayrı modellerdir; public flag tek başına gate'i açamaz.
+
+- tarih: 2026-09-01T09:05:00+03:00
+- konu: Veri işleme dayanağı ile ticari iletişim kuralı ayrı boyutlardır
+- açıklama: Bir kişi verisini saklamak/işlemek için dayanak bulunması, satış veya
+  pazarlama mesajının gönderilebileceği anlamına gelmez; ülke, amaç, alıcı tipi,
+  kanal ve iletişim kuralı ayrıca incelenmelidir.
+- etkisi: ALLOWED receipt, iki boyutu da policy version, reviewer, zaman, gerekçe
+  ve evidence ile taşır. Uygulama hukuki sonucu otomatik tahmin etmez.
+
+- tarih: 2026-09-01T09:05:00+03:00
+- konu: Suppression firma kaydından bağımsız ve global olmalıdır
+- açıklama: Opt-out yalnız ContactPoint veya Company üzerinde tutulursa aynı
+  normalize e-posta/telefon başka bir firma kaydından tekrar kullanılabilir.
+- etkisi: Kanal + normalize değer deterministik SHA-256 hash ile global engel
+  olur. Hash pseudonymous veridir; anonim veya güvenle paylaşılabilir sayılmaz.
+
+- tarih: 2026-09-01T09:05:00+03:00
+- konu: Dry-run permission gate gelecekteki send yetkisi değildir
+- açıklama: Gate değerlendirmesi ile provider çağrısı arasındaki sürede opt-out,
+  süre dolumu veya policy değişebilir.
+- etkisi: Bu aşama yalnız `actualSendPerformed=false` sonucu üretir. Gerçek send
+  eklendiğinde gate, onay ve idempotent send yazımı aynı yürütme sınırında yeniden
+  kontrol edilmelidir.

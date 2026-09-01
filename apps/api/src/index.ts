@@ -8,6 +8,7 @@ import { registerErrorHandler } from './plugins/errorHandler';
 import { prisma } from './lib/prisma';
 import healthRoutes from './routes/health';
 import researchMissionRoutes from './routes/research-missions';
+import contactPointRoutes from './routes/contact-points';
 
 export function buildServer(): { server: FastifyInstance; env: Env } {
   // validate env on startup
@@ -42,6 +43,7 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
   // Business routes are local/private until the authentication architecture is
   // approved and implemented. They must not be exposed in a public deployment.
   server.register(researchMissionRoutes, { prefix: '/api' });
+  server.register(contactPointRoutes, { prefix: '/api' });
 
   // basic swagger/OpenAPI could be added here in the future
 

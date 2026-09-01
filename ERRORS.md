@@ -343,3 +343,37 @@ oluşturulmaz.
 - etki: Şu an test/build sonucu etkilenmiyor; ilerideki Vite major yükseltmesinde
   config/module biçimi uyarlanmazsa kırılma riski var.
 - status: OPEN / NON-BLOCKING. ESM config geçişi ayrı toolchain görevi olmalıdır.
+
+---
+
+- id: pnpm-postinstall-database-url-required
+- tarih: 2026-09-01T08:48:00+03:00
+- yer: yeni `codex/contact-point-v1` worktree, root `postinstall`
+- kısa: İlk `pnpm install`, paketleri kurduktan sonra `prisma generate`
+  postinstall adımında `DATABASE_URL` tanımlı olmadığı için fail-fast oldu.
+- root_cause: Prisma config ve API başlangıcı doğrulanmış DB URL'sini zorunlu
+  tutuyor; yeni worktree `.env` dosyası taşımıyor ve secret kopyalanmıyor.
+- düzeltme/workaround: Gerçek credential kopyalamadan, yalnız disposable yerel
+  PostgreSQL URL'si process env olarak verilerek `pnpm install` tekrarlandı ve
+  generate tamamlandı. Uygulamanın fail-fast davranışı değiştirilmedi.
+- status: DOCUMENTED / NON-BLOCKING. Yeni checkout bootstrap ergonomisi ileride
+  secret içermeyen açık bir komutla belgelenebilir; bu branch için bağımlılık ve
+  Prisma client kurulumu PASS.
+
+---
+
+- id: contact-point-db-timeline-and-person-basis-gap
+- tarih: 2026-09-01T09:10:00+03:00
+- yer: ContactPoint migration ve communication permission gate
+- kısa: İlk 21/21 odaklı koşu API zaman sırasını doğruluyordu; fakat doğrudan DB
+  update'i `verifiedAt < collectedAt` yazabilirdi. PERSON_WORK permission receipt
+  de yanlış biçimde `NOT_PERSONAL_DATA` diyebilirdi.
+- root_cause: Timeline kuralları route/service katmanında kalmış, migration'a
+  tam yansıtılmamıştı. Permission basis guard yalnız PERSONAL açık-rıza kuralına
+  odaklanmıştı ve tüm kişi-sınıflarını kapsamıyordu.
+- düzeltme: Observation/retention/verification order ve receipt/country DB CHECK
+  constraint'leri eklendi. PERSON_WORK/PERSONAL için NOT_PERSONAL_DATA hem receipt
+  yazımında reddediliyor hem gate'te deny nedeni üretiyor. Doğrudan DB ve API
+  regresyonları ile malformed email/phone negatifleri eklendi.
+- status: FIXED LOCALLY. İkinci yeni temiz DB'de dört migration PASS; odaklı
+  26/26, tam 97/97, lint/typecheck/build PASS; DB katalog doğrulaması PASS.

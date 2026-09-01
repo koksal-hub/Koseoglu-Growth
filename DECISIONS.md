@@ -26,8 +26,6 @@ vadede entegrasyon karmaşıklığı biraz artar, uzun vadede blast radius küç
 
 STATUS: ACCEPTED
 
----
-
 ## ADR-002 — GitHub Tek Doğruluk Kaynağı
 
 DECISION: Proje durumu, görev kuyruğu ve karar geçmişi GitHub üzerinden
@@ -216,5 +214,36 @@ belirsizliği sessizce çözmek; otomatik Company/Lead oluşturmak.
 CONSEQUENCES: API yanıtı match nedeni ve güvenini gösterir; eşleşen adayın kabulü
 açık resolution ister. Veri modeli iki nullable ilişki taşır, fakat araştırma
 gerçeği ile insan kararını denetlenebilir biçimde ayırır.
+
+STATUS: ACCEPTED
+
+---
+
+## ADR-012 — Bulunan İletişim Noktası ile İletişim İznini Ayır
+
+DECISION: `ContactPoint`, bir e-posta veya telefonun kaynağını, sınıfını,
+toplanma/doğrulama zamanını, güvenini ve veri işleme bağlamını tutar;
+`CommunicationPermission` ise belirli kanal, amaç ve ülke için insan tarafından
+incelenmiş iletişim kararını ayrı ve eklemeli bir receipt olarak tutar. Açık web
+kaynağında bulunmak izin sayılmaz. `UNKNOWN`, süresi geçmiş karar, düşük güven,
+eksik aydınlatma/retention veya global suppression her zaman deny üretir.
+
+WHY: Veri işleme dayanağı ile ticari iletişim kuralı aynı karar değildir. Bir
+adresin teknik olarak ulaşılabilir olması, o kanalda ve amaçta mesaj gönderme
+yetkisi vermez. Opt-out/şikâyet kayıtlarının firma bazında kalması da aynı
+normalize alıcının başka firma kaydından tekrar kullanılmasına yol açabilir.
+
+ALTERNATIVES: Public kaynağı otomatik izin saymak; kişi ve şirket adreslerini tek
+alan olarak saklamak; izin durumunu `ContactPoint` üzerinde değiştirilebilir tek
+alan yapmak; suppression'ı yalnız company kapsamında tutmak.
+
+CONSEQUENCES: Normalize alıcı değeri ve kanalından deterministik SHA-256
+suppression hash'i üretilir; bu hash anonim değil, pseudonymous güvenlik
+verisidir. `OPTED_OUT`/`SUPPRESSED` global ve bypass edilemez engel oluşturur.
+Kişisel adreslerde retention ve uygun veri işleme dayanağı zorunludur; PERSONAL
+iletişim için yalnız açık rıza + explicit-consent receipt ALLOWED olabilir.
+Türkiye'ye özgü tacir/esnaf istisnası başka ülke kararında kullanılamaz.
+Mevcut gate yalnız dry-run'dır ve gerçek gönderim yapmaz; ileride provider send
+işlemi eklenirse aynı kapı gönderim anında atomik olarak yeniden değerlendirilir.
 
 STATUS: ACCEPTED
