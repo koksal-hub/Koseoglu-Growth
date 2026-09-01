@@ -130,7 +130,8 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
 --- Issue #8 — ContactPoint, Permission ve Suppression Gate (Phase 2b) ---
 - Öncelik: HIGH
 - Sorumlu: Codex
-- Durum: REVIEW (`codex/contact-point-v1`; yerel kapılar PASS, PR/CI bekleniyor)
+- Durum: DONE (PR #9; run `33476774205` PASS; squash merge `4272840`;
+  Issue #8 completed/closed)
 - Bağımlılıklar: Issue #3 Research Mission ilk dikey dilimi merge edilmiş olmalı
 - Acceptance criteria:
   - [x] Şirket genel ve kişi iş/personal iletişim noktaları ayrı sınıflanır
@@ -143,7 +144,7 @@ bunları gerçek GitHub Issue'larına dönüştürmelidir (öneri komutları en 
   - [x] Additive migration temiz disposable DB'ye sıfırdan uygulandı
   - [x] Odaklı API/DB regresyonları PASS (26/26)
   - [x] Tam lint/typecheck/test (97/97)/build ve güvenlik/veri taraması PASS
-  - [ ] GitHub Actions CI PASS ve PR merge
+  - [x] GitHub Actions CI PASS ve PR #9 merge
 
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
