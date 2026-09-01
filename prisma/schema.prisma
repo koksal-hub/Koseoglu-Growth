@@ -75,6 +75,31 @@ enum EventType {
   OPPORTUNITY_CREATED
   CUSTOMER_WON
   CUSTOMER_LOST
+  RESEARCH_MISSION_CREATED
+  RESEARCH_CANDIDATE_PROPOSED
+  RESEARCH_CANDIDATE_ACCEPTED
+  RESEARCH_CANDIDATE_REJECTED
+  RESEARCH_CANDIDATE_NEEDS_EVIDENCE
+}
+
+enum ResearchMissionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum ResearchCandidateStatus {
+  PROPOSED
+  NEEDS_MORE_EVIDENCE
+  ACCEPTED
+  REJECTED
+}
+
+enum EvidenceFreshnessStatus {
+  CURRENT
+  STALE
+  UNKNOWN
 }
 
 /// A B2B company Growth has discovered, researched, or sold to.
@@ -109,10 +134,12 @@ model Company {
   mergedInto   Company?  @relation("CompanyMerge", fields: [mergedIntoId], references: [id])
   mergedFrom   Company[] @relation("CompanyMerge")
 
-  contacts      Contact[]
-  leads         Lead[]
-  opportunities Opportunity[]
-  evidences     Evidence[]
+  contacts                  Contact[]
+  leads                     Lead[]
+  opportunities             Opportunity[]
+  evidences                 Evidence[]
+  researchCandidates        ResearchCandidate[] @relation("ResearchCandidateAcceptedCompany")
+  matchedResearchCandidates ResearchCandidate[] @relation("ResearchCandidateMatchedCompany")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -121,6 +148,78 @@ model Company {
   @@unique([domain])
   @@index([normalizedName])
   @@index([emailDomain])
+  @@index([status])
+}
+
+/// A bounded, human-owned research assignment. The first version accepts
+/// manual/fixture input only; crawlers and LLMs are deliberately out of scope.
+model ResearchMission {
+  id             String                @id @default(cuid())
+  name           String
+  scope          String
+  country        String?
+  region         String?
+  sector         String?
+  route          String?
+  status         ResearchMissionStatus @default(ACTIVE)
+  budgetLimit    Decimal?              @db.Decimal(14, 2)
+  budgetCurrency String                @default("TRY")
+  owner          String
+  startedAt      DateTime              @default(now())
+  completedAt    DateTime?
+
+  candidates ResearchCandidate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([owner])
+  @@index([createdAt])
+}
+
+/// A proposed company inside a ResearchMission. Proposed fields remain as a
+/// source snapshot; `matchedCompanyId` records deterministic resolution as a
+/// proposal, while `companyId` is set only after an accepted human decision.
+model ResearchCandidate {
+  id               String                  @id @default(cuid())
+  missionId        String
+  mission          ResearchMission         @relation(fields: [missionId], references: [id])
+  companyId        String?
+  company          Company?                @relation("ResearchCandidateAcceptedCompany", fields: [companyId], references: [id])
+  matchedCompanyId String?
+  matchedCompany   Company?                @relation("ResearchCandidateMatchedCompany", fields: [matchedCompanyId], references: [id])
+  proposedName     String
+  taxNumber        String?
+  domain           String?
+  phone            String?
+  emailDomain      String?
+  country          String?
+  city             String?
+  address          String?
+  sector           String?
+  website          String?
+  reason           String
+  status           ResearchCandidateStatus @default(PROPOSED)
+  /// 0..1, also enforced by the DB constraint
+  /// "ResearchCandidate_confidence_range".
+  confidence       Float
+  /// Deterministic entity-resolution receipt. A match proposes a link; the
+  /// human decision still controls whether the candidate is accepted.
+  matchedBy        String?
+  matchConfidence  Float?
+  decisionReason   String?
+  decidedBy        String?
+  decidedAt        DateTime?
+
+  evidences Evidence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([missionId])
+  @@index([companyId])
+  @@index([matchedCompanyId])
   @@index([status])
 }
 
@@ -246,28 +345,36 @@ model Opportunity {
 /// A piece of evidence backing a Company record or an Event (ADR-008).
 /// An AI guess is not Evidence — this table only holds sourced facts.
 model Evidence {
-  id          String    @id @default(cuid())
-  companyId   String?
-  company     Company?  @relation(fields: [companyId], references: [id])
-  leadId      String?
-  lead        Lead?     @relation(fields: [leadId], references: [id])
-  eventId     String?
-  event       Event?    @relation(fields: [eventId], references: [id])
-  sourceUrl   String
-  sourceName  String?
-  publishedAt DateTime?
-  accessedAt  DateTime  @default(now())
-  summary     String
+  id              String                  @id @default(cuid())
+  companyId       String?
+  company         Company?                @relation(fields: [companyId], references: [id])
+  leadId          String?
+  lead            Lead?                   @relation(fields: [leadId], references: [id])
+  eventId         String?
+  event           Event?                  @relation(fields: [eventId], references: [id])
+  candidateId     String?
+  candidate       ResearchCandidate?      @relation(fields: [candidateId], references: [id])
+  sourceUrl       String
+  sourceName      String?
+  publishedAt     DateTime?
+  accessedAt      DateTime                @default(now())
+  observedAt      DateTime?
+  claimKey        String?
+  freshnessStatus EvidenceFreshnessStatus @default(UNKNOWN)
+  legalNotes      String?
+  summary         String
   /// 0..1 — how much this single piece of evidence should be trusted.
   /// Range is enforced in the DB via CHECK constraint
   /// "Evidence_confidence_range" (additive migration, not expressible here).
-  confidence  Float     @default(0.5)
+  confidence      Float                   @default(0.5)
 
   createdAt DateTime @default(now())
 
   @@index([companyId])
   @@index([leadId])
   @@index([eventId])
+  @@index([candidateId])
+  @@index([claimKey])
 }
 
 /// Immutable audit/event log (ADR-007). Deliberately NOT a full
