@@ -524,3 +524,15 @@ oluşturulmaz.
   forged ACCEPTED insert, PREPARED+NULL insert ve DISPATCHING+NULL update regresyonları
   yazıldı.
 - status: FIXED. Odaklı 31/31 PASS; bağımsız son re-review'da blocking bulgu yok.
+
+---
+
+- id: github-actions-node20-forced-node24-annotation
+- tarih: 2026-09-01T19:51:02+03:00
+- yer: PR #18 GitHub Actions run `33534095475`
+- kısa: CI tamamen SUCCESS olmasına rağmen GitHub; checkout/setup-node/pnpm
+  action'larının Node 20 runtime'ının deprecated olduğunu ve runner'ın bunları
+  Node 24 altında zorla çalıştırdığını annotation olarak bildirdi.
+- etki: Migration/lint/typecheck/test/build sonucunu etkilemedi; gelecekte action
+  major sürümleri güncellenmezse platform uyumluluk riski oluşabilir.
+- status: OPEN / NON-BLOCKING. Action major güncellemesi ayrı toolchain görevidir.

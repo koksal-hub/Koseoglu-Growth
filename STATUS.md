@@ -1,9 +1,9 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T19:44:56+03:00
-last_actor: Codex (Aşama 5 yerel uygulama, migration ve bağımsız inceleme kapanışı)
+last_update: 2026-09-01T19:51:02+03:00
+last_actor: Codex (Aşama 5 PR/CI kanıtı ve merge-onay kapısı)
 
-CURRENT PHASE: PHASE 5 LOCAL VERIFICATION — PR/CI PENDING
+CURRENT PHASE: PHASE 5 PR/CI PASS — RISK C MERGE APPROVAL GATE
 ACTIVE ISSUE: #17 — Phase 5: Resend test sandbox, send attempts ve signed webhook receipts
 ACTIVE BRANCH: `codex/issue-17-email-sandbox` (`main` `edd492b` tabanı)
 
@@ -53,8 +53,9 @@ ACTIVE BRANCH: `codex/issue-17-email-sandbox` (`main` `edd492b` tabanı)
   gösteriyor; Phase 5 drift'i veya eksik tablo/kolon/constraint önerisi yok
 - İki bağımsız salt-okunur güvenlik/migration yeniden incelemesi: blocking
   kritik/yüksek/orta bulgu yok; düşük operasyonel riskler aşağıda açık
-- Final `git diff --check`: PASS; high-confidence secret-shaped literal taraması:
-  PASS; commit/PR ve GitHub CI: PENDING
+- Final `git diff --check`: PASS; high-confidence secret-shaped literal taraması: PASS
+- Kod commit'i `eb00ac8`; PR #18 açık ve GitHub Actions run `33534095475`
+  migration/lint/typecheck/test/build adımlarının tamamında SUCCESS
 
 ## Açık sınırlar
 
@@ -68,6 +69,8 @@ ACTIVE BRANCH: `codex/issue-17-email-sandbox` (`main` `edd492b` tabanı)
   işleme Phase 5'te özellikle kapalıdır.
 - Bilinen non-blocking borçlar: Vite 5 CJS Node API uyarısı ve beklenen 4xx
   hatalarının error seviyesinde loglanması.
+- GitHub Actions non-blocking annotation: checkout/setup-node/pnpm action'larının
+  Node 20 runtime'ı runner tarafından Node 24'e zorlanıyor; workflow sonucu SUCCESS.
 - Kalan düşük riskler: test DB koruması isim/protokol kapısıdır (ayrı düşük yetkili
   test credential'ı daha güçlü olur); webhook secret'ın provider endpoint'iyle
   operasyonel eşleşmesi ve inbound event aboneliğinin kapalı oluşu go-live'da ayrıca
@@ -75,6 +78,6 @@ ACTIVE BRANCH: `codex/issue-17-email-sandbox` (`main` `edd492b` tabanı)
 
 ## Sonraki tek adım
 
-Issue #17 için exact-file commit/push/PR ve GitHub CI kanıtı üret. Risk C gereği `main`
-merge öncesinde dur ve kullanıcıdan açık onay iste. Gerçek müşteri gönderimi bu
-merge onayına da dahil değildir; ayrıca ve daha sonra açık onay gerektirir.
+Docs-only senkron commit'ini push edip PR #18'in yeni head CI sonucunu doğrula; Risk C
+gereği `main` merge öncesinde dur ve kullanıcıdan açık onay iste. Gerçek müşteri
+gönderimi bu merge onayına dahil değildir; ayrıca ve daha sonra açık onay gerektirir.
