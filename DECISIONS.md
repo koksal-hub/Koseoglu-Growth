@@ -414,3 +414,36 @@ iletişimi çalıştırmaz. Queue gözlemlenebilirliği operasyonel Job state'in
 işletme audit'i ise append-only Event tablosunda tutulur.
 
 STATUS: ACCEPTED FOR INTERNAL WORK ONLY
+
+---
+
+## ADR-018 — Europe/Istanbul Deterministic Reporting ve Secret-Free Usage Ledger
+
+DECISION: Phase 7 yönetim raporu sabit `Europe/Istanbul` takvim günleriyle
+hesaplanır (03:00 UTC başlangıç, 24 saat pencere) ve `reportDate:timezone`
+anahtarıyla idempotent `ManagementReport` snapshot'ına yazılır. Snapshot yalnız
+aggregate Company/Lead/Research/Job/Outreach/Event KPI'ları ve pseudonymous-safe
+durumları taşır; ham e-posta, telefon, token veya secret taşımaz. Maliyet
+gözlemlenebilirliği, dış çağrı başlatmayan ve yalnız gerçek kullanım receipt'i
+geldiğinde yazılan `UsageReceipt` ledger'ıyla sınırlıdır. Receipt yoksa AI kullanımı
+`0` görünür; uydurma maliyet veya başarı üretilmez.
+
+WHY: Yönetim kararı için engagement yerine lead, research quality, queue health ve
+gerçek maliyetin tek, tekrarlanabilir pencerede izlenmesi gerekir. Zaman dilimini
+istemci girdisine bırakmak gün sınırlarını ve rapor karşılaştırmasını bozar. Cost
+alanlarını float yerine integer minor unit olarak tutmak yuvarlama/drift riskini
+azaltır. Ham iletişim ve credential verisini snapshot'a kopyalamamak raporun
+erişim yüzeyini küçültür.
+
+ALTERNATIVES: Her istekte farklı timezone; mutable son-skor alanları; provider
+API'sinden rapor sırasında canlı çağrı; receipt olmadan token/maliyet tahmini;
+raw contact/metadata değerlerini dashboard'a taşımak.
+
+CONSEQUENCES: `GET /api/reports/management` private/local kalır; auth olmadığı
+için public veya multi-user deploy yetkisi vermez. `UsageReceipt` idempotency key
+aynı immutable usage receipt'i yeniden kullanır, farklı receipt 409 döner ve
+credential-shaped metadata reddedilir. Report snapshot regeneration yalnız input
+hash değiştiğinde row'u günceller; aynı input reuse olarak işaretlenir. Gerçek
+AI/provider, e-posta, telefon veya sosyal medya işlemi bu fazda çalıştırılmaz.
+
+STATUS: ACCEPTED FOR DETERMINISTIC REPORTING ONLY

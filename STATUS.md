@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T20:46:00+03:00
-last_actor: Codex (Issue #21 durable queue/worker)
+last_update: 2026-09-01T20:58:00+03:00
+last_actor: Codex (Issue #23 reporting/observability)
 
-CURRENT PHASE: PHASE 6 QUEUE / WORKER / SCHEDULER — CI/REVIEW GATE
-ACTIVE ISSUE: #21 — Queue, worker, scheduler ve crash recovery
-ACTIVE BRANCH: `codex/phase6-queue-v1` (`main` `805fd45` tabanı)
+CURRENT PHASE: PHASE 7 REPORTING / OBSERVABILITY / COST — CI/REVIEW GATE
+ACTIVE ISSUE: #23 — Reporting, observability ve cost attribution
+ACTIVE BRANCH: `codex/phase7-reporting-v1` (`main` `65abee6` tabanı)
 
 ## Uygulanan dar kapsam
 
@@ -45,6 +45,16 @@ ACTIVE BRANCH: `codex/phase6-queue-v1` (`main` `805fd45` tabanı)
 - `FOR UPDATE SKIP LOCKED` ile atomik claim, worker lease, stale crash recovery,
   exponential backoff/max-attempts ve deterministic in-process handler registry
   uygulandı. Handler yoksa iş yalnız retry/dead-letter olur; dış provider çağrısı yoktur.
+- Europe/Istanbul takvim günü için additive `ManagementReport` snapshot modeli ve
+  idempotent `reportKey` eklendi. Company/Lead/Research/Job/Outreach/Event KPI'ları
+  salt aggregate olarak hesaplanır; ham iletişim değerleri rapora girmez.
+- `UsageReceipt` yalnız gerçekleşmiş, secret-free provider/model kullanım receipt'i
+  kaydeder; stable idempotency + conflict guard, integer token/cost alanları ve
+  non-negative DB CHECK'leri vardır. Receipt yoksa AI kullanımı raporda `0` olarak
+  görünür; bu kod hiçbir AI/provider çağrısı başlatmaz.
+- Private `GET /api/reports/management?date=YYYY-MM-DD` endpoint'i deterministik
+  günlük snapshot üretir/reuse eder; malformed date ve credential-shaped metadata
+  reddedilir.
 
 ## Taze yerel kanıt
 
@@ -62,6 +72,14 @@ ACTIVE BRANCH: `codex/phase6-queue-v1` (`main` `805fd45` tabanı)
   tablosu, enum, unique idempotency index ve attempts/maxAttempts CHECK doğrulandı.
 - Phase 6 odaklı queue testleri: PASS — 6/6 (idempotency, concurrent SKIP LOCKED
   claim, completion, retry/backoff, dead-letter, stale lease, handler tick).
+- Phase 6 PR #22 merge: CI run `33539954625` SUCCESS; squash commit `65abee6`;
+  Issue #21 CLOSED.
+- Fresh DB: `growth_phase7_reporting_test_20260901` sıfırdan 18/18 migration PASS;
+  UsageReceipt/ManagementReport tabloları, unique idempotency index'leri ve CHECK'ler
+  uygulandı.
+- Phase 7 odaklı raporlama testleri: PASS — 4/4 (Istanbul window, usage receipt
+  idempotency/conflict, KPI snapshot reuse, endpoint validation).
+- Phase 7 sonrası tam test paketi: PASS — 151/151, 14 dosya; API+web build PASS.
 - Phase 5 migration'larında veri/tablo/kolon silme veya yeniden yazma yok. Son
   migration yalnız daha güçlü composite FK'lerin kapsadığı redundant simple FK'leri kaldırır.
 - Prisma diff artık yalnız Phase 4'ten gelen iki ek OutreachApproval savunma FK'sini
@@ -97,7 +115,7 @@ ACTIVE BRANCH: `codex/phase6-queue-v1` (`main` `805fd45` tabanı)
 
 ## Sonraki adım
 
-Issue #21 için migration/lint/typecheck/test/build CI'sini ve PR merge kapısını
-tamamla. Gerçek web crawler, AI çağrısı, Resend API çağrısı, müşteri gönderimi,
-inbound reply, auth/public deploy veya sosyal hesap yayını hâlâ kapsam dışıdır;
-bunlar ayrı faz ve açık güvenlik/operasyon onayı gerektirir.
+Issue #23 için tam migration/lint/typecheck/test/build CI'sini ve PR merge kapısını
+tamamla. Gerçek web crawler, AI/provider çağrısı, Resend API çağrısı, müşteri
+gönderimi, inbound reply, auth/public deploy veya sosyal hesap yayını hâlâ kapsam
+dışıdır; bunlar ayrı faz ve açık güvenlik/operasyon onayı gerektirir.
