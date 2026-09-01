@@ -5,6 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import { buildLogger, genReqId } from './plugins/logger';
 import { Env, validateEnv } from './plugins/env';
 import { registerErrorHandler } from './plugins/errorHandler';
+import { createInternalAuthHook } from './plugins/internal-auth';
 import { prisma } from './lib/prisma';
 import healthRoutes from './routes/health';
 import researchMissionRoutes from './routes/research-missions';
@@ -42,6 +43,12 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
   // requests are rejected (same-origin clients are unaffected).
   server.register(cors, { origin: corsOrigins.length > 0 ? corsOrigins : false });
   server.register(rateLimit, { max: 100, timeWindow: '1 minute' });
+  const internalAuthHook = createInternalAuthHook(env);
+  server.addHook('onRequest', async (request) => {
+    const route = request.url.split('?')[0];
+    if (route === '/api/health' || route === '/api/ready' || route === '/api/webhooks/resend') return;
+    await internalAuthHook(request);
+  });
 
   // register routes
   server.register(healthRoutes, { prefix: '/api' });
