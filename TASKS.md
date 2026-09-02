@@ -404,3 +404,16 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] Gerçek provider, network, customer contact veya otomatik exploration yok
   - [x] Araştırma uygulama planı ve ADR-028 ile kaynakların kanıt/proposal ayrımı
   - [x] Lint, typecheck, migration, full test ve API/web build CI kanıtı
+
+--- Issue #48 — Management report recommendation funnel ---
+- Öncelik: HIGH / MUST / RISK B
+- Sorumlu: Codex
+- Durum: DONE (PR #49 CI run `33648922655` PASS; squash merge `7ebe663`; Issue #48 kapalı)
+- Bağımlılıklar: RecommendationExposure/Outcome measurement contract; ManagementReport
+- Acceptance criteria:
+  - [x] Günlük report metrics içinde exposure/outcome toplamları
+  - [x] Recommendation type, mode ve outcome type kırılımları
+  - [x] `exposuresWithoutOutcomes` unknown/not recorded olarak korunur
+  - [x] Yeni alanlar snapshot input hash ve idempotent reuse davranışına dahildir
+  - [x] Dış provider/customer/social action veya otomatik exploration yok
+  - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı

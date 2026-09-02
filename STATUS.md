@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-02T18:25:00+03:00
-last_actor: Codex (Issue #45 CI/merge verification)
+last_update: 2026-09-02T18:40:00+03:00
+last_actor: Codex (Issue #48 CI/merge verification)
 
-CURRENT PHASE: PHASE 8J RESEARCH APPLICATION MEASUREMENT — DONE (SAFE MODE)
+CURRENT PHASE: PHASE 8K MANAGEMENT REPORT RECOMMENDATION FUNNEL — DONE (SAFE MODE)
 ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (`a249724` Phase 8J merge)
+ACTIVE BRANCH: `main` (`7ebe663` Phase 8K merge)
 
 ## Phase 8J araştırma uygulaması
 
@@ -20,6 +20,19 @@ ACTIVE BRANCH: `main` (`a249724` Phase 8J merge)
   reddedilir.
 - Bu dilim otomatik 90/10 exploration, bandit, crawler, AI/provider çağrısı,
   sosyal medya yayını, e-posta/telefon veya müşteri kaydı oluşturmaz.
+
+## Phase 8K rapor funnel'i
+
+- ManagementReport günlük metriklerine recommendation exposure/outcome sayıları,
+  recommendation type, exploitation/exploration mode ve outcome type kırılımları
+  eklendi.
+- `exposuresWithoutOutcomes` açıkça unknown/not recorded olarak raporlanır;
+  eksik sonuç başarı veya başarısızlık diye varsayılmaz. Snapshot input hash'i
+  yeni ölçüm alanlarını kapsar.
+- PR #49 CI run `33648922655`: SUCCESS — 22 test dosyası / 175 test, migration,
+  lint, typecheck ve API/web build. Squash merge `7ebe663`; Issue #48 CLOSED.
+- Yerel odaklı Vitest yine NOT_RUN: OneDrive/esbuild reparse-point erişimi
+  `vitest.config.ts` yüklemesini engelliyor; CI PostgreSQL entegrasyon kanıtıdır.
 
 ## Taze Phase 8J kanıtı
 

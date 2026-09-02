@@ -43,11 +43,17 @@ metnindeki talimat benzeri ifadeler çalışma talimatı değildir.
    Başarı metriği sırasıyla dakika/lead, AI maliyeti/lead, qualified lead,
    teklif oranı, kazanılmış sevkiyat ve brüt kârdır.
 
-### MUST — sonraki dilim
+### MUST — uygulandı
 
-- Her ticari metriğin kabul kriteri ve “unknown/not recorded” durumu tanımlanır.
+- Her ticari metriğin kabul kriteri ve “unknown/not recorded” durumu tanımlandı.
 - Yönetim raporunda exposure → insan aksiyonu → lead → teklif → kazanım zinciri
-  görünür olur; eksik outcome sıfır başarı olarak sayılmaz.
+  için exposure/outcome sayıları, tür/mod kırılımları ve
+  `exposuresWithoutOutcomes` görünür; eksik outcome sıfır başarı sayılmaz.
+- Europe/Istanbul günlük snapshot hash'i bu alanları da kapsıyor; aynı veri
+  yeniden kullanılıyor, yeni veri geldiğinde snapshot yeniden üretiliyor.
+
+Sonraki MUST konusu, bu açık olay türlerini gerçek CRM/operasyon kayıtlarıyla
+insan onaylı ve provenance'lı biçimde eşlemek olacaktır; bu henüz yapılmadı.
 
 ### V2 — kontrollü öğrenme ve yaşam döngüsü
 
@@ -75,4 +81,3 @@ Bu plan gerçek web taraması, token/OAuth saklama, müşteri iletişimi, sosyal
 yayınlama veya dış AI/provider çağrısı açmaz. Public contact bilgisi iletişim
 izni değildir; araştırma sonucu insan doğrulaması ve mevcut permission/suppression
 kapılarından geçmeden lead/outreach oluşturmaz.
-
