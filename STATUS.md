@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T01:45:00+03:00
-last_actor: Codex (Issue #57 CI/merge verification)
+last_update: 2026-09-03T02:20:00+03:00
+last_actor: Codex (Issue #60 CI/merge verification)
 
-CURRENT PHASE: PHASE 8M STRUCTURED OUTCOME PROVENANCE — DONE (SAFE MODE)
+CURRENT PHASE: PHASE 8N OUTCOME SOURCE EXISTENCE GATE — DONE (SAFE MODE)
 ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (`8e8782b` Phase 8M merge)
+ACTIVE BRANCH: `main` (`a9ca90a` Phase 8N merge)
 
 ## Phase 8J araştırma uygulaması
 
@@ -57,6 +57,17 @@ ACTIVE BRANCH: `main` (`8e8782b` Phase 8M merge)
   yeni lead, teklif, müşteri veya dış provider kaydı oluşturulmaz.
 - PR #58 CI run `33682847191`: SUCCESS — additive migration, lint, typecheck,
   23 test dosyası / 182 test ve API/web build. Squash merge `8e8782b`; Issue #57
+  CLOSED.
+
+## Phase 8N source existence gate
+
+- `CRM_LEAD`, `CRM_OPPORTUNITY` ve `CRM_EVENT` sourceId değerleri ilk outcome
+  receipt'i oluşturulmadan önce yerel veritabanında aranır; bulunmayan kaynak 404
+  ile reddedilir. Mevcut idempotent receipt tekrarında gereksiz lookup yapılmaz.
+- `HUMAN_NOTE` ve `OPERATIONS_RECORD` dış metadata olarak kalır; dış sistem
+  lookup'u, otomatik entity-link veya yeni CRM/müşteri kaydı yapılmaz.
+- PR #61 CI run `33685338110`: SUCCESS — 23 test dosyası / 182 test, additive
+  migration, lint, typecheck ve API/web build. Squash merge `a9ca90a`; Issue #60
   CLOSED.
 
 ## Taze Phase 8J kanıtı
