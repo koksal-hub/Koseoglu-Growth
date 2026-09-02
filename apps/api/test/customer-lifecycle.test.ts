@@ -79,6 +79,30 @@ describe('read-only customer lifecycle projection', () => {
     expect(JSON.parse(response.payload)).toMatchObject({ state: 'REACTIVATED', signals: { reactivated: true } });
   });
 
+  it.each([
+    ['developing', 'DEVELOPING', null],
+    ['cooling', 'COOLING', 45],
+    ['dormant', 'DORMANT', 120],
+  ] as const)('classifies %s from bounded activity signals', async (suffix, expectedState, activityAgeDays) => {
+    const created = await company(suffix);
+    const lead = await prisma.lead.create({ data: { companyId: created.id, sourceDetail: 'lifecycle-test' } });
+    leadIds.push(lead.id);
+    if (activityAgeDays !== null) {
+      const activity = await prisma.activity.create({
+        data: {
+          leadId: lead.id,
+          type: 'NOTE',
+          occurredAt: new Date(Date.now() - activityAgeDays * 86_400_000),
+          note: 'lifecycle-test',
+        },
+      });
+      activityIds.push(activity.id);
+    }
+    const response = await server.inject({ method: 'GET', url: `/api/companies/${created.id}/lifecycle` });
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.payload)).toMatchObject({ state: expectedState });
+  });
+
   it('rejects malformed, future, and unknown company requests', async () => {
     const future = await server.inject({ method: 'GET', url: `/api/companies/${RUN_ID}-missing/lifecycle?asOf=${new Date(Date.now() + 10 * 60 * 1000).toISOString()}` });
     expect(future.statusCode).toBe(400);
