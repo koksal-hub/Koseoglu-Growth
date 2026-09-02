@@ -430,3 +430,12 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] Lead metadata timestamp'i interaction sayılmaz; reactivation gap regression
   - [x] Canonical state write, dış CRM/provider/customer contact yok
   - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
+
+--- Issue #54 — Expand lifecycle projection regression matrix ---
+- Öncelik: LOW / V2 / RISK B
+- Sorumlu: Codex
+- Durum: DONE (PR #55 CI run `33681822535` PASS; squash merge `22bb643`; Issue #54 kapalı)
+- Acceptance criteria:
+  - [x] DEVELOPING, COOLING ve DORMANT deterministic regression vakaları
+  - [x] Read-only davranış ve mevcut güvenlik sınırları korunur
+  - [x] Lint, typecheck, migration, 23 test dosyası / 182 test ve build CI kanıtı

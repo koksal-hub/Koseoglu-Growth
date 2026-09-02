@@ -1,7 +1,7 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T00:50:00+03:00
-last_actor: Codex (Issue #51 CI/merge verification)
+last_update: 2026-09-03T01:10:00+03:00
+last_actor: Codex (Issue #54 regression coverage verification)
 
 CURRENT PHASE: PHASE 8L READ-ONLY CUSTOMER LIFECYCLE PROJECTION — DONE (SAFE MODE)
 ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
@@ -45,6 +45,8 @@ ACTIVE BRANCH: `main` (`e862e08` Phase 8L merge)
 - PR #52 CI run `33680946827`: SUCCESS — 23 test dosyası / 179 test, migration,
   lint, typecheck ve API/web build. Squash merge `e862e08`; Issue #51 kapanışı
   merge sonrası işlenecek.
+- PR #55 CI run `33681822535`: SUCCESS — lifecycle regression matrix ile 23 test
+  dosyası / 182 test. Squash merge `22bb643`; Issue #54 CLOSED.
 
 ## Taze Phase 8J kanıtı
 
