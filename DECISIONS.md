@@ -695,3 +695,31 @@ Gerçek crawler, email/telefon toplama, permission kararı, Lead/Outreach yazım
 dış iletişim sonraki ayrı onaylı dilimlerdir.
 
 STATUS: ACCEPTED FOR READ-ONLY RESEARCH WORK QUEUE
+
+---
+
+## ADR-028 — Recommendation Measurement Contract ve Exposure Lineage
+
+DECISION: Her lead-ranking veya research-action önerisi, recommendation type/id,
+algorithm version, input hash, exploitation/exploration mode, position, actor ve
+zamanı içeren `RecommendationExposure` receipt'iyle ölçülür. Sonuçlar ayrı
+`RecommendationOutcome` receipt'leri olarak ve yalnız açık gerçekleşmiş olayla
+(`HUMAN_ACTION`, `LEAD_CREATED`, `QUOTE_REQUESTED`, `WON_SHIPMENT`,
+`GROSS_PROFIT`) kaydedilir. Aynı exposure/outcome anahtarı idempotenttir; farklı
+payload conflict'tir. Skor, job veya state değişiminden outcome çıkarılmaz.
+
+WHY: Ekli araştırmalar AI kullanımının ve recommendation maruziyetinin ticari
+sonuçla birlikte ölçülmesi gerektiğini destekliyor; korelasyonel ve alan dışı
+bulgular ise doğrudan kural sayılmıyor. Exposure lineage olmadan model/algoritma
+değişikliğinin etkisi, yoğunlaşma veya keşif oranı denetlenemez.
+
+ALTERNATIVES: Yalnız son skor/state tutmak; outcome'u skor veya job tamamlanınca
+varsaymak; hemen otomatik 90/10 exploration veya bandit seçimi açmak.
+
+CONSEQUENCES: Measurement API'si private ve create-only receipt yoludur; dış
+network/provider/customer action yapmaz. İlk fazda `mode` saklanır fakat
+exploration seçimi otomatik değildir. V2 deneyinde exposure coverage,
+exploration/exploitation ve funnel sonuçları raporlanabilir; yaşam döngüsü ve
+provider challenger kararları ayrı issue'larda ele alınır.
+
+STATUS: ACCEPTED FOR SAFE MEASUREMENT ONLY

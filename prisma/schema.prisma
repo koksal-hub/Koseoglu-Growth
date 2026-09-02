@@ -144,6 +144,26 @@ enum VisibilityAssetStatus {
   ARCHIVED
 }
 
+/// Measurement receipts keep recommendation exposure separate from commercial
+/// outcomes so ranking behavior cannot silently become its own evidence.
+enum RecommendationType {
+  LEAD_RANKING
+  RESEARCH_ACTION
+}
+
+enum RecommendationExposureMode {
+  EXPLOITATION
+  EXPLORATION
+}
+
+enum RecommendationOutcomeType {
+  HUMAN_ACTION
+  LEAD_CREATED
+  QUOTE_REQUESTED
+  WON_SHIPMENT
+  GROSS_PROFIT
+}
+
 enum OpportunityStage {
   QUALIFICATION
   PROPOSAL
@@ -629,6 +649,47 @@ model CompanyRankingReceipt {
   @@index([policyVersion, evaluatedAt])
   @@index([totalScore])
   @@index([nextAction])
+}
+
+/// Immutable record that a recommendation was shown. The polymorphic
+/// recommendationId points to the relevant receipt/projection without making
+/// ranking and research schemas depend on one another.
+model RecommendationExposure {
+  id                   String                       @id @default(cuid())
+  exposureKey          String                       @unique
+  recommendationType   RecommendationType
+  recommendationId     String
+  algorithmVersion     String
+  inputHash            String
+  mode                 RecommendationExposureMode
+  position             Int
+  actor                String
+  exposedAt            DateTime
+  outcomes             RecommendationOutcome[]
+  createdAt            DateTime                     @default(now())
+
+  @@index([recommendationType, recommendationId, exposedAt])
+  @@index([mode, exposedAt])
+}
+
+/// Explicitly recorded result after an exposure. No outcome is inferred from a
+/// ranking score or a job; a source reference and human/system actor are kept.
+model RecommendationOutcome {
+  id          String                    @id @default(cuid())
+  exposureId  String
+  exposure    RecommendationExposure   @relation(fields: [exposureId], references: [id])
+  outcomeKey  String
+  outcomeType RecommendationOutcomeType
+  occurredAt  DateTime
+  valueMinor  Int?
+  currency    String?
+  sourceRef   String?
+  recordedBy  String
+  createdAt   DateTime                  @default(now())
+
+  @@unique([exposureId, outcomeKey])
+  @@index([outcomeType, occurredAt])
+  @@index([exposureId, occurredAt])
 }
 
 /// Human-authored email content that is deliberately separate from delivery.
