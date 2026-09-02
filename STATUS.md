@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T01:10:00+03:00
-last_actor: Codex (Issue #54 regression coverage verification)
+last_update: 2026-09-03T01:45:00+03:00
+last_actor: Codex (Issue #57 CI/merge verification)
 
-CURRENT PHASE: PHASE 8L READ-ONLY CUSTOMER LIFECYCLE PROJECTION — DONE (SAFE MODE)
+CURRENT PHASE: PHASE 8M STRUCTURED OUTCOME PROVENANCE — DONE (SAFE MODE)
 ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (`e862e08` Phase 8L merge)
+ACTIVE BRANCH: `main` (`8e8782b` Phase 8M merge)
 
 ## Phase 8J araştırma uygulaması
 
@@ -47,6 +47,17 @@ ACTIVE BRANCH: `main` (`e862e08` Phase 8L merge)
   merge sonrası işlenecek.
 - PR #55 CI run `33681822535`: SUCCESS — lifecycle regression matrix ile 23 test
   dosyası / 182 test. Squash merge `22bb643`; Issue #54 CLOSED.
+
+## Phase 8M outcome provenance
+
+- `RecommendationOutcome` artık opsiyonel pairwise `sourceType/sourceId`
+  provenance taşıyor: CRM lead/opportunity/event, human note veya operations
+  record. Alanlar idempotency/conflict semantics'e dahildir.
+- Source ID gerçek kayıtta var mı diye otomatik network/CRM lookup yapılmaz;
+  yeni lead, teklif, müşteri veya dış provider kaydı oluşturulmaz.
+- PR #58 CI run `33682847191`: SUCCESS — additive migration, lint, typecheck,
+  23 test dosyası / 182 test ve API/web build. Squash merge `8e8782b`; Issue #57
+  CLOSED.
 
 ## Taze Phase 8J kanıtı
 

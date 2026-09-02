@@ -723,3 +723,27 @@ exploration/exploitation ve funnel sonuçları raporlanabilir; yaşam döngüsü
 provider challenger kararları ayrı issue'larda ele alınır.
 
 STATUS: ACCEPTED FOR SAFE MEASUREMENT ONLY
+
+---
+
+## ADR-029 — Structured Outcome Provenance Without Automatic Linking
+
+DECISION: `RecommendationOutcome` opsiyonel ve birlikte zorunlu
+`sourceType/sourceId` alanlarıyla açık provenance taşıyabilir. Kaynak türleri
+`CRM_LEAD`, `CRM_OPPORTUNITY`, `CRM_EVENT`, `HUMAN_NOTE` ve
+`OPERATIONS_RECORD` ile sınırlıdır. Alanlar outcome idempotency/conflict
+karşılaştırmasına dahildir; ancak bu faz sourceId'nin gerçekten var olan CRM
+kaydı olduğunu otomatik doğrulamaz ve kayıt oluşturmaz.
+
+WHY: Exposure → outcome ölçümü, olayın hangi insan/operasyon kaynağına dayandığını
+göstermeden eksik kalır. Buna rağmen otomatik entity-link veya lead/teklif
+oluşturmak yanlış attribution ve blast-radius üretir.
+
+ALTERNATIVES: Serbest sourceRef ile devam etmek; sourceId'yi otomatik aramak;
+outcome alınca yeni CRM kaydı yaratmak.
+
+CONSEQUENCES: Receipt'ler daha sonra provenance denetimine hazırdır; gerçek
+CRM/operasyon doğrulaması ayrı, insan onaylı adapter ve yetki dilimidir. Dış
+network/provider/customer action bu kararla açılmaz.
+
+STATUS: ACCEPTED FOR EXPLICIT RECEIPTS ONLY
