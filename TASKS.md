@@ -390,3 +390,17 @@ YEREL KISA LİSTE (geçmiş kayıt — korunuyor)
 
 Yeni görev eklerken bu dosyaya bir satır ve detay açıklaması ekleyin (yalnızca
 GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
+
+--- Issue #45 — Research application: measurement and recommendation exposure lineage ---
+- Öncelik: HIGH / MUST / RISK B
+- Sorumlu: Codex
+- Durum: IN_PROGRESS (GitHub Issue #45)
+- Bağımlılıklar: Phase 8I research action projection; ranking receipt; auth boundary
+- Acceptance criteria:
+  - [ ] `RecommendationExposure` migration ve private create/list API'si
+  - [ ] `RecommendationOutcome` ayrı, idempotent ve conflict-guarded API'si
+  - [ ] recommendation type/id, algorithm/input hash, mode, position, actor/time
+    lineage'ı ve unknown outcome sınırı
+  - [ ] Gerçek provider, network, customer contact veya otomatik exploration yok
+  - [ ] Araştırma uygulama planı ve ADR-028 ile kaynakların kanıt/proposal ayrımı
+  - [ ] Lint, typecheck, migration, full test ve API/web build CI kanıtı

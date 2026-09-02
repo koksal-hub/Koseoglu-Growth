@@ -1,11 +1,25 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-02T17:56:00+03:00
-last_actor: Codex (Issue #42 CI/merge verification)
+last_update: 2026-09-02T18:20:00+03:00
+last_actor: Codex (Issue #45 research application implementation)
 
-CURRENT PHASE: PHASE 8I DETERMINISTIC RESEARCH ACTION QUEUE — DONE (SAFE MODE)
-ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (`293f782` Phase 8I merge)
+CURRENT PHASE: PHASE 8J RESEARCH APPLICATION MEASUREMENT — IN_PROGRESS (SAFE MODE)
+ACTIVE ISSUE: #45 — provider/OAuth scope still requires explicit user approval
+ACTIVE BRANCH: `codex/research-measurement-exposure-v1` (base `origin/main`)
+
+## Phase 8J araştırma uygulaması
+
+- Ekli araştırmalar kanıt/öneri/deney hipotezi olarak ayrıldı; doğrudan kod veya
+  bağımlılık kopyalanmadı. Ayrıntılı eşleme `RESEARCH_APPLICATION_PLAN.md`'dedir.
+- `RecommendationExposure` ve `RecommendationOutcome` additive migration ile
+  eklendi. Exposure; öneri türü/id, algorithm/input hash, mode, position,
+  actor/zaman; outcome ise açık ticari olay ve optional value/currency tutar.
+- Private endpoint'ler create/list exposure ve exposure outcome kaydı sağlar.
+  Aynı anahtar idempotent reuse, değişen payload 409 conflict'tir; gelecekteki
+  timestamp, credential-shaped alan, negatif değer ve gross-profit eksikliği
+  reddedilir.
+- Bu dilim otomatik 90/10 exploration, bandit, crawler, AI/provider çağrısı,
+  sosyal medya yayını, e-posta/telefon veya müşteri kaydı oluşturmaz.
 
 ## Uygulanan dar kapsam
 
