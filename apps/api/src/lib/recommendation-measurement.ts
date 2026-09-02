@@ -193,6 +193,20 @@ function sameOutcomePayload(
   );
 }
 
+async function assertLocalOutcomeSourceExists(
+  sourceType: RecommendationOutcomeSourceType | null,
+  sourceId: string | null
+) {
+  if (!sourceType || !sourceId || sourceType === 'HUMAN_NOTE' || sourceType === 'OPERATIONS_RECORD') return;
+  const exists =
+    sourceType === 'CRM_LEAD'
+      ? await prisma.lead.findUnique({ where: { id: sourceId }, select: { id: true } })
+      : sourceType === 'CRM_OPPORTUNITY'
+        ? await prisma.opportunity.findUnique({ where: { id: sourceId }, select: { id: true } })
+        : await prisma.event.findUnique({ where: { id: sourceId }, select: { id: true } });
+  if (!exists) throw new RecommendationMeasurementError(404, `${sourceType} source not found`);
+}
+
 export async function recordRecommendationOutcome(input: {
   exposureId: string;
   outcomeKey: string;
@@ -232,6 +246,8 @@ export async function recordRecommendationOutcome(input: {
 
   const exposure = await prisma.recommendationExposure.findUnique({ where: { id: input.exposureId } });
   if (!exposure) throw new RecommendationMeasurementError(404, 'Recommendation exposure not found');
+  const normalizedSourceType = input.sourceType ? (input.sourceType as RecommendationOutcomeSourceType) : null;
+  const normalizedSourceId = input.sourceId ?? null;
   const data = {
     exposureId: input.exposureId,
     outcomeKey: input.outcomeKey,
@@ -240,10 +256,20 @@ export async function recordRecommendationOutcome(input: {
     valueMinor,
     currency,
     sourceRef: input.sourceRef ?? null,
-    sourceType: input.sourceType ? input.sourceType as RecommendationOutcomeSourceType : null,
-    sourceId: input.sourceId ?? null,
+    sourceType: normalizedSourceType,
+    sourceId: normalizedSourceId,
     recordedBy: input.recordedBy
   };
+  const existingOutcome = await prisma.recommendationOutcome.findUnique({
+    where: { exposureId_outcomeKey: { exposureId: input.exposureId, outcomeKey: input.outcomeKey } }
+  });
+  if (existingOutcome) {
+    if (!sameOutcomePayload(existingOutcome, data)) {
+      throw new RecommendationMeasurementError(409, 'outcomeKey already exists with a different payload');
+    }
+    return { outcome: existingOutcome, reused: true };
+  }
+  await assertLocalOutcomeSourceExists(normalizedSourceType, normalizedSourceId);
   try {
     const outcome = await prisma.recommendationOutcome.create({ data });
     return { outcome, reused: false };

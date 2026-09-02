@@ -123,6 +123,20 @@ describe('recommendation exposure and outcome measurement', () => {
     });
     expect(missingSourceId.statusCode).toBe(400);
 
+    const missingCrmSource = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
+      payload: {
+        outcomeKey: `${RUN_ID}-missing-crm-source`,
+        outcomeType: 'LEAD_CREATED',
+        occurredAt: new Date().toISOString(),
+        sourceType: 'CRM_LEAD',
+        sourceId: `${RUN_ID}-lead-does-not-exist`,
+        recordedBy: `${RUN_ID}-operator`
+      }
+    });
+    expect(missingCrmSource.statusCode).toBe(404);
+
     const grossProfit = await server.inject({
       method: 'POST',
       url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
