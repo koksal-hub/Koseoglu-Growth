@@ -463,3 +463,17 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] Human note/operations metadata remains lookup-free
   - [x] Automatic linking, external lookup, new record or customer action yok
   - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
+
+--- Issue #63 — Human-approved recommendation outcome provenance ---
+- Öncelik: HIGH / MUST / RISK B
+- Sorumlu: Codex
+- Durum: DONE (PR #64 CI `33689347614` PASS; squash merge `3e5ecb5`; Issue #63 kapalı)
+- Bağımlılıklar: RecommendationOutcome structured provenance; local source existence gate; auth boundary
+- Acceptance criteria:
+  - [x] Additive immutable RecommendationOutcomeProvenanceReview receipt ve migration
+  - [x] Yalnız CRM lead/opportunity/event kaynakları review edilebilir
+  - [x] Review anında local source existence tekrar doğrulaması
+  - [x] `recordedBy` ile bağımsız reviewer ve APPROVED/REJECTED kararı
+  - [x] `reviewKey` idempotency/conflict ve outcome başına tek review
+  - [x] HUMAN_NOTE/OPERATIONS_RECORD metadata-only; dış lookup/linking/provider/customer action yok
+  - [x] Migration, 23 test dosyası / 182 test, lint, typecheck ve API/web build CI kanıtı
