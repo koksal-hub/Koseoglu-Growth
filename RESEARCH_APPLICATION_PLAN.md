@@ -62,9 +62,12 @@ insan onaylı ve provenance'lı biçimde eşlemek olacaktır; bu henüz yapılma
   fazda yoktur.
 - Exposure yoğunlaşması, recommendation coverage, exploration/exploitation
   oranı ve outcome oranları raporlanır; performans düşerse deney kapatılabilir.
-- Lojistik müşteri yaşam döngüsü `new`, `developing`, `repeat`, `high-value`,
-  `cooling`, `dormant`, `reactivated` olarak ayrı state/event sözleşmesiyle
-  modellenir. Subscription churn makalesi yalnız kavramsal uyarıdır.
+- Lojistik müşteri yaşam döngüsü için salt-okunur projection uygulandı:
+  `NEW`, `DEVELOPING`, `REPEAT`, `COOLING`, `DORMANT`, `REACTIVATED`.
+  `GET /api/companies/:id/lifecycle` yalnız mevcut Lead/Opportunity/Activity
+  sinyallerini okur; canonical Company state'i değiştirmez. `HIGH_VALUE`,
+  para birimi/eşik politikası açıkça belirlenene kadar `NOT_CLASSIFIED` kalır.
+  Subscription churn makalesi yalnız kavramsal uyarıdır.
 - Trigger.dev ancak retry/lease/idempotency ihtiyacı mevcut queue'nun sınırını
   kanıtlarsa; Meltano ancak kaynak sayısı ve connector bakım maliyeti eşiği
   ölçülürse challenger olarak değerlendirilir.

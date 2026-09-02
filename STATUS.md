@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-02T18:40:00+03:00
-last_actor: Codex (Issue #48 CI/merge verification)
+last_update: 2026-09-03T00:50:00+03:00
+last_actor: Codex (Issue #51 CI/merge verification)
 
-CURRENT PHASE: PHASE 8K MANAGEMENT REPORT RECOMMENDATION FUNNEL — DONE (SAFE MODE)
+CURRENT PHASE: PHASE 8L READ-ONLY CUSTOMER LIFECYCLE PROJECTION — DONE (SAFE MODE)
 ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (`7ebe663` Phase 8K merge)
+ACTIVE BRANCH: `main` (`e862e08` Phase 8L merge)
 
 ## Phase 8J araştırma uygulaması
 
@@ -33,6 +33,18 @@ ACTIVE BRANCH: `main` (`7ebe663` Phase 8K merge)
   lint, typecheck ve API/web build. Squash merge `7ebe663`; Issue #48 CLOSED.
 - Yerel odaklı Vitest yine NOT_RUN: OneDrive/esbuild reparse-point erişimi
   `vitest.config.ts` yüklemesini engelliyor; CI PostgreSQL entegrasyon kanıtıdır.
+
+## Phase 8L müşteri yaşam döngüsü
+
+- `/api/companies/:id/lifecycle` salt-okunur, bounded projection olarak eklendi.
+  `NEW`, `DEVELOPING`, `REPEAT`, `COOLING`, `DORMANT` ve `REACTIVATED` durumları
+  açıklanabilir zaman/Opportunity/Activity sinyallerinden hesaplanır.
+- Lead `updatedAt` metadata değişikliği müşteri etkileşimi sayılmaz; bu ayrım
+  CI regresyonunda doğrulandı. Çoklu para birimi veya eşik politikası olmadan
+  high-value sınıflandırması yapılmaz.
+- PR #52 CI run `33680946827`: SUCCESS — 23 test dosyası / 179 test, migration,
+  lint, typecheck ve API/web build. Squash merge `e862e08`; Issue #51 kapanışı
+  merge sonrası işlenecek.
 
 ## Taze Phase 8J kanıtı
 

@@ -417,3 +417,16 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] Yeni alanlar snapshot input hash ve idempotent reuse davranışına dahildir
   - [x] Dış provider/customer/social action veya otomatik exploration yok
   - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
+
+--- Issue #51 — Read-only customer lifecycle signal projection ---
+- Öncelik: MEDIUM / V2 / RISK B
+- Sorumlu: Codex
+- Durum: DONE (PR #52 CI run `33680946827` PASS; squash merge `e862e08`; Issue #51 kapalı)
+- Bağımlılıklar: Company/Lead/Opportunity/Activity; existing auth boundary
+- Acceptance criteria:
+  - [x] Bounded NEW/DEVELOPING/REPEAT/COOLING/DORMANT/REACTIVATED projection
+  - [x] Read-only `/api/companies/:id/lifecycle` endpoint'i
+  - [x] High-value için currency/threshold policy yoksa NOT_CLASSIFIED
+  - [x] Lead metadata timestamp'i interaction sayılmaz; reactivation gap regression
+  - [x] Canonical state write, dış CRM/provider/customer contact yok
+  - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
