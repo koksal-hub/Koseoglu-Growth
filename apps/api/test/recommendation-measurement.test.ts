@@ -5,6 +5,7 @@ import { prisma } from '../src/lib/prisma';
 
 const RUN_ID = `measurement-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const exposureIds: string[] = [];
+const eventIds: string[] = [];
 let server: FastifyInstance;
 
 function payload<T>(value: string) {
@@ -18,8 +19,10 @@ describe('recommendation exposure and outcome measurement', () => {
   });
 
   afterAll(async () => {
+    await prisma.recommendationOutcomeProvenanceReview.deleteMany({ where: { outcome: { exposureId: { in: exposureIds } } } });
     await prisma.recommendationOutcome.deleteMany({ where: { exposureId: { in: exposureIds } } });
     await prisma.recommendationExposure.deleteMany({ where: { id: { in: exposureIds } } });
+    await prisma.event.deleteMany({ where: { id: { in: eventIds } } });
     await server.close();
     await prisma.$disconnect();
   });
@@ -80,7 +83,8 @@ describe('recommendation exposure and outcome measurement', () => {
       payload: input
     });
     expect(createdResponse.statusCode).toBe(201);
-    expect(payload<{ reused: boolean }>(createdResponse.payload).reused).toBe(false);
+    const createdHumanOutcome = payload<{ outcome: { id: string }; reused: boolean }>(createdResponse.payload);
+    expect(createdHumanOutcome.reused).toBe(false);
 
     const reused = await server.inject({
       method: 'POST',
@@ -151,6 +155,111 @@ describe('recommendation exposure and outcome measurement', () => {
       }
     });
     expect(grossProfit.statusCode).toBe(201);
+
+    const event = await prisma.event.create({
+      data: {
+        type: 'LEAD_CREATED',
+        entityType: 'RecommendationOutcome',
+        entityId: `${RUN_ID}-event-entity`,
+        actor: `${RUN_ID}-event-actor`,
+        metadata: { source: 'test' }
+      }
+    });
+    eventIds.push(event.id);
+    const crmOutcomeResponse = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
+      payload: {
+        outcomeKey: `${RUN_ID}-crm-event-outcome`,
+        outcomeType: 'LEAD_CREATED',
+        occurredAt: new Date().toISOString(),
+        sourceType: 'CRM_EVENT',
+        sourceId: event.id,
+        recordedBy: `${RUN_ID}-operator`
+      }
+    });
+    expect(crmOutcomeResponse.statusCode).toBe(201);
+    const crmOutcome = payload<{ outcome: { id: string } }>(crmOutcomeResponse.payload).outcome;
+
+    const reviewInput = {
+      reviewKey: `${RUN_ID}-provenance-review`,
+      decision: 'APPROVED',
+      reviewedBy: `${RUN_ID}-independent-reviewer`,
+      reason: 'Yerel CRM olay kaydı insan tarafından doğrulandı.'
+    };
+    const reviewResponse = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-outcomes/${crmOutcome.id}/provenance-review`,
+      payload: reviewInput
+    });
+    expect(reviewResponse.statusCode).toBe(201);
+    expect(payload<{ reused: boolean; review: { decision: string; reviewedBy: string } }>(reviewResponse.payload)).toMatchObject({
+      reused: false,
+      review: { decision: 'APPROVED', reviewedBy: reviewInput.reviewedBy }
+    });
+
+    const reusedReview = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-outcomes/${crmOutcome.id}/provenance-review`,
+      payload: reviewInput
+    });
+    expect(reusedReview.statusCode).toBe(200);
+    expect(payload<{ reused: boolean }>(reusedReview.payload).reused).toBe(true);
+
+    const listedWithReview = await server.inject({
+      method: 'GET',
+      url: `/api/recommendation-exposures?recommendationType=LEAD_RANKING&recommendationId=${encodeURIComponent(`${RUN_ID}-ranking`)}`
+    });
+    expect(listedWithReview.statusCode).toBe(200);
+    expect(payload<Array<{ outcomes: Array<{ provenanceReview?: { decision: string } | null }> }>>(listedWithReview.payload)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          outcomes: expect.arrayContaining([expect.objectContaining({ provenanceReview: expect.objectContaining({ decision: 'APPROVED' }) })])
+        })
+      ])
+    );
+
+    const conflictingReview = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-outcomes/${crmOutcome.id}/provenance-review`,
+      payload: { ...reviewInput, decision: 'REJECTED' }
+    });
+    expect(conflictingReview.statusCode).toBe(409);
+
+    const secondReviewKey = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-outcomes/${crmOutcome.id}/provenance-review`,
+      payload: { ...reviewInput, reviewKey: `${RUN_ID}-second-review-key` }
+    });
+    expect(secondReviewKey.statusCode).toBe(409);
+
+    const metadataOnlyReview = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-outcomes/${createdHumanOutcome.outcome.id}/provenance-review`,
+      payload: { ...reviewInput, reviewKey: `${RUN_ID}-metadata-only-review` }
+    });
+    expect(metadataOnlyReview.statusCode).toBe(409);
+
+    const sameRecorderOutcome = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
+      payload: {
+        outcomeKey: `${RUN_ID}-same-recorder-outcome`,
+        outcomeType: 'LEAD_CREATED',
+        occurredAt: new Date().toISOString(),
+        sourceType: 'CRM_EVENT',
+        sourceId: event.id,
+        recordedBy: `${RUN_ID}-same-recorder`
+      }
+    });
+    expect(sameRecorderOutcome.statusCode).toBe(201);
+    const sameRecorderOutcomeId = payload<{ outcome: { id: string } }>(sameRecorderOutcome.payload).outcome.id;
+    const sameRecorderReview = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-outcomes/${sameRecorderOutcomeId}/provenance-review`,
+      payload: { ...reviewInput, reviewKey: `${RUN_ID}-same-recorder-review`, reviewedBy: `${RUN_ID}-same-recorder` }
+    });
+    expect(sameRecorderReview.statusCode).toBe(409);
   });
 
   it('rejects invalid position and future exposure time', async () => {
