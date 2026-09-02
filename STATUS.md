@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-02T17:50:00+03:00
-last_actor: Codex (Issue #42 research action projection)
+last_update: 2026-09-02T17:56:00+03:00
+last_actor: Codex (Issue #42 CI/merge verification)
 
-CURRENT PHASE: PHASE 8I DETERMINISTIC RESEARCH ACTION QUEUE (SAFE MODE)
-ACTIVE ISSUE: #42 — Deterministic research mission action queue
-ACTIVE BRANCH: `codex/phase8i-research-action-queue-v1` (`origin/main` `bfd7c88` tabanı)
+CURRENT PHASE: PHASE 8I DETERMINISTIC RESEARCH ACTION QUEUE — DONE (SAFE MODE)
+ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
+ACTIVE BRANCH: `main` (`293f782` Phase 8I merge)
 
 ## Uygulanan dar kapsam
 
@@ -116,6 +116,8 @@ ACTIVE BRANCH: `codex/phase8i-research-action-queue-v1` (`origin/main` `bfd7c88`
 - Phase 8I `git diff --check`: PASS
 - Phase 8I focused Vitest: NOT_RUN — OneDrive worktree/esbuild reparse-point erişim
   hatası; Docker/DB integration kanıtı bu checkout'ta yok. CI kapısı gereklidir.
+- Phase 8I PR #43 CI run `33644782795`: SUCCESS — 21 test dosyası, 172 test,
+  migration, lint, typecheck ve API/web build; squash merge `293f782`; Issue #42 CLOSED.
 
 - `prisma validate`: PASS
 - `prisma generate`: PASS
@@ -209,6 +211,5 @@ ACTIVE BRANCH: `codex/phase8i-research-action-queue-v1` (`origin/main` `bfd7c88`
 
 ## Sonraki adım
 
-Issue #42 için CI ve read-only araştırma projection kanıtı bekleniyor. Provider
-OAuth/publish ve gerçek e-posta/telefon iletişimi için seçili hesap, exact scope,
-secret-manager/sandbox sınırı ve açık kullanıcı onayı olmadan dış aksiyon yoktur.
+Provider OAuth/publish ve gerçek e-posta/telefon iletişimi için seçili hesap, exact
+scope, secret-manager/sandbox sınırı ve açık kullanıcı onayı olmadan dış aksiyon yoktur.
