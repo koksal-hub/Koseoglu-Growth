@@ -62,7 +62,9 @@ export async function getCustomerLifecycle(companyId: string, asOf = new Date())
 
   const signalDates = [
     ...activities.map((activity) => activity.occurredAt),
-    ...company.leads.flatMap((lead) => [lead.createdAt, lead.updatedAt]),
+    // Lead metadata timestamps are not customer interactions: a status or
+    // notes update must not hide a genuine reactivation gap. Opportunity
+    // creation/stage changes are commercial signals and remain included.
     ...company.opportunities.flatMap((opportunity) => [opportunity.createdAt, opportunity.updatedAt]),
   ]
     .filter((date) => date.getTime() <= asOf.getTime())
