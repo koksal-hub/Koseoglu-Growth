@@ -14,6 +14,9 @@ const MISSION_STATUSES = ['ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED'] as const
 const CANDIDATE_STATUSES = ['PROPOSED', 'NEEDS_MORE_EVIDENCE', 'ACCEPTED', 'REJECTED'] as const;
 const JOB_STATUSES = ['QUEUED', 'RUNNING', 'RETRYABLE_FAILED', 'SUCCEEDED', 'DEAD_LETTER'] as const;
 const DRAFT_STATUSES = ['DRAFT', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED'] as const;
+const RECOMMENDATION_TYPES = ['LEAD_RANKING', 'RESEARCH_ACTION'] as const;
+const RECOMMENDATION_MODES = ['EXPLOITATION', 'EXPLORATION'] as const;
+const RECOMMENDATION_OUTCOMES = ['HUMAN_ACTION', 'LEAD_CREATED', 'QUOTE_REQUESTED', 'WON_SHIPMENT', 'GROSS_PROFIT'] as const;
 
 export class ReportingPolicyError extends Error {
   constructor(readonly statusCode: number, message: string) {
@@ -48,6 +51,14 @@ export type ManagementReportMetrics = {
     inputTokens: number;
     outputTokens: number;
     costMinorByCurrency: Record<string, number>;
+  };
+  recommendations: {
+    exposures: number;
+    exposuresByType: Record<string, number>;
+    exposuresByMode: Record<string, number>;
+    outcomes: number;
+    outcomesByType: Record<string, number>;
+    exposuresWithoutOutcomes: number;
   };
   safety: {
     sandboxProviderCalls: number;
@@ -154,6 +165,9 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
       jobsCreated,
       attempts,
       usageRows,
+      recommendationExposures,
+      recommendationOutcomes,
+      exposuresWithoutOutcomes,
     ] = await Promise.all([
       tx.company.count({ where: { createdAt: { gte: periodStart, lt: periodEnd } } }),
       tx.lead.count({ where: { createdAt: { gte: periodStart, lt: periodEnd } } }),
@@ -169,15 +183,23 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
         where: { occurredAt: { gte: periodStart, lt: periodEnd } },
         select: { currency: true, costMinor: true, inputTokens: true, outputTokens: true },
       }),
+      tx.recommendationExposure.count({ where: { exposedAt: { gte: periodStart, lt: periodEnd } } }),
+      tx.recommendationOutcome.count({ where: { occurredAt: { gte: periodStart, lt: periodEnd } } }),
+      tx.recommendationExposure.count({
+        where: { exposedAt: { gte: periodStart, lt: periodEnd }, outcomes: { none: {} } },
+      }),
     ]);
 
-    const [companyByStatus, leadByStatus, missionByStatus, candidateByStatus, jobByStatus, draftByStatus] = await Promise.all([
+    const [companyByStatus, leadByStatus, missionByStatus, candidateByStatus, jobByStatus, draftByStatus, recommendationByType, recommendationByMode, outcomeByType] = await Promise.all([
       countStatuses(COMPANY_STATUSES, (status) => tx.company.count({ where: { status } })),
       countStatuses(LEAD_STATUSES, (status) => tx.lead.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(MISSION_STATUSES, (status) => tx.researchMission.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(CANDIDATE_STATUSES, (status) => tx.researchCandidate.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(JOB_STATUSES, (status) => tx.job.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(DRAFT_STATUSES, (status) => tx.outreachDraft.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
+      countStatuses(RECOMMENDATION_TYPES, (recommendationType) => tx.recommendationExposure.count({ where: { recommendationType, exposedAt: { gte: periodStart, lt: periodEnd } } })),
+      countStatuses(RECOMMENDATION_MODES, (mode) => tx.recommendationExposure.count({ where: { mode, exposedAt: { gte: periodStart, lt: periodEnd } } })),
+      countStatuses(RECOMMENDATION_OUTCOMES, (outcomeType) => tx.recommendationOutcome.count({ where: { outcomeType, occurredAt: { gte: periodStart, lt: periodEnd } } })),
     ]);
 
     const costMinorByCurrency: Record<string, number> = {};
@@ -208,6 +230,14 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
         inputTokens,
         outputTokens,
         costMinorByCurrency,
+      },
+      recommendations: {
+        exposures: recommendationExposures,
+        exposuresByType: recommendationByType,
+        exposuresByMode: recommendationByMode,
+        outcomes: recommendationOutcomes,
+        outcomesByType: outcomeByType,
+        exposuresWithoutOutcomes,
       },
       safety: {
         sandboxProviderCalls,
