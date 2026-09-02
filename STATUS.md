@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-02T18:20:00+03:00
-last_actor: Codex (Issue #45 research application implementation)
+last_update: 2026-09-02T18:25:00+03:00
+last_actor: Codex (Issue #45 CI/merge verification)
 
-CURRENT PHASE: PHASE 8J RESEARCH APPLICATION MEASUREMENT — IN_PROGRESS (SAFE MODE)
-ACTIVE ISSUE: #45 — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `codex/research-measurement-exposure-v1` (base `origin/main`)
+CURRENT PHASE: PHASE 8J RESEARCH APPLICATION MEASUREMENT — DONE (SAFE MODE)
+ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
+ACTIVE BRANCH: `main` (`a249724` Phase 8J merge)
 
 ## Phase 8J araştırma uygulaması
 
@@ -20,6 +20,15 @@ ACTIVE BRANCH: `codex/research-measurement-exposure-v1` (base `origin/main`)
   reddedilir.
 - Bu dilim otomatik 90/10 exploration, bandit, crawler, AI/provider çağrısı,
   sosyal medya yayını, e-posta/telefon veya müşteri kaydı oluşturmaz.
+
+## Taze Phase 8J kanıtı
+
+- PR #46 CI run `33646914245`: SUCCESS — additive migration, lint, typecheck,
+  22 test dosyası / 175 test (ölçüm testi 3/3), API ve web build.
+- PR #46 squash merge commit `a249724`; GitHub Issue #45 CLOSED.
+- Focused Vitest bu OneDrive checkout'ında NOT_RUN: esbuild, reparse-point
+  nedeniyle `vitest.config.ts` yolunu okuyamadı. CI entegrasyon testi gerçek
+  PostgreSQL container'ında PASS oldu.
 
 ## Uygulanan dar kapsam
 
