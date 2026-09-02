@@ -1,4 +1,4 @@
-import { Prisma, type RecommendationExposureMode, type RecommendationOutcomeType, type RecommendationType } from '@prisma/client';
+import { Prisma, type RecommendationExposureMode, type RecommendationOutcomeSourceType, type RecommendationOutcomeType, type RecommendationType } from '@prisma/client';
 import { prisma } from './prisma';
 
 export const RECOMMENDATION_MEASUREMENT_POLICY_VERSION = 'recommendation-measurement-v1';
@@ -166,6 +166,8 @@ function sameOutcomePayload(
     valueMinor: number | null;
     currency: string | null;
     sourceRef: string | null;
+    sourceType: RecommendationOutcomeSourceType | null;
+    sourceId: string | null;
     recordedBy: string;
   },
   input: {
@@ -174,6 +176,8 @@ function sameOutcomePayload(
     valueMinor: number | null;
     currency: string | null;
     sourceRef: string | null;
+    sourceType: RecommendationOutcomeSourceType | null;
+    sourceId: string | null;
     recordedBy: string;
   }
 ) {
@@ -183,6 +187,8 @@ function sameOutcomePayload(
     existing.valueMinor === input.valueMinor &&
     existing.currency === input.currency &&
     existing.sourceRef === input.sourceRef &&
+    existing.sourceType === input.sourceType &&
+    existing.sourceId === input.sourceId &&
     existing.recordedBy === input.recordedBy
   );
 }
@@ -195,6 +201,8 @@ export async function recordRecommendationOutcome(input: {
   valueMinor?: number;
   currency?: string;
   sourceRef?: string;
+  sourceType?: string;
+  sourceId?: string;
   recordedBy: string;
 }) {
   validateKey(input.exposureId, 'exposure id');
@@ -203,6 +211,11 @@ export async function recordRecommendationOutcome(input: {
   validateDate(input.occurredAt, 'occurredAt');
   validateKey(input.recordedBy, 'recorded by');
   validateSourceRef(input.sourceRef);
+  if (input.sourceType !== undefined) validateEnum(input.sourceType, ['CRM_LEAD', 'CRM_OPPORTUNITY', 'CRM_EVENT', 'HUMAN_NOTE', 'OPERATIONS_RECORD'], 'outcome source type');
+  if (input.sourceId !== undefined) validateKey(input.sourceId, 'outcome source id');
+  if ((input.sourceType === undefined) !== (input.sourceId === undefined)) {
+    throw new RecommendationMeasurementError(400, 'sourceType and sourceId must be provided together');
+  }
   if (input.valueMinor !== undefined && (!Number.isInteger(input.valueMinor) || input.valueMinor < 0 || input.valueMinor > 2_000_000_000)) {
     throw new RecommendationMeasurementError(400, 'valueMinor must be a non-negative integer within the supported range');
   }
@@ -227,6 +240,8 @@ export async function recordRecommendationOutcome(input: {
     valueMinor,
     currency,
     sourceRef: input.sourceRef ?? null,
+    sourceType: input.sourceType ? input.sourceType as RecommendationOutcomeSourceType : null,
+    sourceId: input.sourceId ?? null,
     recordedBy: input.recordedBy
   };
   try {

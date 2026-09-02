@@ -70,6 +70,8 @@ describe('recommendation exposure and outcome measurement', () => {
       outcomeType: 'HUMAN_ACTION',
       occurredAt: new Date().toISOString(),
       sourceRef: `${RUN_ID}-crm-note`,
+      sourceType: 'HUMAN_NOTE',
+      sourceId: `${RUN_ID}-note-1`,
       recordedBy: `${RUN_ID}-operator`
     };
     const createdResponse = await server.inject({
@@ -107,6 +109,19 @@ describe('recommendation exposure and outcome measurement', () => {
       }
     });
     expect(missingValue.statusCode).toBe(400);
+
+    const missingSourceId = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
+      payload: {
+        outcomeKey: `${RUN_ID}-missing-source-id`,
+        outcomeType: 'LEAD_CREATED',
+        occurredAt: new Date().toISOString(),
+        sourceType: 'CRM_LEAD',
+        recordedBy: `${RUN_ID}-operator`
+      }
+    });
+    expect(missingSourceId.statusCode).toBe(400);
 
     const grossProfit = await server.inject({
       method: 'POST',

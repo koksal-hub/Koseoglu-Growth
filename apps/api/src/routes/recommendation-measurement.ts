@@ -12,6 +12,7 @@ const hashSchema = z.string().regex(/^[0-9a-f]{64}$/i);
 const recommendationTypeSchema = z.enum(['LEAD_RANKING', 'RESEARCH_ACTION']);
 const exposureModeSchema = z.enum(['EXPLOITATION', 'EXPLORATION']);
 const outcomeTypeSchema = z.enum(['HUMAN_ACTION', 'LEAD_CREATED', 'QUOTE_REQUESTED', 'WON_SHIPMENT', 'GROSS_PROFIT']);
+const outcomeSourceTypeSchema = z.enum(['CRM_LEAD', 'CRM_OPPORTUNITY', 'CRM_EVENT', 'HUMAN_NOTE', 'OPERATIONS_RECORD']);
 const exposureSchema = z
   .object({
     exposureKey: keySchema,
@@ -33,6 +34,8 @@ const outcomeSchema = z
     valueMinor: z.number().int().min(0).max(2_000_000_000).optional(),
     currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).optional(),
     sourceRef: keySchema.optional(),
+    sourceType: outcomeSourceTypeSchema.optional(),
+    sourceId: keySchema.optional(),
     recordedBy: keySchema
   })
   .strict();
