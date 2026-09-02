@@ -16,6 +16,8 @@ const reportDate = getCurrentReportDate();
 const jobIds: string[] = [];
 const eventIds: string[] = [];
 const usageIds: string[] = [];
+const recommendationExposureIds: string[] = [];
+const recommendationOutcomeIds: string[] = [];
 let server: FastifyInstance;
 
 function metricsOf(value: unknown) {
@@ -23,6 +25,14 @@ function metricsOf(value: unknown) {
     jobs: { created: number; byStatus: Record<string, number> };
     usage: { receipts: number; inputTokens: number; outputTokens: number; costMinorByCurrency: Record<string, number> };
     safety: { realExternalActionsRecorded: number; unverifiedAiCalls: number };
+    recommendations: {
+      exposures: number;
+      exposuresByType: Record<string, number>;
+      exposuresByMode: Record<string, number>;
+      outcomes: number;
+      outcomesByType: Record<string, number>;
+      exposuresWithoutOutcomes: number;
+    };
   };
 }
 
@@ -42,6 +52,8 @@ describe('management reporting and usage receipts', () => {
     await prisma.usageReceipt.deleteMany({ where: { id: { in: usageIds } } });
     await prisma.event.deleteMany({ where: { id: { in: eventIds } } });
     await prisma.job.deleteMany({ where: { id: { in: jobIds } } });
+    await prisma.recommendationOutcome.deleteMany({ where: { id: { in: recommendationOutcomeIds } } });
+    await prisma.recommendationExposure.deleteMany({ where: { id: { in: recommendationExposureIds } } });
     await prisma.$disconnect();
   });
 
@@ -87,6 +99,30 @@ describe('management reporting and usage receipts', () => {
       data: { type: 'COMPANY_DISCOVERED', entityType: 'report-test', entityId: RUN_ID, actor: 'report-test' },
     });
     eventIds.push(event.id);
+    const exposure = await prisma.recommendationExposure.create({
+      data: {
+        exposureKey: `${RUN_ID}-exposure`,
+        recommendationType: 'RESEARCH_ACTION',
+        recommendationId: `${RUN_ID}-action`,
+        algorithmVersion: 'research-actions-v1',
+        inputHash: 'c'.repeat(64),
+        mode: 'EXPLORATION',
+        position: 1,
+        actor: `${RUN_ID}-operator`,
+        exposedAt: new Date(),
+      },
+    });
+    recommendationExposureIds.push(exposure.id);
+    const outcome = await prisma.recommendationOutcome.create({
+      data: {
+        exposureId: exposure.id,
+        outcomeKey: `${RUN_ID}-human-action`,
+        outcomeType: 'HUMAN_ACTION',
+        occurredAt: new Date(),
+        recordedBy: `${RUN_ID}-operator`,
+      },
+    });
+    recommendationOutcomeIds.push(outcome.id);
 
     const first = await generateManagementReport(reportDate);
     expect(first.reused).toBe(false);
@@ -96,6 +132,12 @@ describe('management reporting and usage receipts', () => {
     expect(firstMetrics.usage.costMinorByCurrency.USD).toBeGreaterThanOrEqual(7);
     expect(firstMetrics.safety.realExternalActionsRecorded).toBe(0);
     expect(firstMetrics.safety.unverifiedAiCalls).toBe(0);
+    expect(firstMetrics.recommendations.exposures).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.recommendations.outcomes).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.recommendations.exposuresWithoutOutcomes).toBeGreaterThanOrEqual(0);
+    expect(firstMetrics.recommendations.exposuresByType.RESEARCH_ACTION).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.recommendations.exposuresByMode.EXPLORATION).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.recommendations.outcomesByType.HUMAN_ACTION).toBeGreaterThanOrEqual(1);
 
     const repeat = await generateManagementReport(reportDate);
     expect(repeat.reused).toBe(true);
