@@ -15,6 +15,20 @@ import {
 
 export const MIN_ACCEPTANCE_CONFIDENCE = 0.7;
 export const MIN_INDEPENDENT_RESEARCH_SOURCES = 2;
+export const MAX_RESEARCH_ACTIONS = 100;
+
+export type ResearchMissionActionType =
+  | 'VERIFY_CANDIDATE'
+  | 'COLLECT_EVIDENCE'
+  | 'COLLECT_CONTACT_SIGNAL'
+  | 'REVIEW_CANDIDATE_DECISION';
+
+const RESEARCH_ACTION_PRIORITY: Record<ResearchMissionActionType, number> = {
+  VERIFY_CANDIDATE: 10,
+  COLLECT_EVIDENCE: 20,
+  COLLECT_CONTACT_SIGNAL: 30,
+  REVIEW_CANDIDATE_DECISION: 40
+};
 
 export class ResearchWorkflowError extends Error {
   readonly statusCode: number;
@@ -248,6 +262,122 @@ export async function addResearchCandidate(input: AddResearchCandidateInput) {
 
     return { ...candidate, evidences: [evidence] };
   });
+}
+
+/**
+ * Project the next bounded research tasks without changing any candidate.
+ * This is deliberately a read-only projection: no crawler, AI, contact write,
+ * lead creation, or outreach operation is triggered here.
+ */
+export async function listResearchMissionActions(input: { missionId: string; limit?: number }) {
+  const limit = input.limit ?? MAX_RESEARCH_ACTIONS;
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_RESEARCH_ACTIONS) {
+    throw new ResearchWorkflowError(400, `limit must be an integer between 1 and ${MAX_RESEARCH_ACTIONS}`);
+  }
+
+  const mission = await prisma.researchMission.findUnique({
+    where: { id: input.missionId },
+    include: {
+      candidates: {
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        select: {
+          id: true,
+          status: true,
+          confidence: true,
+          phone: true,
+          emailDomain: true,
+          website: true,
+          createdAt: true,
+          evidences: { select: { sourceUrl: true } }
+        }
+      }
+    }
+  });
+  if (!mission) throw new ResearchWorkflowError(404, 'Research mission not found');
+  if (!['ACTIVE', 'PAUSED'].includes(mission.status)) {
+    throw new ResearchWorkflowError(409, 'Actions are available only for active or paused research missions');
+  }
+
+  const actions: Array<{
+    id: string;
+    missionId: string;
+    candidateId: string;
+    type: ResearchMissionActionType;
+    priority: number;
+    reasonCodes: string[];
+    candidateStatus: string;
+    confidence: number;
+    evidenceSourceCount: number;
+    independentEvidenceSourceCount: number;
+    hasContactSignal: boolean;
+  }> = [];
+
+  for (const candidate of mission.candidates) {
+    if (candidate.status === 'ACCEPTED' || candidate.status === 'REJECTED') continue;
+
+    const reasonCodes: Array<{ type: ResearchMissionActionType; reason: string }> = [];
+    if (candidate.confidence < MIN_ACCEPTANCE_CONFIDENCE) {
+      reasonCodes.push({ type: 'VERIFY_CANDIDATE', reason: 'CANDIDATE_CONFIDENCE_BELOW_ACCEPTANCE_THRESHOLD' });
+    }
+
+    const independentEvidenceSourceCount = countIndependentResearchSources(
+      candidate.evidences.map((evidence) => evidence.sourceUrl)
+    );
+    if (
+      candidate.status === 'NEEDS_MORE_EVIDENCE' ||
+      independentEvidenceSourceCount < MIN_INDEPENDENT_RESEARCH_SOURCES
+    ) {
+      reasonCodes.push({
+        type: 'COLLECT_EVIDENCE',
+        reason:
+          candidate.status === 'NEEDS_MORE_EVIDENCE'
+            ? 'CANDIDATE_REQUESTED_MORE_EVIDENCE'
+            : 'INDEPENDENT_EVIDENCE_BELOW_ACCEPTANCE_THRESHOLD'
+      });
+    }
+
+    // A website is a research source, not an email/phone contact signal.
+    const hasContactSignal = Boolean(candidate.phone || candidate.emailDomain);
+    if (!hasContactSignal) reasonCodes.push({ type: 'COLLECT_CONTACT_SIGNAL', reason: 'NO_CONTACT_SIGNAL' });
+
+    if (reasonCodes.length === 0 && candidate.status === 'PROPOSED') {
+      reasonCodes.push({ type: 'REVIEW_CANDIDATE_DECISION', reason: 'CANDIDATE_READY_FOR_HUMAN_DECISION' });
+    }
+
+    for (const item of reasonCodes) {
+      actions.push({
+        id: `${candidate.id}:${item.type}`,
+        missionId: mission.id,
+        candidateId: candidate.id,
+        type: item.type,
+        priority: RESEARCH_ACTION_PRIORITY[item.type],
+        reasonCodes: [item.reason],
+        candidateStatus: candidate.status,
+        confidence: candidate.confidence,
+        evidenceSourceCount: candidate.evidences.length,
+        independentEvidenceSourceCount,
+        hasContactSignal
+      });
+    }
+  }
+
+  actions.sort(
+    (left, right) =>
+      left.priority - right.priority ||
+      left.candidateId.localeCompare(right.candidateId) ||
+      left.type.localeCompare(right.type)
+  );
+  return {
+    mission: {
+      id: mission.id,
+      name: mission.name,
+      status: mission.status,
+      owner: mission.owner
+    },
+    actions: actions.slice(0, limit),
+    actualWritesPerformed: false,
+    externalCallsPerformed: false
+  };
 }
 
 export async function addResearchEvidence(input: AddResearchEvidenceInput) {

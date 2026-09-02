@@ -8,6 +8,7 @@ import {
   discoverResearchCandidate,
   getResearchMission,
   listResearchMissions,
+  listResearchMissionActions,
   ResearchWorkflowError
 } from '../lib/research';
 
@@ -35,6 +36,7 @@ const httpUrl = z
   }, 'Only credential-free HTTP(S) URLs without secret query parameters are allowed');
 
 const idParamsSchema = z.object({ id: z.string().trim().min(1).max(64) }).strict();
+const actionQuerySchema = z.object({ limit: z.coerce.number().int().min(1).max(100).default(100) }).strict();
 
 const createMissionSchema = z
   .object({
@@ -331,6 +333,12 @@ const researchMissionRoutes: FastifyPluginAsync = async (server) => {
         candidates: mission.candidates.map(serializeCandidate)
       });
     return reply.send(response);
+  });
+
+  server.get('/research-missions/:id/actions', async (request, reply) => {
+    const { id } = parseRequest(idParamsSchema, request.params);
+    const { limit } = parseRequest(actionQuerySchema, request.query);
+    return reply.send(await listResearchMissionActions({ missionId: id, limit }));
   });
 
   server.post('/research-missions/:id/discover', async (request, reply) => {

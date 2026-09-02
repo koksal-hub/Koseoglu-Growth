@@ -666,3 +666,32 @@ bulunmaz. Search Console, analytics, crawler ve provider connector'ları ayrı
 provenance, credential ve onay sözleşmeleriyle sonraki fazlara bırakılır.
 
 STATUS: ACCEPTED FOR SAFE METADATA/REVIEW ONLY
+
+---
+
+## ADR-027 — Deterministic Research Mission Action Projection
+
+DECISION: ResearchMission adayları için yeni bir DB tablosu veya otomatik worker
+yerine read-only bir action projection sunulur. `PROPOSED` ve
+`NEEDS_MORE_EVIDENCE` adayları confidence, bağımsız evidence origin sayısı ve
+email/phone contact signal varlığına göre `VERIFY_CANDIDATE`,
+`COLLECT_EVIDENCE`, `COLLECT_CONTACT_SIGNAL` veya
+`REVIEW_CANDIDATE_DECISION` görevlerine ayrılır. Sonuç bounded limit, stable
+priority/candidate sıralaması ve `actualWritesPerformed=false` /
+`externalCallsPerformed=false` receipt'i taşır; ACCEPTED/REJECTED adaylar
+projeksiyona girmez.
+
+WHY: Araştırma görevi görünürlüğü, dış tarama veya otomatik iletişim başlatmadan
+operatörün sıradaki doğrulama işini seçebilmesini sağlar. Website varlığı email ya
+da telefon kanıtı değildir; contact toplama görevi yalnız bu sinyaller eksikse
+üretilir.
+
+ALTERNATIVES: Her görev için kalıcı queue tablosu oluşturmak; eksik veriyi AI ile
+tamamlamak; aday oluşturulunca otomatik email/telefon lead'i üretmek; website'i
+iletişim noktası kabul etmek.
+
+CONSEQUENCES: Bu dilim yalnız projection ve açıklanabilir reason code üretir.
+Gerçek crawler, email/telefon toplama, permission kararı, Lead/Outreach yazımı ve
+dış iletişim sonraki ayrı onaylı dilimlerdir.
+
+STATUS: ACCEPTED FOR READ-ONLY RESEARCH WORK QUEUE
