@@ -164,6 +164,14 @@ enum RecommendationOutcomeType {
   GROSS_PROFIT
 }
 
+enum RecommendationOutcomeSourceType {
+  CRM_LEAD
+  CRM_OPPORTUNITY
+  CRM_EVENT
+  HUMAN_NOTE
+  OPERATIONS_RECORD
+}
+
 enum OpportunityStage {
   QUALIFICATION
   PROPOSAL
@@ -684,12 +692,15 @@ model RecommendationOutcome {
   valueMinor  Int?
   currency    String?
   sourceRef   String?
+  sourceType  RecommendationOutcomeSourceType?
+  sourceId    String?
   recordedBy  String
   createdAt   DateTime                  @default(now())
 
   @@unique([exposureId, outcomeKey])
   @@index([outcomeType, occurredAt])
   @@index([exposureId, occurredAt])
+  @@index([sourceType, sourceId])
 }
 
 /// Human-authored email content that is deliberately separate from delivery.
