@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T02:20:00+03:00
-last_actor: Codex (Issue #60 CI/merge verification)
+last_update: 2026-09-03T01:16:47+03:00
+last_actor: Codex (Issue #63 CI/merge verification)
 
-CURRENT PHASE: PHASE 8N OUTCOME SOURCE EXISTENCE GATE — DONE (SAFE MODE)
+CURRENT PHASE: PHASE 8O HUMAN-APPROVED OUTCOME PROVENANCE — DONE (SAFE MODE)
 ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (`a9ca90a` Phase 8N merge)
+ACTIVE BRANCH: `main` (`3e5ecb5` Phase 8O merge)
 
 ## Phase 8J araştırma uygulaması
 
@@ -69,6 +69,20 @@ ACTIVE BRANCH: `main` (`a9ca90a` Phase 8N merge)
 - PR #61 CI run `33685338110`: SUCCESS — 23 test dosyası / 182 test, additive
   migration, lint, typecheck ve API/web build. Squash merge `a9ca90a`; Issue #60
   CLOSED.
+
+## Phase 8O human-approved outcome provenance
+
+- CRM kaynaklı `RecommendationOutcome` eşleştirmeleri ayrı immutable
+  `RecommendationOutcomeProvenanceReview` receipt'iyle `APPROVED` veya `REJECTED`
+  olarak kaydedilir. Reviewer, outcome'u kaydeden aktörden farklı olmak zorundadır.
+- Review endpoint'i yalnız `CRM_LEAD`, `CRM_OPPORTUNITY` ve `CRM_EVENT` için
+  çalışır; source ID yerel veritabanında review anında yeniden doğrulanır.
+  `HUMAN_NOTE` ve `OPERATIONS_RECORD` metadata-only kalır.
+- `reviewKey` aynı payload'da idempotent reuse, farklı payload'da 409 conflict'tir;
+  aynı outcome için ikinci review receipt'i reddedilir. Review sonucu outcome'u
+  silmez veya değiştirmez.
+- PR #64 CI run `33689347614`: SUCCESS — migration, lint, typecheck, 23 test
+  dosyası / 182 test ve API/web build. Squash merge `3e5ecb5`; Issue #63 CLOSED.
 
 ## Taze Phase 8J kanıtı
 
