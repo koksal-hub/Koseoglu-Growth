@@ -359,6 +359,19 @@ oturumların notları korunur. Çelişki halinde GitHub Issue ve güncel CI kan�
   - [x] Readiness açıkça `NOT_RUN` / execution disabled döner; search provider çağrısı yok
   - [x] Lint, typecheck, focused tests, build ve CI kanıtı
 
+--- Issue #42 — Deterministic Research Mission Action Queue (Phase 8I) ---
+- Öncelik: HIGH / RISK B
+- Sorumlu: Codex
+- Durum: IN_PROGRESS (read-only projection; external action disabled)
+- Bağımlılıklar: ResearchMission / Evidence / ContactPoint safety gates
+- Acceptance criteria:
+  - [ ] Active/paused mission için bounded action listesi döner
+  - [ ] PROPOSED/NEEDS_MORE_EVIDENCE adaylarına deterministic action üretir; final adayları dışlar
+  - [ ] İki bağımsız kaynak, confidence ve email/phone contact-signal eksikleri reason code üretir
+  - [ ] Stable priority + candidate id sıralaması ve limit validation vardır
+  - [ ] Dış network/AI/send/Lead/Activity write yoktur
+  - [ ] Focused regression, lint, typecheck, build ve CI kanıtı raporlanır
+
 ================================================================
 ISSUE OLUŞTURMA KOMUTLARI (gh CLI mevcut olduğunda)
 ================================================================

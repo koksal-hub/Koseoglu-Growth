@@ -1,13 +1,22 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-01T23:16:00+03:00
-last_actor: Codex (Issue #39 CI/merge verification)
+last_update: 2026-09-02T17:50:00+03:00
+last_actor: Codex (Issue #42 research action projection)
 
-CURRENT PHASE: PHASE 8H SEO/GEO VISIBILITY ASSET CONTRACT — DONE (SAFE MODE)
-ACTIVE ISSUE: #37 — Provider OAuth onboarding and pilot approval gate (WAITING_APPROVAL)
-ACTIVE BRANCH: `main` (`e9ef322` Phase 8H merge)
+CURRENT PHASE: PHASE 8I DETERMINISTIC RESEARCH ACTION QUEUE (SAFE MODE)
+ACTIVE ISSUE: #42 — Deterministic research mission action queue
+ACTIVE BRANCH: `codex/phase8i-research-action-queue-v1` (`origin/main` `bfd7c88` tabanı)
 
 ## Uygulanan dar kapsam
+
+- ResearchMission için read-only `/research-missions/:id/actions` projection'ı
+  eklendi. Aday confidence, bağımsız evidence origin sayısı ve gerçek
+  email/phone contact signal eksiklerine göre bounded görevler üretir.
+- `VERIFY_CANDIDATE`, `COLLECT_EVIDENCE`, `COLLECT_CONTACT_SIGNAL` ve
+  `REVIEW_CANDIDATE_DECISION` reason code/priority ile stable sıralanır; ACCEPTED
+  ve REJECTED adaylar dışlanır. Website tek başına contact signal sayılmaz.
+- Endpoint hiçbir candidate, ContactPoint, Lead, Activity veya Job yazmaz; dış
+  network/AI/send çağrısı yapmaz ve response bunu açık receipt alanlarıyla bildirir.
 
 - SEO/GEO için credential-free `SearchVisibilityAsset` modeli ve additive migration
   eklendi. Canonical URL yalnız HTTPS, credential/query/fragment olmadan kabul
@@ -101,6 +110,13 @@ ACTIVE BRANCH: `main` (`e9ef322` Phase 8H merge)
 
 ## Taze yerel kanıt
 
+- Phase 8I `pnpm run lint`: PASS
+- Phase 8I `pnpm run typecheck`: PASS
+- Phase 8I API build: PASS
+- Phase 8I `git diff --check`: PASS
+- Phase 8I focused Vitest: NOT_RUN — OneDrive worktree/esbuild reparse-point erişim
+  hatası; Docker/DB integration kanıtı bu checkout'ta yok. CI kapısı gereklidir.
+
 - `prisma validate`: PASS
 - `prisma generate`: PASS
 - `pnpm run lint`: PASS
@@ -193,7 +209,6 @@ ACTIVE BRANCH: `main` (`e9ef322` Phase 8H merge)
 
 ## Sonraki adım
 
-Issue #37 için kullanıcıdan seçili provider/pilot hesap, exact scope, secret-manager ve
-sandbox/paper onayı gerekir. Bu kanıt gelene kadar gerçek OAuth/token refresh,
-medya yükleme, sosyal yayın/DM, search/indexing API, AI çağrısı, Resend API çağrısı,
-müşteri gönderimi ve inbound reply kapsam dışıdır.
+Issue #42 için CI ve read-only araştırma projection kanıtı bekleniyor. Provider
+OAuth/publish ve gerçek e-posta/telefon iletişimi için seçili hesap, exact scope,
+secret-manager/sandbox sınırı ve açık kullanıcı onayı olmadan dış aksiyon yoktur.
