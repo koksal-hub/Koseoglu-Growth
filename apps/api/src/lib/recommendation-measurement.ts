@@ -47,6 +47,13 @@ function validateSourceRef(value: string | undefined) {
   if (CREDENTIAL_PATTERN.test(value)) throw new RecommendationMeasurementError(400, 'source reference contains credential-shaped data');
 }
 
+function validateReviewReason(value: string) {
+  if (typeof value !== 'string' || value.trim().length < 1 || value.trim().length > 1_000) {
+    throw new RecommendationMeasurementError(400, 'Review reason must be between 1 and 1000 characters');
+  }
+  if (CREDENTIAL_PATTERN.test(value)) throw new RecommendationMeasurementError(400, 'Review reason contains credential-shaped data');
+}
+
 function sameExposurePayload(
   existing: {
     recommendationType: RecommendationType;
@@ -153,7 +160,7 @@ export async function listRecommendationExposures(input: {
   if (input.recommendationId !== undefined) validateKey(input.recommendationId, 'recommendation id');
   return prisma.recommendationExposure.findMany({
     where: { recommendationType: input.recommendationType, recommendationId: input.recommendationId },
-    include: { outcomes: { orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }] } },
+    include: { outcomes: { include: { provenanceReview: true }, orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }] } },
     orderBy: [{ exposedAt: 'desc' }, { id: 'asc' }],
     take: limit
   });
@@ -205,6 +212,91 @@ async function assertLocalOutcomeSourceExists(
         ? await prisma.opportunity.findUnique({ where: { id: sourceId }, select: { id: true } })
         : await prisma.event.findUnique({ where: { id: sourceId }, select: { id: true } });
   if (!exists) throw new RecommendationMeasurementError(404, `${sourceType} source not found`);
+}
+
+function sameProvenanceReviewPayload(
+  existing: {
+    outcomeId: string;
+    decision: 'APPROVED' | 'REJECTED';
+    reviewedBy: string;
+    reason: string;
+  },
+  input: {
+    outcomeId: string;
+    decision: 'APPROVED' | 'REJECTED';
+    reviewedBy: string;
+    reason: string;
+  }
+) {
+  return (
+    existing.outcomeId === input.outcomeId &&
+    existing.decision === input.decision &&
+    existing.reviewedBy === input.reviewedBy &&
+    existing.reason === input.reason
+  );
+}
+
+export async function recordRecommendationOutcomeProvenanceReview(input: {
+  outcomeId: string;
+  reviewKey: string;
+  decision: string;
+  reviewedBy: string;
+  reason: string;
+}) {
+  validateKey(input.outcomeId, 'outcome id');
+  validateKey(input.reviewKey, 'review key');
+  validateEnum(input.decision, ['APPROVED', 'REJECTED'], 'provenance review decision');
+  validateKey(input.reviewedBy, 'reviewer');
+  if (CREDENTIAL_PATTERN.test(input.reviewedBy)) throw new RecommendationMeasurementError(400, 'reviewer contains credential-shaped data');
+  validateReviewReason(input.reason);
+
+  const normalized = {
+    outcomeId: input.outcomeId,
+    decision: input.decision as 'APPROVED' | 'REJECTED',
+    reviewedBy: input.reviewedBy,
+    reason: input.reason.trim()
+  };
+  const existingByKey = await prisma.recommendationOutcomeProvenanceReview.findUnique({ where: { reviewKey: input.reviewKey } });
+  if (existingByKey) {
+    if (!sameProvenanceReviewPayload(existingByKey, normalized)) {
+      throw new RecommendationMeasurementError(409, 'reviewKey already exists with a different payload');
+    }
+    return { review: existingByKey, reused: true };
+  }
+
+  const outcome = await prisma.recommendationOutcome.findUnique({ where: { id: input.outcomeId }, include: { provenanceReview: true } });
+  if (!outcome) throw new RecommendationMeasurementError(404, 'Recommendation outcome not found');
+  if (!outcome.sourceType || !outcome.sourceId || ['HUMAN_NOTE', 'OPERATIONS_RECORD'].includes(outcome.sourceType)) {
+    throw new RecommendationMeasurementError(409, 'Only CRM outcome sources can receive provenance review');
+  }
+  if (outcome.recordedBy === input.reviewedBy) {
+    throw new RecommendationMeasurementError(409, 'Outcome recorder cannot review its own provenance');
+  }
+  if (outcome.provenanceReview) {
+    throw new RecommendationMeasurementError(409, 'Recommendation outcome already has a provenance review');
+  }
+  await assertLocalOutcomeSourceExists(outcome.sourceType, outcome.sourceId);
+
+  try {
+    const review = await prisma.recommendationOutcomeProvenanceReview.create({
+      data: {
+        reviewKey: input.reviewKey,
+        ...normalized,
+        reviewedAt: new Date()
+      }
+    });
+    return { review, reused: false };
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') throw error;
+    const existing = await prisma.recommendationOutcomeProvenanceReview.findUnique({ where: { reviewKey: input.reviewKey } });
+    if (existing) {
+      if (!sameProvenanceReviewPayload(existing, normalized)) {
+        throw new RecommendationMeasurementError(409, 'reviewKey already exists with a different payload');
+      }
+      return { review: existing, reused: true };
+    }
+    throw new RecommendationMeasurementError(409, 'Recommendation outcome already has a provenance review');
+  }
 }
 
 export async function recordRecommendationOutcome(input: {

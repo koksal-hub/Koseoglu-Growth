@@ -172,6 +172,11 @@ enum RecommendationOutcomeSourceType {
   OPERATIONS_RECORD
 }
 
+enum RecommendationOutcomeProvenanceDecision {
+  APPROVED
+  REJECTED
+}
+
 enum OpportunityStage {
   QUALIFICATION
   PROPOSAL
@@ -683,24 +688,42 @@ model RecommendationExposure {
 /// Explicitly recorded result after an exposure. No outcome is inferred from a
 /// ranking score or a job; a source reference and human/system actor are kept.
 model RecommendationOutcome {
-  id          String                    @id @default(cuid())
-  exposureId  String
-  exposure    RecommendationExposure   @relation(fields: [exposureId], references: [id])
-  outcomeKey  String
-  outcomeType RecommendationOutcomeType
-  occurredAt  DateTime
-  valueMinor  Int?
-  currency    String?
-  sourceRef   String?
-  sourceType  RecommendationOutcomeSourceType?
-  sourceId    String?
-  recordedBy  String
-  createdAt   DateTime                  @default(now())
+  id               String                    @id @default(cuid())
+  exposureId       String
+  exposure         RecommendationExposure   @relation(fields: [exposureId], references: [id])
+  outcomeKey       String
+  outcomeType      RecommendationOutcomeType
+  occurredAt       DateTime
+  valueMinor       Int?
+  currency         String?
+  sourceRef        String?
+  sourceType       RecommendationOutcomeSourceType?
+  sourceId         String?
+  recordedBy       String
+  provenanceReview RecommendationOutcomeProvenanceReview?
+  createdAt        DateTime                  @default(now())
 
   @@unique([exposureId, outcomeKey])
   @@index([outcomeType, occurredAt])
   @@index([exposureId, occurredAt])
   @@index([sourceType, sourceId])
+}
+
+/// Immutable human decision about a CRM source attached to an outcome.
+/// A rejected review remains an audit receipt; it never deletes or rewrites
+/// the original measurement outcome.
+model RecommendationOutcomeProvenanceReview {
+  id         String                                @id @default(cuid())
+  reviewKey  String                                @unique
+  outcomeId  String                                @unique
+  outcome    RecommendationOutcome                 @relation(fields: [outcomeId], references: [id])
+  decision   RecommendationOutcomeProvenanceDecision
+  reviewedBy String
+  reason     String
+  reviewedAt DateTime
+  createdAt  DateTime                              @default(now())
+
+  @@index([decision, reviewedAt])
 }
 
 /// Human-authored email content that is deliberately separate from delivery.

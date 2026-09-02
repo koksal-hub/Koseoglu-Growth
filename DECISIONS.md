@@ -747,3 +747,31 @@ CRM/operasyon doğrulaması ayrı, insan onaylı adapter ve yetki dilimidir. Dı
 network/provider/customer action bu kararla açılmaz.
 
 STATUS: ACCEPTED FOR EXPLICIT RECEIPTS ONLY
+
+---
+
+## ADR-030 — Human-Approved Recommendation Outcome Provenance
+
+DECISION: CRM kaynaklı bir `RecommendationOutcome` için provenance eşleştirmesi
+ayrı ve immutable bir review receipt'iyle onaylanır. Receipt yalnız
+`CRM_LEAD`, `CRM_OPPORTUNITY` veya `CRM_EVENT` kaynaklarını kabul eder; kaynak
+ID'si review anında yerel veritabanında yeniden doğrulanır. Reviewer,
+`recordedBy` aktöründen farklı olmak zorundadır ve `APPROVED` veya `REJECTED`
+kararı, gerekçe ve zaman damgasıyla saklanır. Aynı outcome için tek review
+receipt'i vardır; aynı payload tekrarında idempotent reuse, farklı payload'da
+409 conflict döner.
+
+WHY: Source existence tek başına insanın attribution kararını kanıtlamaz.
+İnsan onayını outcome kaydını overwrite etmeden ayrı receipt olarak tutmak,
+yanlış eşleştirmeyi ve sonradan sessiz değişikliği denetlenebilir kılar.
+
+ALTERNATIVES: Outcome satırını doğrudan APPROVED yapmak; reviewer bilgisini
+serbest metadata'ya yazmak; aynı outcome için birden çok çelişkili review'a izin
+vermek; CRM kaydı yoksa otomatik oluşturmak veya dış sisteme sormak.
+
+CONSEQUENCES: Bu dilim yalnız private review API'si ve yerel receipt yazımıdır.
+`HUMAN_NOTE`/`OPERATIONS_RECORD` metadata olarak kalır; provider OAuth, dış CRM
+lookup'u, entity-link, yeni kayıt, e-posta/telefon veya sosyal medya aksiyonu
+başlatılmaz. Review reddi ölçüm receipt'ini silmez ve ticari başarı sayılmaz.
+
+STATUS: PROPOSED — IMPLEMENTATION IN NEXT CONTROLLED SLICE

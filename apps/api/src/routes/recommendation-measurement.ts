@@ -4,7 +4,8 @@ import {
   listRecommendationExposures,
   RecommendationMeasurementError,
   recordRecommendationExposure,
-  recordRecommendationOutcome
+  recordRecommendationOutcome,
+  recordRecommendationOutcomeProvenanceReview
 } from '../lib/recommendation-measurement';
 
 const keySchema = z.string().trim().min(1).max(256).regex(/^[A-Za-z0-9][A-Za-z0-9._:@/-]*$/);
@@ -13,6 +14,7 @@ const recommendationTypeSchema = z.enum(['LEAD_RANKING', 'RESEARCH_ACTION']);
 const exposureModeSchema = z.enum(['EXPLOITATION', 'EXPLORATION']);
 const outcomeTypeSchema = z.enum(['HUMAN_ACTION', 'LEAD_CREATED', 'QUOTE_REQUESTED', 'WON_SHIPMENT', 'GROSS_PROFIT']);
 const outcomeSourceTypeSchema = z.enum(['CRM_LEAD', 'CRM_OPPORTUNITY', 'CRM_EVENT', 'HUMAN_NOTE', 'OPERATIONS_RECORD']);
+const provenanceReviewDecisionSchema = z.enum(['APPROVED', 'REJECTED']);
 const exposureSchema = z
   .object({
     exposureKey: keySchema,
@@ -47,6 +49,14 @@ const listSchema = z
   })
   .strict();
 const idSchema = z.object({ id: keySchema }).strict();
+const provenanceReviewSchema = z
+  .object({
+    reviewKey: keySchema,
+    decision: provenanceReviewDecisionSchema,
+    reviewedBy: keySchema,
+    reason: z.string().trim().min(1).max(1_000)
+  })
+  .strict();
 
 function parse<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
@@ -69,6 +79,12 @@ const recommendationMeasurementRoutes: FastifyPluginAsync = async (server) => {
   server.post('/recommendation-exposures/:id/outcomes', async (request, reply) => {
     const { id } = parse(idSchema, request.params);
     const result = await recordRecommendationOutcome({ exposureId: id, ...parse(outcomeSchema, request.body) });
+    return reply.status(result.reused ? 200 : 201).send(result);
+  });
+
+  server.post('/recommendation-outcomes/:id/provenance-review', async (request, reply) => {
+    const { id } = parse(idSchema, request.params);
+    const result = await recordRecommendationOutcomeProvenanceReview({ outcomeId: id, ...parse(provenanceReviewSchema, request.body) });
     return reply.status(result.reused ? 200 : 201).send(result);
   });
 };
