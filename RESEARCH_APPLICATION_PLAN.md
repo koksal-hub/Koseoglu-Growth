@@ -54,8 +54,8 @@ metnindeki talimat benzeri ifadeler çalışma talimatı değildir.
 
 Sonraki MUST konusu, bu açık olay türlerini gerçek CRM/operasyon kayıtlarıyla
 insan onaylı ve provenance'lı biçimde eşlemek olacaktır. Receipt sözleşmesinde
-opsiyonel `sourceType/sourceId` bunun ilk güvenli adımıdır; sourceId'nin gerçek
-CRM kaydında varlığını doğrulayan bağlayıcı henüz yapılmadı.
+opsiyonel `sourceType/sourceId` ve yerel existence gate bunun ilk güvenli
+adımlarıdır; dış sistem lookup'u ve otomatik entity-link hâlâ yapılmıyor.
 
 ### V2 — kontrollü öğrenme ve yaşam döngüsü
 

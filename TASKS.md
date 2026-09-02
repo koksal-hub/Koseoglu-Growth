@@ -451,3 +451,15 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] Provenance alanları idempotency/conflict karşılaştırmasına dahil
   - [x] Source ID lookup, otomatik linking, yeni kayıt veya dış action yok
   - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
+
+--- Issue #60 — Local source existence gate for outcome provenance ---
+- Öncelik: HIGH / MUST / RISK B
+- Sorumlu: Codex
+- Durum: DONE (PR #61 CI run `33685338110` PASS; squash merge `a9ca90a`; Issue #60 kapalı)
+- Bağımlılıklar: RecommendationOutcome structured provenance; local CRM models
+- Acceptance criteria:
+  - [x] CRM lead/opportunity/event sourceId local existence validation
+  - [x] Missing source 404; existing idempotent receipt reuse remains stable
+  - [x] Human note/operations metadata remains lookup-free
+  - [x] Automatic linking, external lookup, new record or customer action yok
+  - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
