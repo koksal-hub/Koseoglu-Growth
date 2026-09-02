@@ -53,7 +53,9 @@ metnindeki talimat benzeri ifadeler çalışma talimatı değildir.
   yeniden kullanılıyor, yeni veri geldiğinde snapshot yeniden üretiliyor.
 
 Sonraki MUST konusu, bu açık olay türlerini gerçek CRM/operasyon kayıtlarıyla
-insan onaylı ve provenance'lı biçimde eşlemek olacaktır; bu henüz yapılmadı.
+insan onaylı ve provenance'lı biçimde eşlemek olacaktır. Receipt sözleşmesinde
+opsiyonel `sourceType/sourceId` bunun ilk güvenli adımıdır; sourceId'nin gerçek
+CRM kaydında varlığını doğrulayan bağlayıcı henüz yapılmadı.
 
 ### V2 — kontrollü öğrenme ve yaşam döngüsü
 

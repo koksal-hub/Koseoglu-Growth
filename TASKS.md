@@ -439,3 +439,15 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] DEVELOPING, COOLING ve DORMANT deterministic regression vakaları
   - [x] Read-only davranış ve mevcut güvenlik sınırları korunur
   - [x] Lint, typecheck, migration, 23 test dosyası / 182 test ve build CI kanıtı
+
+--- Issue #57 — Structured outcome provenance for CRM attribution ---
+- Öncelik: HIGH / MUST / RISK B
+- Sorumlu: Codex
+- Durum: DONE (PR #58 CI run `33682847191` PASS; squash merge `8e8782b`; Issue #57 kapalı)
+- Bağımlılıklar: RecommendationOutcome measurement contract; auth boundary
+- Acceptance criteria:
+  - [x] Opsiyonel pairwise `sourceType/sourceId` alanları ve additive migration
+  - [x] CRM lead/opportunity/event, human note ve operations record türleri
+  - [x] Provenance alanları idempotency/conflict karşılaştırmasına dahil
+  - [x] Source ID lookup, otomatik linking, yeni kayıt veya dış action yok
+  - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
