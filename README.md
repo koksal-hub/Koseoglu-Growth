@@ -26,6 +26,8 @@ kontrollü bir API üzerinden gerekli veri paylaşılabilir. Detay: [DECISIONS.m
 
 - Modüler monolith, önce çalışan sade çekirdek.
 - `apps/api` — Fastify + TypeScript backend.
+- `GET /api/intelligence/companies/:id/timeline` — yerel Event kanıtlarından
+  bounded, salt-okunur şirket istihbaratı görünümü.
 - `apps/web` — React + Vite frontend.
 - `prisma/` — PostgreSQL şema ve migration'lar.
 - `docker/` — yerel geliştirme için Postgres.
@@ -34,6 +36,8 @@ kontrollü bir API üzerinden gerekli veri paylaşılabilir. Detay: [DECISIONS.m
   [DECISIONS.md](DECISIONS.md).
 - Mevcut API authentication sınırı ve credential/token davranışı için
   [AUTHENTICATION.md](AUTHENTICATION.md).
+- Kalan yol haritasının güvenli uygulama sırası için
+  [REMAINING_ROADMAP_PLAN.md](REMAINING_ROADMAP_PLAN.md).
 
 ## Current phase
 
