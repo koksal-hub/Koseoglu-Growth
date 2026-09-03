@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import {
   CompanyIntelligencePolicyError,
+  getCompanyEvidenceBrief,
   getCompanyIntelligenceTimeline,
   MAX_COMPANY_INTELLIGENCE_LIMIT,
 } from '../lib/company-intelligence';
@@ -30,6 +31,12 @@ const companyIntelligenceRoutes: FastifyPluginAsync = async (server) => {
     const { id } = parse(paramsSchema, request.params);
     const query = parse(querySchema, request.query);
     return reply.send(await getCompanyIntelligenceTimeline({ companyId: id, ...query }));
+  });
+
+  server.get('/intelligence/companies/:id/evidence-brief', async (request, reply) => {
+    const { id } = parse(paramsSchema, request.params);
+    const query = parse(querySchema, request.query);
+    return reply.send(await getCompanyEvidenceBrief({ companyId: id, ...query }));
   });
 };
 

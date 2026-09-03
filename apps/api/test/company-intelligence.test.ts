@@ -7,6 +7,7 @@ const RUN_ID = `company-intelligence-${Date.now()}-${Math.random().toString(36).
 let server: FastifyInstance;
 let companyId: string;
 const eventIds: string[] = [];
+const evidenceIds: string[] = [];
 
 describe('read-only company intelligence timeline', () => {
   beforeAll(async () => {
@@ -29,13 +30,45 @@ describe('read-only company intelligence timeline', () => {
       });
       eventIds.push(event.id);
     }
+    const evidence = await prisma.evidence.create({
+      data: {
+        companyId: company.id,
+        sourceUrl: 'https://example.com/company?utm_source=test',
+        sourceName: 'Test source',
+        claimKey: 'sector',
+        summary: 'Untrusted source summary',
+        confidence: 0.8,
+      },
+    });
+    evidenceIds.push(evidence.id);
   });
 
   afterAll(async () => {
+    if (evidenceIds.length > 0) await prisma.evidence.deleteMany({ where: { id: { in: evidenceIds } } });
     if (eventIds.length > 0) await prisma.event.deleteMany({ where: { id: { in: eventIds } } });
     if (companyId) await prisma.company.deleteMany({ where: { id: companyId } });
     if (server) await server.close();
     await prisma.$disconnect();
+  });
+
+  it('returns an evidence brief with origin-only sources and explicit untrusted text', async () => {
+    const response = await server.inject({ method: 'GET', url: `/api/intelligence/companies/${companyId}/evidence-brief?limit=1` });
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.payload) as {
+      evidence: Array<{ sourceOrigin: string | null; summary: string; summaryTrust: string }>;
+      policy: { rawSourceUrlIncluded: boolean; metadataIncluded: boolean; writesPerformed: boolean; externalCallsPerformed: boolean };
+    };
+    expect(body.evidence).toHaveLength(1);
+    expect(body.evidence[0]).toMatchObject({ sourceOrigin: 'https://example.com', summary: 'Untrusted source summary', summaryTrust: 'UNTRUSTED_SOURCE_TEXT' });
+    expect(JSON.stringify(body)).not.toContain('utm_source');
+    expect(body.policy).toEqual({
+      maxLimit: 100,
+      maxWindowDays: 366,
+      rawSourceUrlIncluded: false,
+      metadataIncluded: false,
+      writesPerformed: false,
+      externalCallsPerformed: false,
+    });
   });
 
   it('returns a bounded timeline without raw event metadata or external actions', async () => {
