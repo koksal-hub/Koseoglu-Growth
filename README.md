@@ -35,7 +35,7 @@ kontrollü bir API üzerinden gerekli veri paylaşılabilir. Detay: [DECISIONS.m
 
 ## Current phase
 
-**PHASE 8P — provenance review quality metrics (safe mode).** Güncel operasyonel durum için [STATUS.md](STATUS.md).
+**PHASE 8R — read-only daily action dashboard (safe mode).** Güncel operasyonel durum için [STATUS.md](STATUS.md).
 Tam roadmap için [MASTER_PLAN.md](MASTER_PLAN.md).
 
 ## Local development

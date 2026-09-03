@@ -504,3 +504,17 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] Ham e-posta/telefon değerleri ve secret'lar report payload'ına girmez
   - [x] Crawler/provider/OAuth/send/lead/customer action yok
   - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
+
+--- Issue #73 — Read-only daily action dashboard ---
+- Öncelik: HIGH / MUST / RISK B
+- Sorumlu: Codex
+- Durum: IN_PROGRESS (kod/test hazır; CI ve merge bekleniyor)
+- Bağımlılıklar: ManagementReport; CompanyRankingReceipt; ResearchMission action projection
+- Acceptance criteria:
+  - [x] Europe/Istanbul date window ve 1..50 bounded limit validation
+  - [x] Deterministic ranking receipt summary (company, score, reasons, nextAction)
+  - [x] ACTIVE/PAUSED research mission actions tek bounded response'ta
+  - [x] Raw contact values, credential metadata ve report içi contactReceipt dışarı sızmaz
+  - [x] Action flags actualLeadCreated/actualOutreachCreated/actualSendPerformed false
+  - [x] Crawler/provider/OAuth/send/canonical CRM write yok
+  - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı

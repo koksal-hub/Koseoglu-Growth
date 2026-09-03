@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T20:23:30+03:00
-last_actor: Codex (Issue #71 CI verification)
+last_update: 2026-09-03T20:31:35+03:00
+last_actor: Codex (Issue #73 implementation)
 
-CURRENT PHASE: PHASE 8Q CONTACT SIGNAL QUALITY METRICS — DONE (SAFE MODE)
-ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (Phase 8Q PR #72; CI verified)
+CURRENT PHASE: PHASE 8R READ-ONLY DAILY ACTION DASHBOARD — IN PROGRESS (SAFE MODE)
+ACTIVE ISSUE: #73 — CI/build verification pending
+ACTIVE BRANCH: `codex/daily-dashboard-v1`
 
 ## Kalıcı GitHub yayın standardı
 
@@ -122,6 +122,21 @@ ACTIVE BRANCH: `main` (Phase 8Q PR #72; CI verified)
   veya müşteri iletişimi başlatmaz.
 - PR #72 CI run `33784015755`: SUCCESS — migration, lint, typecheck, 23 test
   dosyası / 182 test ve API/web build. Issue #71 kapanışı merge ile kaydedilecek.
+
+## Phase 8R read-only daily action dashboard
+
+- `GET /api/dashboard/daily` mevcut ManagementReport snapshot'ını, tarih penceresi
+  içindeki deterministik company ranking receipt'lerini ve ACTIVE/PAUSED araştırma
+  görevlerini tek bounded private response'ta birleştirir.
+- Ranking çıktısı yalnız şirket kimliği, skor, gerekçeler ve `nextAction` taşır;
+  araştırma çıktısı raw contact alanlarını içermez. Her iki liste istenen limit ile
+  sınırlandırılır ve sıralama deterministiktir.
+- Response `actualLeadCreated`, `actualOutreachCreated`, `actualSendPerformed` ve
+  `externalCallsPerformed` için false receipt'i taşır. Endpoint crawler, provider,
+  OAuth, send veya canonical CRM write açmaz; yalnız report snapshot reuse/write
+  davranışını mevcut ManagementReport sözleşmesiyle sürdürür.
+- Local focused Vitest/web build OneDrive/esbuild erişim kısıtı nedeniyle NOT_RUN;
+  CI doğrulaması Issue #73 merge öncesi bekleniyor.
 
 ## Taze Phase 8J kanıtı
 
