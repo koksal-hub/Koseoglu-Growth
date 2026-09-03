@@ -477,3 +477,16 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] `reviewKey` idempotency/conflict ve outcome başına tek review
   - [x] HUMAN_NOTE/OPERATIONS_RECORD metadata-only; dış lookup/linking/provider/customer action yok
   - [x] Migration, 23 test dosyası / 182 test, lint, typecheck ve API/web build CI kanıtı
+
+--- Issue #66 — Provenance review quality metrics ---
+- Öncelik: HIGH / MUST / RISK B
+- Sorumlu: Codex
+- Durum: DONE (PR #67 CI `33780845257` PASS; squash merge `7de1757`; Issue #66 kapalı)
+- Bağımlılıklar: ManagementReport; RecommendationOutcome; provenance review receipt
+- Acceptance criteria:
+  - [x] Raw recommendation outcome toplamları değişmeden korunur
+  - [x] Review receipt sayısı `reviewedAt` ile ve karar kırılımıyla raporlanır
+  - [x] CRM outcome'ları `occurredAt` ile APPROVED/REJECTED/WITHOUT_REVIEW ayrılır
+  - [x] HUMAN_NOTE/OPERATIONS_RECORD CRM kalite kovalarından dışlanır
+  - [x] Eksik review approval sayılmaz; snapshot hash ve idempotent reuse korunur
+  - [x] Migration, 23 test dosyası / 182 test, lint, typecheck ve API/web build CI kanıtı

@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T01:16:47+03:00
-last_actor: Codex (Issue #63 CI/merge verification)
+last_update: 2026-09-03T19:53:04+03:00
+last_actor: Codex (Issue #66 CI/merge verification)
 
-CURRENT PHASE: PHASE 8O HUMAN-APPROVED OUTCOME PROVENANCE — DONE (SAFE MODE)
+CURRENT PHASE: PHASE 8P PROVENANCE REVIEW QUALITY METRICS — DONE (SAFE MODE)
 ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (`3e5ecb5` Phase 8O merge)
+ACTIVE BRANCH: `main` (`7de1757` Phase 8P merge)
 
 ## Kalıcı GitHub yayın standardı
 
@@ -95,6 +95,20 @@ ACTIVE BRANCH: `main` (`3e5ecb5` Phase 8O merge)
   silmez veya değiştirmez.
 - PR #64 CI run `33689347614`: SUCCESS — migration, lint, typecheck, 23 test
   dosyası / 182 test ve API/web build. Squash merge `3e5ecb5`; Issue #63 CLOSED.
+
+## Phase 8P provenance review quality metrics
+
+- Management report'un mevcut raw recommendation outcome toplamları korunur;
+  ayrıca provenance review sayısı ve `APPROVED`/`REJECTED` kırılımı eklenir.
+- Review receipt'leri report window içinde `reviewedAt` ile, CRM outcome kalite
+  kovaları ise `occurredAt` ile sayılır. CRM kayıtları `APPROVED`, `REJECTED` ve
+  `WITHOUT_REVIEW` olarak ayrılır; `HUMAN_NOTE` ve `OPERATIONS_RECORD` bu
+  CRM kovalarına dahil edilmez.
+- Eksik review approval sayılmaz; yeni alanlar snapshot input hash ve mevcut
+  idempotent reuse davranışına dahildir. Yeni provider, OAuth, müşteri iletişimi
+  veya otomatik attribution eylemi açılmaz.
+- PR #67 CI run `33780845257`: SUCCESS — migration, lint, typecheck, 23 test
+  dosyası / 182 test ve API/web build. Squash merge `7de1757`; Issue #66 CLOSED.
 
 ## Taze Phase 8J kanıtı
 

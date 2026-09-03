@@ -802,4 +802,4 @@ existing snapshot input hash and idempotent reuse. This remains read-only
 measurement; no provider, OAuth, customer contact, or automatic attribution
 action is enabled.
 
-STATUS: PROPOSED — IMPLEMENTATION IN NEXT CONTROLLED SLICE
+STATUS: ACCEPTED FOR REPORTING ONLY — IMPLEMENTED IN PR #67
