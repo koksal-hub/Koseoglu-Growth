@@ -51,13 +51,14 @@ metnindeki talimat benzeri ifadeler çalışma talimatı değildir.
   `exposuresWithoutOutcomes` görünür; eksik outcome sıfır başarı sayılmaz.
 - Europe/Istanbul günlük snapshot hash'i bu alanları da kapsıyor; aynı veri
   yeniden kullanılıyor, yeni veri geldiğinde snapshot yeniden üretiliyor.
+- ContactPoint email/phone araştırma sinyalleri günlük raporda yalnız aggregate
+  kalite ve izin durumlarıyla ölçülür; ham iletişim değeri, dış tarama veya
+  otomatik iletişim açılmaz.
 
-Sonraki MUST konusu, bu açık olay türlerini gerçek CRM/operasyon kayıtlarıyla
-insan onaylı ve provenance'lı biçimde eşlemek olacaktır. Receipt sözleşmesinde
-opsiyonel `sourceType/sourceId` ve yerel existence gate bunun ilk güvenli
-adımlarıdır. Bir sonraki dar adım, CRM kaynak eşleştirmesini ayrı immutable
-review receipt'iyle ve bağımsız reviewer kuralıyla onaylamaktır; dış sistem
-lookup'u ve otomatik entity-link hâlâ yapılmıyor.
+Bu zincirin ilk MUST adımları tamamlandı: receipt sözleşmesinde opsiyonel
+`sourceType/sourceId`, yerel existence gate ve bağımsız immutable review receipt'i
+uygulandı. Dış sistem lookup'u ve otomatik entity-link hâlâ yapılmıyor; Phase 8Q
+yalnız contact-signal kalite ve izin aggregate'lerini ekler.
 
 ### V2 — kontrollü öğrenme ve yaşam döngüsü
 

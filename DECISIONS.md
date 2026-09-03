@@ -803,3 +803,27 @@ measurement; no provider, OAuth, customer contact, or automatic attribution
 action is enabled.
 
 STATUS: ACCEPTED FOR REPORTING ONLY — IMPLEMENTED IN PR #67
+
+---
+
+## ADR-032 — Contact Signal Quality Metrics
+
+DECISION: Management reports add aggregate contact-signal quality metrics without
+persisting or exposing raw email/phone values. Contact points are counted by
+`collectedAt` with EMAIL/PHONE and current verification-status breakdowns;
+verification decisions and currently VERIFIED points are counted by `verifiedAt`.
+Communication permission receipts are counted by `checkedAt` with explicit
+ALLOWED, DENIED, OPTED_OUT and SUPPRESSED statuses.
+
+WHY: Research needs to show whether contact discovery is producing usable,
+reviewable signals before any outreach decision. A public address is not itself
+permission, and a permission receipt is not a send operation.
+
+ALTERNATIVES: Count raw values; infer permission from public visibility; count
+only ALLOWED receipts; trigger email/phone outreach from collected signals.
+
+CONSEQUENCES: The report remains aggregate and deterministic. No crawler, external
+provider, OAuth/token operation, lead creation, send, or customer contact is
+enabled. Existing report metrics and snapshot idempotency are preserved.
+
+STATUS: ACCEPTED FOR REPORTING ONLY — IMPLEMENTED IN PR #72
