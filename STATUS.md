@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T19:53:04+03:00
-last_actor: Codex (Issue #66 CI/merge verification)
+last_update: 2026-09-03T20:02:00+03:00
+last_actor: Codex (Issue #69 documentation consistency)
 
 CURRENT PHASE: PHASE 8P PROVENANCE REVIEW QUALITY METRICS — DONE (SAFE MODE)
 ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (`7de1757` Phase 8P merge)
+ACTIVE BRANCH: `main` (`1b52ef1` Phase 8P documentation closure)
 
 ## Kalıcı GitHub yayın standardı
 
@@ -55,8 +55,7 @@ ACTIVE BRANCH: `main` (`7de1757` Phase 8P merge)
   CI regresyonunda doğrulandı. Çoklu para birimi veya eşik politikası olmadan
   high-value sınıflandırması yapılmaz.
 - PR #52 CI run `33680946827`: SUCCESS — 23 test dosyası / 179 test, migration,
-  lint, typecheck ve API/web build. Squash merge `e862e08`; Issue #51 kapanışı
-  merge sonrası işlenecek.
+  lint, typecheck ve API/web build. Squash merge `e862e08`; Issue #51 CLOSED.
 - PR #55 CI run `33681822535`: SUCCESS — lifecycle regression matrix ile 23 test
   dosyası / 182 test. Squash merge `22bb643`; Issue #54 CLOSED.
 
