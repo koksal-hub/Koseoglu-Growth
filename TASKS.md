@@ -418,6 +418,26 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] Dış provider/customer/social action veya otomatik exploration yok
   - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
 
+================================================================
+NEW PROPOSAL — Phase 9A: Read-only Company Intelligence Timeline
+================================================================
+
+- Öncelik: MUST / RISK B
+- Sorumlu: Codex
+- Durum: IN_PROGRESS (yerel dal; PR/merge henüz yapılmadı)
+- Bağımlılıklar: Event ve Evidence kayıtları; mevcut internal auth sınırı
+- Kapsam: Yerel Company Event kayıtlarından bounded zaman çizelgesi; metadata,
+  ham iletişim, crawler, dış provider, AI ve CRM write kapsam dışıdır.
+- Acceptance criteria:
+  - [x] Company kimliği, güvenli temel sınıflandırma, event türü/zamanı ve
+    evidence sayısı salt-okunur response'ta döner
+  - [x] Limit ve tarih penceresi deterministik biçimde sınırlandırılır
+  - [x] Event metadata'sı response'a girmez; writes/external calls false receipt'i vardır
+  - [x] Route regression testi eklenir
+  - [x] Lint/typecheck geçer; build geçerli çalışma bağlamında doğrulanır
+  - [ ] İzole PostgreSQL test koşusu ve GitHub CI kanıtı
+  - [ ] Kullanıcı incelemesi, commit, PR ve merge
+
 --- Issue #51 — Read-only customer lifecycle signal projection ---
 - Öncelik: MEDIUM / V2 / RISK B
 - Sorumlu: Codex
