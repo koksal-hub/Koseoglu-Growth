@@ -32,6 +32,8 @@ kontrollü bir API üzerinden gerekli veri paylaşılabilir. Detay: [DECISIONS.m
 - Mimari ilkeler (LLM Last, deterministic-first, evidence/confidence gate,
   model-independent AI routing, vb.) için [MASTER_PLAN.md](MASTER_PLAN.md) ve
   [DECISIONS.md](DECISIONS.md).
+- Mevcut API authentication sınırı ve credential/token davranışı için
+  [AUTHENTICATION.md](AUTHENTICATION.md).
 
 ## Current phase
 
