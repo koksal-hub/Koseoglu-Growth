@@ -5,7 +5,7 @@ import { validateEnv } from '../src/plugins/env';
 
 const INTERNAL_KEY = 'A'.repeat(40);
 
-function request(method = 'GET', headers: Record<string, string> = {}) {
+function request(method = 'GET', headers: Record<string, string | string[]> = {}) {
   return { method, headers } as unknown as FastifyRequest;
 }
 
@@ -22,6 +22,12 @@ describe('internal API authentication boundary', () => {
     await expect(hook(request('GET', { 'x-api-key': INTERNAL_KEY }))).resolves.toBeUndefined();
   });
 
+  it('rejects multi-valued keys and bearer credentials', async () => {
+    const hook = createInternalAuthHook({ NODE_ENV: 'production', GROWTH_INTERNAL_API_KEY: INTERNAL_KEY });
+    await expect(hook(request('GET', { 'x-api-key': [INTERNAL_KEY, INTERNAL_KEY] }))).rejects.toMatchObject({ statusCode: 401 });
+    await expect(hook(request('GET', { authorization: `Bearer ${INTERNAL_KEY}` }))).rejects.toMatchObject({ statusCode: 401 });
+  });
+
   it('does not block CORS preflight when the key is configured', async () => {
     const hook = createInternalAuthHook({ NODE_ENV: 'production', GROWTH_INTERNAL_API_KEY: INTERNAL_KEY });
     await expect(hook(request('OPTIONS'))).resolves.toBeUndefined();
@@ -34,5 +40,14 @@ describe('internal API authentication boundary', () => {
     expect(
       validateEnv({ DATABASE_URL: 'postgresql://example.invalid/growth', NODE_ENV: 'production', GROWTH_INTERNAL_API_KEY: INTERNAL_KEY })
     ).toMatchObject({ GROWTH_INTERNAL_API_KEY: INTERNAL_KEY });
+  });
+
+  it('rejects weak or unsafe production keys', () => {
+    expect(() => validateEnv({ DATABASE_URL: 'postgresql://example.invalid/growth', NODE_ENV: 'production', GROWTH_INTERNAL_API_KEY: 'too-short' })).toThrow(
+      /Environment validation failed/
+    );
+    expect(() => validateEnv({ DATABASE_URL: 'postgresql://example.invalid/growth', NODE_ENV: 'production', GROWTH_INTERNAL_API_KEY: `${'A'.repeat(32)}!` })).toThrow(
+      /Environment validation failed/
+    );
   });
 });
