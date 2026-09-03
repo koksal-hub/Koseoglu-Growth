@@ -774,7 +774,7 @@ CONSEQUENCES: Bu dilim yalnız private review API'si ve yerel receipt yazımıd�
 lookup'u, entity-link, yeni kayıt, e-posta/telefon veya sosyal medya aksiyonu
 başlatılmaz. Review reddi ölçüm receipt'ini silmez ve ticari başarı sayılmaz.
 
-STATUS: PROPOSED — IMPLEMENTATION IN NEXT CONTROLLED SLICE
+STATUS: ACCEPTED FOR HUMAN REVIEW ONLY — IMPLEMENTED IN PR #64
 
 ---
 
