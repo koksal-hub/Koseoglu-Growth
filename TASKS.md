@@ -508,7 +508,8 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
 --- Issue #73 — Read-only daily action dashboard ---
 - Öncelik: HIGH / MUST / RISK B
 - Sorumlu: Codex
-- Durum: IN_PROGRESS (kod/test hazır; CI ve merge bekleniyor)
+- Durum: DONE (PR #74 CI run `33785403958` SUCCESS; squash merge
+  `77c10587599def9a8d97241113b3c910818bcf70`; Issue #73 CLOSED)
 - Bağımlılıklar: ManagementReport; CompanyRankingReceipt; ResearchMission action projection
 - Acceptance criteria:
   - [x] Europe/Istanbul date window ve 1..50 bounded limit validation
