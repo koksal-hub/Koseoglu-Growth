@@ -32,6 +32,11 @@ function metricsOf(value: unknown) {
       outcomes: number;
       outcomesByType: Record<string, number>;
       exposuresWithoutOutcomes: number;
+      provenanceReviews: number;
+      provenanceReviewsByDecision: Record<string, number>;
+      crmOutcomesApproved: number;
+      crmOutcomesRejected: number;
+      crmOutcomesWithoutReview: number;
     };
   };
 }
@@ -52,6 +57,7 @@ describe('management reporting and usage receipts', () => {
     await prisma.usageReceipt.deleteMany({ where: { id: { in: usageIds } } });
     await prisma.event.deleteMany({ where: { id: { in: eventIds } } });
     await prisma.job.deleteMany({ where: { id: { in: jobIds } } });
+    await prisma.recommendationOutcomeProvenanceReview.deleteMany({ where: { outcomeId: { in: recommendationOutcomeIds } } });
     await prisma.recommendationOutcome.deleteMany({ where: { id: { in: recommendationOutcomeIds } } });
     await prisma.recommendationExposure.deleteMany({ where: { id: { in: recommendationExposureIds } } });
     await prisma.$disconnect();
@@ -124,6 +130,65 @@ describe('management reporting and usage receipts', () => {
     });
     recommendationOutcomeIds.push(outcome.id);
 
+    const approvedOutcome = await prisma.recommendationOutcome.create({
+      data: {
+        exposureId: exposure.id,
+        outcomeKey: `${RUN_ID}-approved-crm-outcome`,
+        outcomeType: 'LEAD_CREATED',
+        occurredAt: new Date(),
+        sourceType: 'CRM_EVENT',
+        sourceId: `${RUN_ID}-approved-event`,
+        recordedBy: `${RUN_ID}-operator`,
+      },
+    });
+    recommendationOutcomeIds.push(approvedOutcome.id);
+    await prisma.recommendationOutcomeProvenanceReview.create({
+      data: {
+        reviewKey: `${RUN_ID}-approved-review`,
+        outcomeId: approvedOutcome.id,
+        decision: 'APPROVED',
+        reviewedBy: `${RUN_ID}-reviewer`,
+        reason: 'Reporting test approved CRM provenance.',
+        reviewedAt: new Date(),
+      },
+    });
+
+    const rejectedOutcome = await prisma.recommendationOutcome.create({
+      data: {
+        exposureId: exposure.id,
+        outcomeKey: `${RUN_ID}-rejected-crm-outcome`,
+        outcomeType: 'QUOTE_REQUESTED',
+        occurredAt: new Date(),
+        sourceType: 'CRM_EVENT',
+        sourceId: `${RUN_ID}-rejected-event`,
+        recordedBy: `${RUN_ID}-operator`,
+      },
+    });
+    recommendationOutcomeIds.push(rejectedOutcome.id);
+    await prisma.recommendationOutcomeProvenanceReview.create({
+      data: {
+        reviewKey: `${RUN_ID}-rejected-review`,
+        outcomeId: rejectedOutcome.id,
+        decision: 'REJECTED',
+        reviewedBy: `${RUN_ID}-reviewer`,
+        reason: 'Reporting test rejected CRM provenance.',
+        reviewedAt: new Date(),
+      },
+    });
+
+    const withoutReviewOutcome = await prisma.recommendationOutcome.create({
+      data: {
+        exposureId: exposure.id,
+        outcomeKey: `${RUN_ID}-without-review-crm-outcome`,
+        outcomeType: 'HUMAN_ACTION',
+        occurredAt: new Date(),
+        sourceType: 'CRM_EVENT',
+        sourceId: `${RUN_ID}-without-review-event`,
+        recordedBy: `${RUN_ID}-operator`,
+      },
+    });
+    recommendationOutcomeIds.push(withoutReviewOutcome.id);
+
     const first = await generateManagementReport(reportDate);
     expect(first.reused).toBe(false);
     const firstMetrics = metricsOf(first.report.metrics);
@@ -138,6 +203,12 @@ describe('management reporting and usage receipts', () => {
     expect(firstMetrics.recommendations.exposuresByType.RESEARCH_ACTION).toBeGreaterThanOrEqual(1);
     expect(firstMetrics.recommendations.exposuresByMode.EXPLORATION).toBeGreaterThanOrEqual(1);
     expect(firstMetrics.recommendations.outcomesByType.HUMAN_ACTION).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.recommendations.provenanceReviews).toBeGreaterThanOrEqual(2);
+    expect(firstMetrics.recommendations.provenanceReviewsByDecision.APPROVED).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.recommendations.provenanceReviewsByDecision.REJECTED).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.recommendations.crmOutcomesApproved).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.recommendations.crmOutcomesRejected).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.recommendations.crmOutcomesWithoutReview).toBeGreaterThanOrEqual(1);
 
     const repeat = await generateManagementReport(reportDate);
     expect(repeat.reused).toBe(true);

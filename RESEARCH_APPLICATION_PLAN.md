@@ -65,7 +65,9 @@ lookup'u ve otomatik entity-link hâlâ yapılmıyor.
   exploration deneyi tasarlanır. Random/bandit seçimi ve otomatik aksiyon bu
   fazda yoktur.
 - Exposure yoğunlaşması, recommendation coverage, exploration/exploitation
-  oranı ve outcome oranları raporlanır; performans düşerse deney kapatılabilir.
+  oranı ve outcome oranları raporlanır; provenance review kararları ayrıca
+  approved/rejected/without-review olarak ayrılır; performans düşerse deney
+  kapatılabilir.
 - Lojistik müşteri yaşam döngüsü için salt-okunur projection uygulandı:
   `NEW`, `DEVELOPING`, `REPEAT`, `COOLING`, `DORMANT`, `REACTIVATED`.
   `GET /api/companies/:id/lifecycle` yalnız mevcut Lead/Opportunity/Activity

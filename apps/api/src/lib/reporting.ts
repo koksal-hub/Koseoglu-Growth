@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { Prisma } from '@prisma/client';
+import { Prisma, type RecommendationOutcomeSourceType } from '@prisma/client';
 import { prisma } from './prisma';
 
 export const REPORT_TIMEZONE = 'Europe/Istanbul';
@@ -17,6 +17,8 @@ const DRAFT_STATUSES = ['DRAFT', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'EXPIRED']
 const RECOMMENDATION_TYPES = ['LEAD_RANKING', 'RESEARCH_ACTION'] as const;
 const RECOMMENDATION_MODES = ['EXPLOITATION', 'EXPLORATION'] as const;
 const RECOMMENDATION_OUTCOMES = ['HUMAN_ACTION', 'LEAD_CREATED', 'QUOTE_REQUESTED', 'WON_SHIPMENT', 'GROSS_PROFIT'] as const;
+const PROVENANCE_REVIEW_DECISIONS = ['APPROVED', 'REJECTED'] as const;
+const CRM_PROVENANCE_SOURCE_TYPES: RecommendationOutcomeSourceType[] = ['CRM_LEAD', 'CRM_OPPORTUNITY', 'CRM_EVENT'];
 
 export class ReportingPolicyError extends Error {
   constructor(readonly statusCode: number, message: string) {
@@ -59,6 +61,11 @@ export type ManagementReportMetrics = {
     outcomes: number;
     outcomesByType: Record<string, number>;
     exposuresWithoutOutcomes: number;
+    provenanceReviews: number;
+    provenanceReviewsByDecision: Record<string, number>;
+    crmOutcomesApproved: number;
+    crmOutcomesRejected: number;
+    crmOutcomesWithoutReview: number;
   };
   safety: {
     sandboxProviderCalls: number;
@@ -168,6 +175,10 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
       recommendationExposures,
       recommendationOutcomes,
       exposuresWithoutOutcomes,
+      provenanceReviews,
+      crmOutcomesApproved,
+      crmOutcomesRejected,
+      crmOutcomesWithoutReview,
     ] = await Promise.all([
       tx.company.count({ where: { createdAt: { gte: periodStart, lt: periodEnd } } }),
       tx.lead.count({ where: { createdAt: { gte: periodStart, lt: periodEnd } } }),
@@ -188,9 +199,31 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
       tx.recommendationExposure.count({
         where: { exposedAt: { gte: periodStart, lt: periodEnd }, outcomes: { none: {} } },
       }),
+      tx.recommendationOutcomeProvenanceReview.count({ where: { reviewedAt: { gte: periodStart, lt: periodEnd } } }),
+      tx.recommendationOutcome.count({
+        where: {
+          occurredAt: { gte: periodStart, lt: periodEnd },
+          sourceType: { in: CRM_PROVENANCE_SOURCE_TYPES },
+          provenanceReview: { is: { decision: 'APPROVED' } },
+        },
+      }),
+      tx.recommendationOutcome.count({
+        where: {
+          occurredAt: { gte: periodStart, lt: periodEnd },
+          sourceType: { in: CRM_PROVENANCE_SOURCE_TYPES },
+          provenanceReview: { is: { decision: 'REJECTED' } },
+        },
+      }),
+      tx.recommendationOutcome.count({
+        where: {
+          occurredAt: { gte: periodStart, lt: periodEnd },
+          sourceType: { in: CRM_PROVENANCE_SOURCE_TYPES },
+          provenanceReview: { is: null },
+        },
+      }),
     ]);
 
-    const [companyByStatus, leadByStatus, missionByStatus, candidateByStatus, jobByStatus, draftByStatus, recommendationByType, recommendationByMode, outcomeByType] = await Promise.all([
+    const [companyByStatus, leadByStatus, missionByStatus, candidateByStatus, jobByStatus, draftByStatus, recommendationByType, recommendationByMode, outcomeByType, provenanceReviewByDecision] = await Promise.all([
       countStatuses(COMPANY_STATUSES, (status) => tx.company.count({ where: { status } })),
       countStatuses(LEAD_STATUSES, (status) => tx.lead.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(MISSION_STATUSES, (status) => tx.researchMission.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
@@ -200,6 +233,9 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
       countStatuses(RECOMMENDATION_TYPES, (recommendationType) => tx.recommendationExposure.count({ where: { recommendationType, exposedAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(RECOMMENDATION_MODES, (mode) => tx.recommendationExposure.count({ where: { mode, exposedAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(RECOMMENDATION_OUTCOMES, (outcomeType) => tx.recommendationOutcome.count({ where: { outcomeType, occurredAt: { gte: periodStart, lt: periodEnd } } })),
+      countStatuses(PROVENANCE_REVIEW_DECISIONS, (decision) =>
+        tx.recommendationOutcomeProvenanceReview.count({ where: { decision, reviewedAt: { gte: periodStart, lt: periodEnd } } })
+      ),
     ]);
 
     const costMinorByCurrency: Record<string, number> = {};
@@ -238,6 +274,11 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
         outcomes: recommendationOutcomes,
         outcomesByType: outcomeByType,
         exposuresWithoutOutcomes,
+        provenanceReviews,
+        provenanceReviewsByDecision: provenanceReviewByDecision,
+        crmOutcomesApproved,
+        crmOutcomesRejected,
+        crmOutcomesWithoutReview,
       },
       safety: {
         sandboxProviderCalls,
