@@ -71,6 +71,21 @@ export async function getDailyDashboard(input: { reportDate?: string; limit?: nu
     }),
   ]);
 
+  const followUps = await prisma.followUp.findMany({
+    where: { status: 'PENDING', dueAt: { lt: window.periodEnd } },
+    select: {
+      id: true,
+      leadId: true,
+      contactId: true,
+      dueAt: true,
+      reason: true,
+      lead: { select: { company: { select: { id: true, name: true } } } },
+      contact: { select: { company: { select: { id: true, name: true } } } },
+    },
+    orderBy: [{ dueAt: 'asc' }, { id: 'asc' }],
+    take: limit,
+  });
+
   const researchActions: Array<{
     id: string;
     missionId: string;
@@ -138,6 +153,14 @@ export async function getDailyDashboard(input: { reportDate?: string; limit?: nu
       evaluatedAt: receipt.evaluatedAt.toISOString(),
     })),
     researchActions,
+    followUps: followUps.map((followUp) => ({
+      id: followUp.id,
+      leadId: followUp.leadId,
+      contactId: followUp.contactId,
+      dueAt: followUp.dueAt.toISOString(),
+      reason: followUp.reason,
+      company: followUp.lead?.company ?? followUp.contact?.company ?? null,
+    })),
     actualLeadCreated: false,
     actualOutreachCreated: false,
     actualSendPerformed: false,

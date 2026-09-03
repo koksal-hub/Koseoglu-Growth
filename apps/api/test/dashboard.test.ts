@@ -31,6 +31,7 @@ describe('daily action dashboard', () => {
       report: { reportDate: string; metrics: Record<string, unknown> };
       ranking: Array<{ company: { id: string; name: string }; totalScore: number; reasons: string[]; nextAction: string }>;
       researchActions: Array<{ candidateId: string; type: string; reasonCodes: string[]; hasContactSignal: boolean }>;
+      followUps: Array<{ id: string; dueAt: string; company: { id: string; name: string } | null }>;
       actualLeadCreated: boolean;
       actualOutreachCreated: boolean;
       actualSendPerformed: boolean;
@@ -42,6 +43,7 @@ describe('daily action dashboard', () => {
     expect(body.report.reportDate).toBe(reportDate);
     expect(body.ranking.length).toBeLessThanOrEqual(2);
     expect(body.researchActions.length).toBeLessThanOrEqual(2);
+    expect(body.followUps.length).toBeLessThanOrEqual(2);
     expect(body.actualLeadCreated).toBe(false);
     expect(body.actualOutreachCreated).toBe(false);
     expect(body.actualSendPerformed).toBe(false);
@@ -58,9 +60,11 @@ describe('daily action dashboard', () => {
     const body = JSON.parse(response.payload) as {
       ranking: unknown[];
       researchActions: unknown[];
+      followUps: unknown[];
     };
     expect(body.ranking.length).toBeLessThanOrEqual(1);
     expect(body.researchActions.length).toBeLessThanOrEqual(1);
+    expect(body.followUps.length).toBeLessThanOrEqual(1);
   });
 
   it.each([
