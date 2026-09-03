@@ -4,6 +4,7 @@ import {
   CompanyIntelligencePolicyError,
   getCompanyEvidenceBrief,
   getCompanyIntelligenceTimeline,
+  getCompanyIntelligenceInsights,
   MAX_COMPANY_INTELLIGENCE_LIMIT,
 } from '../lib/company-intelligence';
 
@@ -17,6 +18,7 @@ const querySchema = z
     limit: z.coerce.number().int().min(1).max(MAX_COMPANY_INTELLIGENCE_LIMIT).default(50),
   })
   .strict();
+const insightQuerySchema = querySchema.extend({ category: z.enum(['COMPANY', 'MARKET', 'SUPPLY_CHAIN']).optional() });
 
 function parse<T>(schema: z.ZodType<T>, input: unknown): T {
   const result = schema.safeParse(input);
@@ -37,6 +39,12 @@ const companyIntelligenceRoutes: FastifyPluginAsync = async (server) => {
     const { id } = parse(paramsSchema, request.params);
     const query = parse(querySchema, request.query);
     return reply.send(await getCompanyEvidenceBrief({ companyId: id, ...query }));
+  });
+
+  server.get('/intelligence/companies/:id/insights', async (request, reply) => {
+    const { id } = parse(paramsSchema, request.params);
+    const query = parse(insightQuerySchema, request.query);
+    return reply.send(await getCompanyIntelligenceInsights({ companyId: id, ...query }));
   });
 };
 
