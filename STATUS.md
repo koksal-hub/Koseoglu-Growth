@@ -7,6 +7,18 @@ CURRENT PHASE: PHASE 8O HUMAN-APPROVED OUTCOME PROVENANCE — DONE (SAFE MODE)
 ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
 ACTIVE BRANCH: `main` (`3e5ecb5` Phase 8O merge)
 
+## Kalıcı GitHub yayın standardı
+
+- Güvenli development PR'ı ancak kapsam/diff, secret-shaped taraması,
+  `git diff --check`, lint, typecheck, migration/Prisma validation, test,
+  build ve yeşil CI kanıtı ile yayınlanır ve merge edilir.
+- Yerel test veya build ortamı erişim nedeniyle çalışmıyorsa sonuç `NOT_RUN`
+  kalır; CI yeşil olmadan tamamlandı denmez. Kırmızı/bekleyen CI, bozuk veya
+  ilgisiz dosya ve doğrulanmamış READY iddiası GitHub'a gönderilmez.
+- Bu standart güvenli repository geliştirmesinde tekrar tekrar onay istemez;
+  production reset/silme, ödeme, canlı provider/OAuth ve gerçek müşteri
+  iletişimi yine açık onay kapısıdır.
+
 ## Phase 8J araştırma uygulaması
 
 - Ekli araştırmalar kanıt/öneri/deney hipotezi olarak ayrıldı; doğrudan kod veya
