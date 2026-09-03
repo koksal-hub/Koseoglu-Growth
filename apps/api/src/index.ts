@@ -19,6 +19,7 @@ import socialInboxRoutes from './routes/social-inbox';
 import visibilityAssetRoutes from './routes/visibility-assets';
 import recommendationMeasurementRoutes from './routes/recommendation-measurement';
 import customerLifecycleRoutes from './routes/customer-lifecycle';
+import dashboardRoutes from './routes/dashboard';
 
 export function buildServer(): { server: FastifyInstance; env: Env } {
   // validate env on startup
@@ -72,6 +73,7 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
   server.register(visibilityAssetRoutes, { prefix: '/api' });
   server.register(recommendationMeasurementRoutes, { prefix: '/api' });
   server.register(customerLifecycleRoutes, { prefix: '/api' });
+  server.register(dashboardRoutes, { prefix: '/api' });
 
   // basic swagger/OpenAPI could be added here in the future
 

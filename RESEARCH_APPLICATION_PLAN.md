@@ -54,6 +54,9 @@ metnindeki talimat benzeri ifadeler çalışma talimatı değildir.
 - ContactPoint email/phone araştırma sinyalleri günlük raporda yalnız aggregate
   kalite ve izin durumlarıyla ölçülür; ham iletişim değeri, dış tarama veya
   otomatik iletişim açılmaz.
+- Günlük dashboard, ManagementReport ile deterministik ranking ve araştırma
+  aksiyon projection'ını tek bounded private response'ta birleştirir; ham
+  contactReceipt ve dış aksiyonlar yüzeye çıkarılmaz.
 
 Bu zincirin ilk MUST adımları tamamlandı: receipt sözleşmesinde opsiyonel
 `sourceType/sourceId`, yerel existence gate ve bağımsız immutable review receipt'i

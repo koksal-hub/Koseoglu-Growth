@@ -827,3 +827,26 @@ provider, OAuth/token operation, lead creation, send, or customer contact is
 enabled. Existing report metrics and snapshot idempotency are preserved.
 
 STATUS: ACCEPTED FOR REPORTING ONLY — IMPLEMENTED IN PR #72
+
+---
+
+## ADR-033 — Read-only Daily Action Dashboard
+
+DECISION: Provide one private bounded dashboard projection that combines the
+Europe/Istanbul ManagementReport snapshot with deterministic ranking receipt
+summaries and active/paused research mission action projections. Ranking output
+contains only company identity, score, reasons and nextAction; research output
+contains no raw contact values.
+
+WHY: The V1 workday needs one answer to “what should I do today?” without making
+the dashboard an automation or provider surface. Existing report, ranking and
+research contracts already contain the evidence needed for a safe projection.
+
+ALTERNATIVES: Expose full ranking/contact receipts; let the dashboard trigger
+ranking refresh or research discovery; add a public route before user auth.
+
+CONSEQUENCES: The endpoint is private and limit-bounded, preserves explicit false
+action receipts, and does not create leads, outreach, sends, crawler jobs or
+external calls. ManagementReport snapshot reuse/write behavior remains unchanged.
+
+STATUS: PROPOSED — IMPLEMENTATION IN CURRENT CONTROLLED SLICE
