@@ -849,4 +849,4 @@ CONSEQUENCES: The endpoint is private and limit-bounded, preserves explicit fals
 action receipts, and does not create leads, outreach, sends, crawler jobs or
 external calls. ManagementReport snapshot reuse/write behavior remains unchanged.
 
-STATUS: PROPOSED — IMPLEMENTATION IN CURRENT CONTROLLED SLICE
+STATUS: ACCEPTED FOR READ-ONLY SAFE MODE — IMPLEMENTED IN PR #74

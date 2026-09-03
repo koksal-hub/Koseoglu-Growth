@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T20:31:35+03:00
-last_actor: Codex (Issue #73 implementation)
+last_update: 2026-09-03T21:23:04+03:00
+last_actor: Codex (Issue #73 closure)
 
-CURRENT PHASE: PHASE 8R READ-ONLY DAILY ACTION DASHBOARD — IN PROGRESS (SAFE MODE)
-ACTIVE ISSUE: #73 — CI/build verification pending
-ACTIVE BRANCH: `codex/daily-dashboard-v1`
+CURRENT PHASE: PHASE 8R READ-ONLY DAILY ACTION DASHBOARD — DONE (SAFE MODE)
+ACTIVE ISSUE: none
+ACTIVE BRANCH: `main` (merged from `codex/daily-dashboard-v1`)
 
 ## Kalıcı GitHub yayın standardı
 
@@ -135,8 +135,11 @@ ACTIVE BRANCH: `codex/daily-dashboard-v1`
   `externalCallsPerformed` için false receipt'i taşır. Endpoint crawler, provider,
   OAuth, send veya canonical CRM write açmaz; yalnız report snapshot reuse/write
   davranışını mevcut ManagementReport sözleşmesiyle sürdürür.
-- Local focused Vitest/web build OneDrive/esbuild erişim kısıtı nedeniyle NOT_RUN;
-  CI doğrulaması Issue #73 merge öncesi bekleniyor.
+- Local focused Vitest/web build OneDrive/esbuild erişim kısıtı nedeniyle NOT_RUN.
+- PR #74 squash merge commit `77c10587599def9a8d97241113b3c910818bcf70` ile
+  `main` üzerine alındı; Issue #73 CLOSED.
+- CI run `33785403958` SUCCESS: migration, lint, typecheck, 24 test dosyası /
+  188 test ve API/web build.
 
 ## Taze Phase 8J kanıtı
 
