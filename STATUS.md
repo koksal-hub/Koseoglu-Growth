@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T20:18:43+03:00
-last_actor: Codex (Issue #71 implementation)
+last_update: 2026-09-03T20:23:30+03:00
+last_actor: Codex (Issue #71 CI verification)
 
-CURRENT PHASE: PHASE 8Q CONTACT SIGNAL QUALITY METRICS — IN PROGRESS (SAFE MODE)
-ACTIVE ISSUE: #71 — CI/build verification pending
-ACTIVE BRANCH: `codex/contact-quality-metrics-v1`
+CURRENT PHASE: PHASE 8Q CONTACT SIGNAL QUALITY METRICS — DONE (SAFE MODE)
+ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
+ACTIVE BRANCH: `main` (Phase 8Q PR #72; CI verified)
 
 ## Kalıcı GitHub yayın standardı
 
@@ -119,7 +119,9 @@ ACTIVE BRANCH: `codex/contact-quality-metrics-v1`
   `ALLOWED`/`DENIED`/`OPTED_OUT`/`SUPPRESSED` kırılımıyla raporlanır; izin
   kaydı gönderim anlamına gelmez.
 - Bu dilim crawler, dış provider/OAuth, e-posta/telefon gönderimi, lead oluşturma
-  veya müşteri iletişimi başlatmaz. CI kanıtı Issue #71 merge öncesi bekleniyor.
+  veya müşteri iletişimi başlatmaz.
+- PR #72 CI run `33784015755`: SUCCESS — migration, lint, typecheck, 23 test
+  dosyası / 182 test ve API/web build. Issue #71 kapanışı merge ile kaydedilecek.
 
 ## Taze Phase 8J kanıtı
 

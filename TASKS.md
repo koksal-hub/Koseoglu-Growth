@@ -494,7 +494,7 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
 --- Issue #71 — Contact signal quality metrics ---
 - Öncelik: HIGH / MUST / RISK B
 - Sorumlu: Codex
-- Durum: IN_PROGRESS (kod/test hazır; CI ve merge bekleniyor)
+- Durum: DONE (PR #72 CI `33784015755` PASS; merge sonrası Issue #71 kapanışı)
 - Bağımlılıklar: ContactPoint/CommunicationPermission safety gate; ManagementReport
 - Acceptance criteria:
   - [x] `collectedAt` penceresinde contact point toplamı ve EMAIL/PHONE kırılımı

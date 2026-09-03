@@ -826,4 +826,4 @@ CONSEQUENCES: The report remains aggregate and deterministic. No crawler, extern
 provider, OAuth/token operation, lead creation, send, or customer contact is
 enabled. Existing report metrics and snapshot idempotency are preserved.
 
-STATUS: PROPOSED — IMPLEMENTATION IN CURRENT CONTROLLED SLICE
+STATUS: ACCEPTED FOR REPORTING ONLY — IMPLEMENTED IN PR #72
