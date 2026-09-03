@@ -118,3 +118,86 @@ export async function getCompanyIntelligenceTimeline(input: {
     },
   };
 }
+
+function safeSourceOrigin(sourceUrl: string) {
+  try {
+    const url = new URL(sourceUrl);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+/** Return bounded, source-backed company evidence without leaking URL query data. */
+export async function getCompanyEvidenceBrief(input: {
+  companyId: string;
+  from?: Date;
+  to?: Date;
+  limit?: number;
+}) {
+  validateCompanyId(input.companyId);
+  const to = input.to ?? new Date();
+  const from = input.from ?? new Date(to.getTime() - 90 * DAY_MS);
+  const limit = input.limit ?? 50;
+  validateDate(from, 'from');
+  validateDate(to, 'to');
+  validateLimit(limit);
+  if (from.getTime() >= to.getTime()) {
+    throw new CompanyIntelligencePolicyError(400, 'from must be earlier than to');
+  }
+  if (to.getTime() - from.getTime() > MAX_COMPANY_INTELLIGENCE_WINDOW_DAYS * DAY_MS) {
+    throw new CompanyIntelligencePolicyError(400, `window cannot exceed ${MAX_COMPANY_INTELLIGENCE_WINDOW_DAYS} days`);
+  }
+
+  const company = await prisma.company.findUnique({
+    where: { id: input.companyId },
+    select: { id: true, name: true },
+  });
+  if (!company) throw new CompanyIntelligencePolicyError(404, 'Company not found');
+
+  const evidence = await prisma.evidence.findMany({
+    where: { companyId: company.id, accessedAt: { gte: from, lt: to } },
+    orderBy: [{ accessedAt: 'desc' }, { id: 'desc' }],
+    take: limit,
+    select: {
+      id: true,
+      sourceUrl: true,
+      sourceName: true,
+      claimKey: true,
+      freshnessStatus: true,
+      confidence: true,
+      summary: true,
+      publishedAt: true,
+      observedAt: true,
+      accessedAt: true,
+    },
+  });
+
+  return {
+    policyVersion: COMPANY_INTELLIGENCE_POLICY_VERSION,
+    company,
+    window: { from: from.toISOString(), to: to.toISOString() },
+    evidence: evidence.map((item) => ({
+      id: item.id,
+      sourceOrigin: safeSourceOrigin(item.sourceUrl),
+      sourceName: item.sourceName,
+      claimKey: item.claimKey,
+      freshnessStatus: item.freshnessStatus,
+      confidence: item.confidence,
+      summary: item.summary,
+      summaryTrust: 'UNTRUSTED_SOURCE_TEXT' as const,
+      publishedAt: item.publishedAt?.toISOString() ?? null,
+      observedAt: item.observedAt?.toISOString() ?? null,
+      accessedAt: item.accessedAt.toISOString(),
+    })),
+    policy: {
+      maxLimit: MAX_COMPANY_INTELLIGENCE_LIMIT,
+      maxWindowDays: MAX_COMPANY_INTELLIGENCE_WINDOW_DAYS,
+      rawSourceUrlIncluded: false,
+      metadataIncluded: false,
+      writesPerformed: false,
+      externalCallsPerformed: false,
+    },
+  };
+}

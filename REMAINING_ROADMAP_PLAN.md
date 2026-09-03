@@ -46,6 +46,10 @@ iletişim bilgileri ve dış kaynak içeriği döndürülmez. Ayrıca tarih penc
 toplam olay/kanıt sayıları ve olay türü kırılımı deterministik özet olarak verilir.
 Endpoint hiçbir yazma, crawler, provider veya AI çağrısı yapmaz.
 
+Phase 9B'nin evidence brief görünümü kaynak URL'sinin yalnız origin kısmını ve
+untrusted kaynak özetini döndürür; query parametreleri, metadata ve credential
+alanları döndürülmez.
+
 ## Phase 8G açılma kapısı
 
 İmplementasyon ancak aşağıdaki maddeler yazılı olarak netleşince başlar:

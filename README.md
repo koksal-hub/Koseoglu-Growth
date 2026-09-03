@@ -28,6 +28,8 @@ kontrollü bir API üzerinden gerekli veri paylaşılabilir. Detay: [DECISIONS.m
 - `apps/api` — Fastify + TypeScript backend.
 - `GET /api/intelligence/companies/:id/timeline` — yerel Event kanıtlarından
   bounded, salt-okunur şirket istihbaratı görünümü.
+- `GET /api/intelligence/companies/:id/evidence-brief` — kanıtları origin-only
+  kaynak ve untrusted özet olarak bounded biçimde sunar.
 - `apps/web` — React + Vite frontend.
 - `prisma/` — PostgreSQL şema ve migration'lar.
 - `docker/` — yerel geliştirme için Postgres.
