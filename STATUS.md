@@ -1,11 +1,11 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T20:02:00+03:00
-last_actor: Codex (Issue #69 documentation consistency)
+last_update: 2026-09-03T20:18:43+03:00
+last_actor: Codex (Issue #71 implementation)
 
-CURRENT PHASE: PHASE 8P PROVENANCE REVIEW QUALITY METRICS — DONE (SAFE MODE)
-ACTIVE ISSUE: NONE — provider/OAuth scope still requires explicit user approval
-ACTIVE BRANCH: `main` (`1b52ef1` Phase 8P documentation closure)
+CURRENT PHASE: PHASE 8Q CONTACT SIGNAL QUALITY METRICS — IN PROGRESS (SAFE MODE)
+ACTIVE ISSUE: #71 — CI/build verification pending
+ACTIVE BRANCH: `codex/contact-quality-metrics-v1`
 
 ## Kalıcı GitHub yayın standardı
 
@@ -108,6 +108,18 @@ ACTIVE BRANCH: `main` (`1b52ef1` Phase 8P documentation closure)
   veya otomatik attribution eylemi açılmaz.
 - PR #67 CI run `33780845257`: SUCCESS — migration, lint, typecheck, 23 test
   dosyası / 182 test ve API/web build. Squash merge `7de1757`; Issue #66 CLOSED.
+
+## Phase 8Q contact signal quality metrics
+
+- Mevcut `ContactPoint` kayıtları `collectedAt` penceresinde toplam ve
+  EMAIL/PHONE kırılımıyla raporlanır; ham e-posta/telefon değerleri rapora girmez.
+- Doğrulama kararları `verifiedAt` ile, o pencerede hâlen `VERIFIED` olan noktalar
+  ayrı sayılır. Toplanan noktaların mevcut verification status kırılımı da korunur.
+- İletişim izin receipt'leri `checkedAt` penceresinde toplam ve
+  `ALLOWED`/`DENIED`/`OPTED_OUT`/`SUPPRESSED` kırılımıyla raporlanır; izin
+  kaydı gönderim anlamına gelmez.
+- Bu dilim crawler, dış provider/OAuth, e-posta/telefon gönderimi, lead oluşturma
+  veya müşteri iletişimi başlatmaz. CI kanıtı Issue #71 merge öncesi bekleniyor.
 
 ## Taze Phase 8J kanıtı
 

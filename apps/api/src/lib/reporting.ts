@@ -19,6 +19,9 @@ const RECOMMENDATION_MODES = ['EXPLOITATION', 'EXPLORATION'] as const;
 const RECOMMENDATION_OUTCOMES = ['HUMAN_ACTION', 'LEAD_CREATED', 'QUOTE_REQUESTED', 'WON_SHIPMENT', 'GROSS_PROFIT'] as const;
 const PROVENANCE_REVIEW_DECISIONS = ['APPROVED', 'REJECTED'] as const;
 const CRM_PROVENANCE_SOURCE_TYPES: RecommendationOutcomeSourceType[] = ['CRM_LEAD', 'CRM_OPPORTUNITY', 'CRM_EVENT'];
+const CONTACT_POINT_TYPES = ['EMAIL', 'PHONE'] as const;
+const CONTACT_POINT_VERIFICATION_STATUSES = ['UNVERIFIED', 'VERIFIED', 'INVALID', 'STALE'] as const;
+const COMMUNICATION_PERMISSION_STATUSES = ['ALLOWED', 'DENIED', 'OPTED_OUT', 'SUPPRESSED'] as const;
 
 export class ReportingPolicyError extends Error {
   constructor(readonly statusCode: number, message: string) {
@@ -44,6 +47,15 @@ export type ManagementReportMetrics = {
     candidatesCreated: number;
     candidatesByStatus: Record<string, number>;
     evidenceAdded: number;
+  };
+  contacts: {
+    pointsCollected: number;
+    pointsByType: Record<string, number>;
+    pointsByVerificationStatus: Record<string, number>;
+    verificationDecisions: number;
+    verifiedPoints: number;
+    permissionsRecorded: number;
+    permissionsByStatus: Record<string, number>;
   };
   jobs: { created: number; byStatus: Record<string, number>; attempts: number };
   outreach: { draftsCreated: number; draftsByStatus: Record<string, number> };
@@ -166,6 +178,10 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
       missionsCreated,
       candidatesCreated,
       evidenceAdded,
+      contactPointsCollected,
+      contactPointVerificationDecisions,
+      verifiedContactPoints,
+      communicationPermissionsRecorded,
       eventsCreated,
       draftsCreated,
       sandboxProviderCalls,
@@ -185,6 +201,12 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
       tx.researchMission.count({ where: { createdAt: { gte: periodStart, lt: periodEnd } } }),
       tx.researchCandidate.count({ where: { createdAt: { gte: periodStart, lt: periodEnd } } }),
       tx.evidence.count({ where: { createdAt: { gte: periodStart, lt: periodEnd } } }),
+      tx.contactPoint.count({ where: { collectedAt: { gte: periodStart, lt: periodEnd } } }),
+      tx.contactPoint.count({ where: { verifiedAt: { gte: periodStart, lt: periodEnd } } }),
+      tx.contactPoint.count({
+        where: { verifiedAt: { gte: periodStart, lt: periodEnd }, verificationStatus: 'VERIFIED' },
+      }),
+      tx.communicationPermission.count({ where: { checkedAt: { gte: periodStart, lt: periodEnd } } }),
       tx.event.count({ where: { createdAt: { gte: periodStart, lt: periodEnd } } }),
       tx.outreachDraft.count({ where: { createdAt: { gte: periodStart, lt: periodEnd } } }),
       tx.sendAttempt.count({ where: { createdAt: { gte: periodStart, lt: periodEnd }, providerCallPerformed: true } }),
@@ -223,11 +245,18 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
       }),
     ]);
 
-    const [companyByStatus, leadByStatus, missionByStatus, candidateByStatus, jobByStatus, draftByStatus, recommendationByType, recommendationByMode, outcomeByType, provenanceReviewByDecision] = await Promise.all([
+    const [companyByStatus, leadByStatus, missionByStatus, candidateByStatus, contactPointByType, contactPointByVerificationStatus, permissionByStatus, jobByStatus, draftByStatus, recommendationByType, recommendationByMode, outcomeByType, provenanceReviewByDecision] = await Promise.all([
       countStatuses(COMPANY_STATUSES, (status) => tx.company.count({ where: { status } })),
       countStatuses(LEAD_STATUSES, (status) => tx.lead.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(MISSION_STATUSES, (status) => tx.researchMission.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(CANDIDATE_STATUSES, (status) => tx.researchCandidate.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
+      countStatuses(CONTACT_POINT_TYPES, (type) => tx.contactPoint.count({ where: { type, collectedAt: { gte: periodStart, lt: periodEnd } } })),
+      countStatuses(CONTACT_POINT_VERIFICATION_STATUSES, (verificationStatus) =>
+        tx.contactPoint.count({ where: { verificationStatus, collectedAt: { gte: periodStart, lt: periodEnd } } })
+      ),
+      countStatuses(COMMUNICATION_PERMISSION_STATUSES, (status) =>
+        tx.communicationPermission.count({ where: { status, checkedAt: { gte: periodStart, lt: periodEnd } } })
+      ),
       countStatuses(JOB_STATUSES, (status) => tx.job.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(DRAFT_STATUSES, (status) => tx.outreachDraft.count({ where: { status, createdAt: { gte: periodStart, lt: periodEnd } } })),
       countStatuses(RECOMMENDATION_TYPES, (recommendationType) => tx.recommendationExposure.count({ where: { recommendationType, exposedAt: { gte: periodStart, lt: periodEnd } } })),
@@ -257,6 +286,15 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
         candidatesCreated,
         candidatesByStatus: candidateByStatus,
         evidenceAdded,
+      },
+      contacts: {
+        pointsCollected: contactPointsCollected,
+        pointsByType: contactPointByType,
+        pointsByVerificationStatus: contactPointByVerificationStatus,
+        verificationDecisions: contactPointVerificationDecisions,
+        verifiedPoints: verifiedContactPoints,
+        permissionsRecorded: communicationPermissionsRecorded,
+        permissionsByStatus: permissionByStatus,
       },
       jobs: { created: jobsCreated, byStatus: jobByStatus, attempts: attempts._sum.attempts ?? 0 },
       outreach: { draftsCreated, draftsByStatus: draftByStatus },

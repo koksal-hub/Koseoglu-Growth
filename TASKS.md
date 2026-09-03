@@ -490,3 +490,17 @@ GitHub Issue'ların aynası olarak; çelişki durumunda GitHub Issue esastır).
   - [x] HUMAN_NOTE/OPERATIONS_RECORD CRM kalite kovalarından dışlanır
   - [x] Eksik review approval sayılmaz; snapshot hash ve idempotent reuse korunur
   - [x] Migration, 23 test dosyası / 182 test, lint, typecheck ve API/web build CI kanıtı
+
+--- Issue #71 — Contact signal quality metrics ---
+- Öncelik: HIGH / MUST / RISK B
+- Sorumlu: Codex
+- Durum: IN_PROGRESS (kod/test hazır; CI ve merge bekleniyor)
+- Bağımlılıklar: ContactPoint/CommunicationPermission safety gate; ManagementReport
+- Acceptance criteria:
+  - [x] `collectedAt` penceresinde contact point toplamı ve EMAIL/PHONE kırılımı
+  - [x] `verifiedAt` penceresinde doğrulama kararları ve VERIFIED kalite sayısı
+  - [x] Toplanan noktaların verification status kırılımı
+  - [x] `checkedAt` penceresinde izin toplamı ve dört izin durumu kırılımı
+  - [x] Ham e-posta/telefon değerleri ve secret'lar report payload'ına girmez
+  - [x] Crawler/provider/OAuth/send/lead/customer action yok
+  - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı

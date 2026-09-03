@@ -18,11 +18,23 @@ const eventIds: string[] = [];
 const usageIds: string[] = [];
 const recommendationExposureIds: string[] = [];
 const recommendationOutcomeIds: string[] = [];
+const contactCompanyIds: string[] = [];
+const contactPointIds: string[] = [];
+const permissionIds: string[] = [];
 let server: FastifyInstance;
 
 function metricsOf(value: unknown) {
   return value as {
     jobs: { created: number; byStatus: Record<string, number> };
+    contacts: {
+      pointsCollected: number;
+      pointsByType: Record<string, number>;
+      pointsByVerificationStatus: Record<string, number>;
+      verificationDecisions: number;
+      verifiedPoints: number;
+      permissionsRecorded: number;
+      permissionsByStatus: Record<string, number>;
+    };
     usage: { receipts: number; inputTokens: number; outputTokens: number; costMinorByCurrency: Record<string, number> };
     safety: { realExternalActionsRecorded: number; unverifiedAiCalls: number };
     recommendations: {
@@ -57,6 +69,9 @@ describe('management reporting and usage receipts', () => {
     await prisma.usageReceipt.deleteMany({ where: { id: { in: usageIds } } });
     await prisma.event.deleteMany({ where: { id: { in: eventIds } } });
     await prisma.job.deleteMany({ where: { id: { in: jobIds } } });
+    await prisma.communicationPermission.deleteMany({ where: { id: { in: permissionIds } } });
+    await prisma.contactPoint.deleteMany({ where: { id: { in: contactPointIds } } });
+    await prisma.company.deleteMany({ where: { id: { in: contactCompanyIds } } });
     await prisma.recommendationOutcomeProvenanceReview.deleteMany({ where: { outcomeId: { in: recommendationOutcomeIds } } });
     await prisma.recommendationOutcome.deleteMany({ where: { id: { in: recommendationOutcomeIds } } });
     await prisma.recommendationExposure.deleteMany({ where: { id: { in: recommendationExposureIds } } });
@@ -189,10 +204,65 @@ describe('management reporting and usage receipts', () => {
     });
     recommendationOutcomeIds.push(withoutReviewOutcome.id);
 
+    const contactCompany = await prisma.company.create({
+      data: {
+        name: `Report Contact Company ${RUN_ID}`,
+        normalizedName: `REPORT CONTACT COMPANY ${RUN_ID}`,
+        domain: `report-contact-${RUN_ID}.example.com`,
+      },
+    });
+    contactCompanyIds.push(contactCompany.id);
+    const contactPoint = await prisma.contactPoint.create({
+      data: {
+        companyId: contactCompany.id,
+        type: 'EMAIL',
+        classification: 'COMPANY_GENERAL',
+        normalizedValue: `report-${RUN_ID}@example.com`,
+        countryCode: 'TR',
+        sourceUrl: `https://report-contact-${RUN_ID}.example.com/contact`,
+        sourceIsPublic: true,
+        collectedAt: new Date(),
+        verifiedAt: new Date(),
+        verificationStatus: 'VERIFIED',
+        verifiedBy: `${RUN_ID}-contact-reviewer`,
+        verificationReason: 'Reporting test verification.',
+        confidence: 0.9,
+        collectionPurpose: 'Reporting test contact signal.',
+        dataProcessingBasis: 'NOT_PERSONAL_DATA',
+        noticeStatus: 'NOT_REQUIRED',
+      },
+    });
+    contactPointIds.push(contactPoint.id);
+    const permission = await prisma.communicationPermission.create({
+      data: {
+        contactPointId: contactPoint.id,
+        channel: 'EMAIL',
+        purpose: 'SALES_OUTREACH',
+        jurisdictionCountry: 'TR',
+        status: 'ALLOWED',
+        dataProcessingBasis: 'NOT_PERSONAL_DATA',
+        communicationRule: 'B2B_RECIPIENT_EXCEPTION',
+        recipientCategory: 'TRADER_OR_CRAFTSMAN',
+        evidenceUrl: `https://report-contact-${RUN_ID}.example.com/legal-review`,
+        policyVersion: 'reporting-contact-policy-v1',
+        checkedAt: new Date(),
+        reviewedBy: `${RUN_ID}-permission-reviewer`,
+        reason: 'Reporting test permission.',
+      },
+    });
+    permissionIds.push(permission.id);
+
     const first = await generateManagementReport(reportDate);
     expect(first.reused).toBe(false);
     const firstMetrics = metricsOf(first.report.metrics);
     expect(firstMetrics.jobs.created).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.contacts.pointsCollected).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.contacts.pointsByType.EMAIL).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.contacts.pointsByVerificationStatus.VERIFIED).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.contacts.verificationDecisions).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.contacts.verifiedPoints).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.contacts.permissionsRecorded).toBeGreaterThanOrEqual(1);
+    expect(firstMetrics.contacts.permissionsByStatus.ALLOWED).toBeGreaterThanOrEqual(1);
     expect(firstMetrics.usage.receipts).toBeGreaterThanOrEqual(1);
     expect(firstMetrics.usage.costMinorByCurrency.USD).toBeGreaterThanOrEqual(7);
     expect(firstMetrics.safety.realExternalActionsRecorded).toBe(0);
