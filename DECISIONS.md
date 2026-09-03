@@ -775,3 +775,31 @@ lookup'u, entity-link, yeni kayıt, e-posta/telefon veya sosyal medya aksiyonu
 başlatılmaz. Review reddi ölçüm receipt'ini silmez ve ticari başarı sayılmaz.
 
 STATUS: PROPOSED — IMPLEMENTATION IN NEXT CONTROLLED SLICE
+
+---
+
+## ADR-031 — Provenance Review Quality Metrics
+
+DECISION: Management reports keep the existing raw recommendation outcome
+counts unchanged and add separate provenance-quality metrics. Review receipts
+are counted by `reviewedAt` in the report window, with `APPROVED` and `REJECTED`
+breakdowns. CRM outcomes are counted by `occurredAt` into approved, rejected,
+or `WITHOUT_REVIEW` buckets. `HUMAN_NOTE` and `OPERATIONS_RECORD` are excluded
+from CRM provenance-quality buckets. No missing review is treated as approval.
+
+WHY: A recorded CRM source and a human-approved attribution are different
+claims. Separating their time windows and statuses prevents the funnel from
+overstating qualified commercial evidence while preserving historical raw
+receipt totals.
+
+ALTERNATIVES: Count every CRM source as approved; overwrite raw outcome totals
+with only approved records; classify late reviews by outcome date without
+showing the review date; include metadata-only notes in CRM approval metrics.
+
+CONSEQUENCES: Report snapshots expose review coverage and disagreement without
+creating or changing CRM/outcome records. The new fields participate in the
+existing snapshot input hash and idempotent reuse. This remains read-only
+measurement; no provider, OAuth, customer contact, or automatic attribution
+action is enabled.
+
+STATUS: PROPOSED — IMPLEMENTATION IN NEXT CONTROLLED SLICE

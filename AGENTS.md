@@ -66,6 +66,22 @@ PLAN → IMPLEMENT → LINT → TYPECHECK → TEST → BUILD → VERIFY → COMM
   - gerçek müşteri e-postasına gönderim
   - geri alınamaz (irreversible) production işlemleri
 
+GITHUB YAYIN KALİTE KAPISI (standart):
+
+- `git diff --check`, değişen dosya kapsamı ve secret-shaped içerik taraması
+  geçmeden commit/push yapılmaz.
+- Lint, typecheck, migration/Prisma validation, test ve build kanıtı olmadan
+  PR merge edilmez. Yerel ortam bir testi çalıştıramıyorsa bu `NOT_RUN` kalır;
+  gerçek CI sonucu yeşil olmadan işlem tamamlanmış sayılmaz.
+- Kırmızı veya bekleyen CI, bozuk dosya, gizli veri, ilgisiz dirty-worktree
+  değişikliği ya da doğrulanmamış "READY" iddiası GitHub'a yayınlanmaz.
+- CI başarısız olursa kök neden düzeltilir ve aynı kapı yeniden çalıştırılır;
+  başarısız sonuç courtesy PASS sayılmaz.
+- Yeşil CI'lı güvenli development PR'ları standart akışta ayrıca kullanıcı
+  onayı beklemeden merge edilebilir. Production veri silme/reset, ödeme,
+  canlı provider/OAuth, gerçek müşteri iletişimi ve geri alınamaz işlemler bu
+  istisnanın dışındadır ve açık onay gerektirir.
+
 ================================================================
 KOTA / SESSION SONU KURALI (2026-08 EK)
 ================================================================
