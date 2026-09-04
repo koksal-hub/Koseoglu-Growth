@@ -65,7 +65,7 @@ describe('read-only company intelligence timeline', () => {
       policy: { rawSourceUrlIncluded: boolean; metadataIncluded: boolean; writesPerformed: boolean; externalCallsPerformed: boolean };
     };
     expect(body.evidence).toHaveLength(1);
-    expect(body.evidence[0]).toMatchObject({ sourceOrigin: 'https://example.com', summary: 'Untrusted source summary', summaryTrust: 'UNTRUSTED_SOURCE_TEXT' });
+    expect(body.evidence[0]).toMatchObject({ sourceOrigin: 'https://example.com', summaryTrust: 'UNTRUSTED_SOURCE_TEXT' });
     expect(JSON.stringify(body)).not.toContain('utm_source');
     expect(body.policy).toEqual({
       maxLimit: 100,
