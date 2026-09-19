@@ -62,12 +62,13 @@ Not: Bu bölüm ilk kez 2026-09-19 sabah taramasıyla yazıldı. Aşağıdaki de
 **Truth refresh — 2026-09-19 akşam (PR #90 sonrası).** Yukarıdaki satırlar sabahki taramanın
 kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler şunlardır:
 
-- **Git:** latest code-bearing baseline = `5f5d6dc226afdc2721db63daf59d4969d5a56db9` (current
+- **Git:** latest code-bearing baseline = `5b0450bdeb72aafd995faba241b6e0f0b3683954` (current
   repository HEAD doküman commit'leriyle ilerleyebilir); MERGED: #87 (B2A
   migration convergence gate + shadow replay + disposable guard), #88 (BC1 + BC6 money/value
   kontratı), #89 (BC2 + BC3 identity scope + domain evidence), #90 (BC4 lifecycle shipment truth),
   #91 (docs truth refresh), #92 (PR #4 kapanış kaydı), #93 (PR-B2B DB-6 fingerprint + DB-7 db push
-  guard); açık PR **yok** (PR #4 2026-09-19'da superseded kapatıldı; branch
+  guard), #95 (PR-D2 Fastify 5 + koordineli güvenlik eklentileri); açık PR **yok** (PR #4
+  2026-09-19'da superseded kapatıldı; branch
   `chore/process-review-gate` arşiv olarak korunuyor).
 - **Migration:** **29** (fresh 29/29 · upgrade 28→29 · zero drift · DB safety gate **25/25 PASS** ·
   ≤63 byte object-name politikası). `growth_db` bu çalışmada mutate edilmedi (3 migration, yalnız
@@ -80,8 +81,14 @@ kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler
   evidence tipi) PR-D1 kapsamına devredildi.**
 - **DELTA-03 (PR-B2B) DONE:** PR **#93** squash `5f5d6dc` · CI **25/25 step success** (yeni
   `db fingerprint (read-only, fail-closed on DIVERGED/UNKNOWN)` adımı dahil) · 4 dosya / +506−4.
-- **Sıradaki uygulama dilimi:** **PR-D2** (Fastify 5 + güvenlik modernizasyonu; SYS-6/T9).
-  Kanonik sıra değişmedi; TASKS.md DELTA aynası aynı gün hizalandı.
+- **DELTA-04 (PR-D2) DONE:** PR **#95** squash `5b0450b` · CI run **`35468157516` PASS** ·
+  Fastify 5.12.5 + helmet 13.1.1 + cors 11.3.0 + rate-limit 11.2.0 · fresh 29/29,
+  fingerprint `IN_SYNC`, **33 dosya / 240 test**, lint/typecheck/build PASS · kaynak kodu ve
+  migration değişmedi. Merge sonrası frozen install + lint/typecheck/build tekrar PASS; yerel
+  full suite, konfigüre disposable DB 25/29 BEHIND ve mutation yetkisi olmadığı için yeniden
+  koşulmadı; fresh DB full-suite kapanış kanıtı GitHub CI'dır.
+- **Sıradaki uygulama dilimi:** **PR-D1** (Exposure Guard + Trusted Proxy + BC5 PORT/HOST;
+  SYS-1/SYS-2). Kanonik sıra değişmedi; TASKS.md DELTA aynası aynı gün hizalandı.
 
 
 ## 3. Sıralama (bağlayıcı)
@@ -103,7 +110,7 @@ kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler
 **L0 KAPANDI (kanıtlı):** PR #82 MERGED · #81 CLOSED (superseded) · main = origin/main = 7840c35 ·
 `.env` + izole test DB'leri mevcut · lint/typecheck/test/build kanıtları alındı (CI + lokal).
 
-Güncel git truth: latest code-bearing baseline = `5f5d6dc` (§2 truth refresh; current HEAD docs commit'leriyle ilerleyebilir) — L0 kapanışının kendi kanıtı tarihsel
+Güncel git truth: latest code-bearing baseline = `5b0450b` (§2 truth refresh; current HEAD docs commit'leriyle ilerleyebilir) — L0 kapanışının kendi kanıtı tarihsel
 olarak korunur; kanonik sıra ve durumlar aşağıdaki tabloda güncellenir.
 
 Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capability kimlikleriyle):
@@ -113,8 +120,8 @@ Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capabilit
 | 1 | **PR-C** (#85, MERGED) | DB-1, DB-9 | — | fresh 27/27 · upgrade 26→27 · zero drift · 226 test |
 | 2 | **PR-B2A** (#87, MERGED) | DB-2, DB-3, DB-4, DB-5, DB-9 | PR-C | gate 11/11 PASS · fresh 29/29 · upgrade 28→29 · zero drift · bozuk drift fixture'ında FAIL |
 | 3 | **PR-B2B** (#93, MERGED) | DB-6, DB-7 | PR-B2A (#87 MERGED) | gate 25/25 PASS (8 fingerprint + 6 db push kanıtı) · CI 25/25 step · full suite 33 dosya / 240 test |
-| 4 | **PR-D2** (Fastify security modernization; sıradaki dilim) | SYS-6 (T9) | PR-C | full regression suite PASS + dependency-gate kaydı |
-| 5 | **PR-D1** (Exposure/Proxy) | SYS-1, SYS-2 | PR-D2 | bind adresi + CIDR/forwarded header testleri |
+| 4 | **PR-D2** (#95, MERGED) | SYS-6 (T9) | PR-C | Fastify 5.12.5 + coordinated plugins · dependency gate · fresh 29/29 · 240 test · CI PASS |
+| 5 | **PR-D1** (Exposure/Proxy; sıradaki dilim) | SYS-1, SYS-2 | PR-D2 (#95 MERGED) | bind adresi + CIDR/forwarded header testleri |
 | 6 | **PR-D5** (Pool/Timeout + Readiness) | SYS-12 (T4), SYS-3 | PR-D2 | pool benchmark + `/ready` timeout testi |
 | 7 | **PR-D3** (Route Auth + Rate Limit) | SYS-4, SYS-5 | PR-D1 | auth metadata testi + endpoint bazlı limitler |
 | 8 | **PR-D4** (Response Contract / PII Guard) | SYS-11 | PR-D3 | şema dışı alan testinin kırılması |
@@ -459,6 +466,10 @@ B2B lojistiğe aktarım ayrı bir pilot ve ölçüm gerektirir.
   33 dosya / 240 test, DB safety gate **25/25**; **DELTA-03 (PR-B2B) DONE** (#93, CI 25/25 step) ve
   sıradaki dilim **PR-D2**; PR #4 superseded kapatıldı (arşiv branch `73b84af`). TASKS.md DELTA
   aynası aynı gün hizalandı (DELTA-03 DONE, DELTA-04 sıradaki).
+- Bölüm 2 + 3.1 + 6 + 21 (2026-09-19, PR #95 sonrası): **DELTA-04 DONE** — Fastify 5.12.5 ve
+  koordineli güvenlik eklentileri dependency-gate kaydıyla merge edildi (`5b0450b`); CI fresh
+  29/29 + 33 dosya / 240 test + lint/typecheck/build PASS. Sıradaki dilim **PR-D1** (SYS-1/SYS-2,
+  BC5 PORT/HOST). Latest code-bearing baseline etiketi `5b0450b` olarak ilerledi.
 
 ## 21. Capability & Revenue-Enabler Matrix (2026-09-19 delta)
 
@@ -484,7 +495,7 @@ Verdict dağılımı (**46 capability**): EXISTING 4 · PARTIAL 19 · MISSING 22
 | SYS-3 | **Bounded Readiness** — `/ready` DB kontrolü açık timeout ile | MISSING | MUST | PR-D5 | DB yarı-erişilebilirken instance kısa sürede 503 döner → bozuk instance müşteri trafiği almaz | K: yavaş DB'de < N sn 503 · R: LB yanılgısı; dep SYS-12 |
 | SYS-4 | **Route Auth Metadata** — raw `request.url.split('?')[0]` kaldırılır; public/private explicit metadata/encapsulation; business route default DENY | MISSING | MUST | PR-D3 | Auth bypass → müşteri/veri sızıntısı; yeni route sessizce public olamaz | K: auth'suz yeni route testi kırar · R: sessiz public endpoint; dep L3 |
 | SYS-5 | **Rate-limit Policy** — webhook / expensive (ranking, research) / internal / auth ayrı limitler | MISSING | MUST | PR-D3 | Tek global limit → pahalı endpoint veya webhook seli tüm API'yi düşürür → teklif gecikir | K: endpoint bazlı limit testleri · R: flood; dep SYS-2 |
-| SYS-6 | **Fastify 5 + helmet 13 + cors 11 + rate-limit 11** (koordineli) | EXISTING (planlı **T9**) | MUST | PR-D2 | EOL framework = güvenlik yaması almama → breach → müşteri durur | K: full regression suite PASS · R: davranış değişimi (T8 gerekmez — §13 düzeltmesi) |
+| SYS-6 | **Fastify 5 + helmet 13 + cors 11 + rate-limit 11** (koordineli) | **DONE** (PR #95 · `5b0450b` · T9) | MUST | PR-D2 | EOL framework = güvenlik yaması almama → breach → müşteri durur | K: fresh 29/29 + 240 test + lint/typecheck/build + CI PASS · R: kaynak kodu/migration değişmedi (T8 gerekmez — §13 düzeltmesi) |
 | SYS-7 | **Worker Activation Contract** — worker active / handler registered / last tick / queue depth / oldest queued job age / dead-letter / stale lease | MISSING | MUST (async öncesi) | L2 | Job yaratılıp çalışmaması → lead/research/outreach sessizce durur → satış hattı kesilir | K: worker kapalıyken dashboard "çalışıyor" demez · R: görünmez duruş; dep OBS-1 |
 | SYS-8 | **Job Lease/Heartbeat/Fencing** — lease aşımı + external side effect için idempotency key | PARTIAL | MUST (canlı outbound öncesi) | L2/L4 | Çift müşteri teması → complaint, itibar ve deliverability kaybı | K: lease aşan job ikinci worker'da tekrar uygulanmaz · R: çift e-posta; dep SYS-7 |
 | SYS-9 | **PG Error Classifier + Bounded Retry** — 40001/40P01 retry; 23505 generic retry yok; 23503 retry yok; unknown throw; driver-adapter wrapper tanınır | PARTIAL | MUST | PR-E2 | Blind retry = çift etki; retry'siz deadlock = spurious 500 → dashboard/teklif kesintisi | K: 7 senaryo testi + retry limiti · R: sonsuz retry; dep SYS-12 |

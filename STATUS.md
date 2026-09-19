@@ -18,12 +18,13 @@ ACTIVE BRANCH: `main` (merged from `codex/daily-dashboard-v1`)
 Yukarıdaki "L0 durumu" satırı 2026-09-19 öğleden önceki kayıttır ve tarihsel olarak korunur;
 aşağıdakiler kanonik güncel truth'tur.
 
-- **Git:** latest code-bearing baseline = `5f5d6dc226afdc2721db63daf59d4969d5a56db9` (son **kod**
+- **Git:** latest code-bearing baseline = `5b0450bdeb72aafd995faba241b6e0f0b3683954` (son **kod**
   taşıyan merge); current repository HEAD doküman commit'leriyle ilerleyebilir, bu yüzden her docs
   commit'inde SHA yeniden yazılmaz — etiket esastır. MERGED: **#87** (B2A migration convergence gate + shadow replay + disposable guard) ·
   **#88** (BC1 + BC6 money/value kontratı) · **#89** (BC2 + BC3 identity scope + domain evidence) ·
   **#90** (BC4 lifecycle shipment truth) · **#91** (docs truth refresh) · **#92** (PR #4 kapanış
-  kaydı) · **#93** (PR-B2B: DB-6 fingerprint + DB-7 db push guard). Açık PR: **yok**
+  kaydı) · **#93** (PR-B2B: DB-6 fingerprint + DB-7 db push guard) · **#95** (PR-D2:
+  Fastify 5 + koordineli güvenlik eklentileri). Açık PR: **yok**
   (PR #4 kapatıldı — aşağıdaki madde). Açık Issue yok.
 - **Migration:** **29** — fresh **29/29** · upgrade **28→29** · zero drift · DB safety gate
   **25/25 PASS** (B2A 11 + DB-6 fingerprint 8 + DB-7 db push 6 kanıtı) · ≤63 byte object-name
@@ -48,8 +49,16 @@ aşağıdakiler kanonik güncel truth'tur.
   adımı dahil) · 4 dosya / +506−4 · DB-6 salt-okunur fingerprint (`IN_SYNC`/`BEHIND`/`AHEAD`/
   `DIVERGED`/`UNKNOWN`) + DB-7 `db push` guard (production env'de disposable isimli hedefte bile
   red).
-- **Sıradaki uygulama dilimi:** **PR-D2** (Fastify 5 + güvenlik modernizasyonu; DELTA-04 / SYS-6,
-  T9) — dependency değişikliği dependency-gate kaydı ile.
+- **DELTA-04 (PR-D2) DONE — 2026-09-19:** PR **#95** squash `5b0450b` · CI run
+  **`35468157516` PASS** · Fastify **5.12.5**, `@fastify/helmet` **13.1.1**,
+  `@fastify/cors` **11.3.0**, `@fastify/rate-limit` **11.2.0** · fresh 29/29,
+  fingerprint `IN_SYNC`, DB safety kanıtları, **33 dosya / 240 test**, lint/typecheck/build PASS.
+  Uygulama kaynak kodu ve migration değişmedi; dependency-gate kaydı plan §6'da.
+  Merge sonrası frozen install + lint/typecheck/build tekrar PASS; yerel full suite yeniden
+  koşulmadı (konfigüre disposable DB salt-okunur kontrolde 25/29 BEHIND ve mutation yetkisi yoktu),
+  bu nedenle full-suite kapanış kanıtı fresh DB kullanan GitHub CI'dır.
+- **Sıradaki uygulama dilimi:** **PR-D1** (Exposure Guard + Trusted Proxy + BC5 PORT/HOST;
+  DELTA-05 / SYS-1 / SYS-2).
 - **Kanonik order (değişmedi):** B2B → D2 → D1 → D5 → D3 → D4 → E2 → E1 → E3 → L6
   (tek sahip: `GROWTH_2026_PROGRAM_PLAN.md` §3.1; TASKS.md DELTA aynası hizalı).
 

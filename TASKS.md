@@ -551,13 +551,14 @@ GitHub Issue açılacak; o zamana kadar bu bölüm aynadır. Çelişki halinde G
 CI kanıtı esastır. (DB-HYGIENE-FORENSIC ayrı bir forensic hattıdır, execution dilimi değildir
 ve `growth_db` mutate edilmez.)
 
-NOT (2026-09-19, PR #93 sonrası): DELTA numaralandırması ve §3.1 aynası korunur; **DELTA-03
-(PR-B2B) DONE**, kanonik sıradaki dilim **DELTA-04 (PR-D2)**. Bu arada kanonik tabloda yer almayan **BC integrity serisi**
+NOT (2026-09-19, PR #95 sonrası): DELTA numaralandırması ve §3.1 aynası korunur; **DELTA-03
+(PR-B2B) DONE** ve **DELTA-04 (PR-D2) DONE**, kanonik sıradaki dilim **DELTA-05 (PR-D1)**.
+Bu arada kanonik tabloda yer almayan **BC integrity serisi**
 tamamlandı: **BC1+BC6 (PR #88)** money/value kontratı (signed brüt kâr + value/currency kontratı) ·
 **BC2+BC3 (PR #89)** identity scope + domain evidence (domain artık kimlik değil, vergi kimliği
 jurisdiction-scoped) · **BC4 (PR #90)** lifecycle shipment truth (REPEAT yalnız gerçek sevkiyat
 truth'undan; pipeline etiketi yetmez). **BC5 (PORT/HOST evidence tipi) PR-D1 kapsamına devredildi.**
-Güncel truth: latest code-bearing baseline `5f5d6dc` (current HEAD docs commit'leriyle ilerleyebilir), 29 migration, 33 dosya / 240 test, DB safety gate 25/25, lifecycle policy
+Güncel truth: latest code-bearing baseline `5b0450b` (current HEAD docs commit'leriyle ilerleyebilir), 29 migration, 33 dosya / 240 test, DB safety gate 25/25, lifecycle policy
 `customer-lifecycle-signals-v2`, `growth_db` mutate edilmedi. **PR #4 (Process + Architecture Review
 Gate) 2026-09-19'da superseded kapatıldı** (branch `chore/process-review-gate` tarihsel arşiv; kod/CI
 içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilinçli taşınmadı).
@@ -605,12 +606,14 @@ içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilin�
 --- DELTA-04 — PR-D2 Fastify security modernization ---
 - Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-6 (T9)
 - Sorumlu: Cline
-- Durum: TODO
+- Durum: DONE (PR #95 squash merge `5b0450b`; CI run `35468157516` PASS; merged branch silindi)
 - Bağımlılıklar: DELTA-01; T8 (zod 4) GEREKMEZ (type-provider kullanılmıyor — §13 düzeltmesi)
 - Acceptance criteria:
-  - [ ] fastify 5.12.5 + @fastify/helmet 13 + @fastify/cors 11 + @fastify/rate-limit 11 koordineli
-  - [ ] Full regression suite PASS (lint/typecheck/test/build) + davranış değişikliği yok kanıtı
-  - [ ] Dependency değişikliği dependency-gate kaydı ile
+  - [x] fastify 5.12.5 + @fastify/helmet 13.1.1 + @fastify/cors 11.3.0 + @fastify/rate-limit 11.2.0 koordineli
+  - [x] Full regression suite PASS: fresh 29/29 DB'de 33 dosya / 240 test + lint/typecheck/build; uygulama kaynak kodu değişmedi
+  - [x] Dependency değişikliği dependency-gate kaydı ile (plan §6)
+  - [x] Merge sonrası frozen install + lint/typecheck/build PASS; yerel full suite yeniden koşulmadı
+        (konfigüre disposable DB 25/29 BEHIND, mutation yetkisi yok); fresh DB full-suite kanıtı CI'dan
 
 --- DELTA-05 — PR-D1 Exposure Guard + Trusted Proxy ---
 - Öncelik: HIGH / MUST / RISK B (public exposure öncesi) · Kapsam: SYS-1, SYS-2
