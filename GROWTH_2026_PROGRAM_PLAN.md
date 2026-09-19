@@ -62,10 +62,11 @@ Not: Bu bölüm ilk kez 2026-09-19 sabah taramasıyla yazıldı. Aşağıdaki de
 **Truth refresh — 2026-09-19 akşam (PR #90 sonrası).** Yukarıdaki satırlar sabahki taramanın
 kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler şunlardır:
 
-- **Git:** `main` = `origin/main` = `2b80322623e80a7d056010bb947d152b4e69b7ec`; MERGED: #87 (B2A
+- **Git:** `main` = `origin/main` = `0da03cefbf87a490118113b9366ac2d3c37f1132`; MERGED: #87 (B2A
   migration convergence gate + shadow replay + disposable guard), #88 (BC1 + BC6 money/value
-  kontratı), #89 (BC2 + BC3 identity scope + domain evidence), #90 (BC4 lifecycle shipment
-  truth); açık PR yalnız #4.
+  kontratı), #89 (BC2 + BC3 identity scope + domain evidence), #90 (BC4 lifecycle shipment truth),
+  #91 (docs truth refresh); açık PR **yok** (PR #4 2026-09-19'da superseded kapatıldı; branch
+  `chore/process-review-gate` arşiv olarak korunuyor).
 - **Migration:** **29** (fresh 29/29 · upgrade 28→29 · zero drift · convergence gate 11/11 PASS ·
   ≤63 byte object-name politikası). `growth_db` bu çalışmada mutate edilmedi (3 migration).
 - **Test:** **33 API+web dosya / 236 test PASS** (fresh 29/29 DB'de); lint, typecheck, build,
@@ -98,7 +99,7 @@ kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler
 **L0 KAPANDI (kanıtlı):** PR #82 MERGED · #81 CLOSED (superseded) · main = origin/main = 7840c35 ·
 `.env` + izole test DB'leri mevcut · lint/typecheck/test/build kanıtları alındı (CI + lokal).
 
-Güncel git truth: `main` = `2b80322` (§2 truth refresh) — L0 kapanışının kendi kanıtı tarihsel
+Güncel git truth: `main` = `0da03ce` (§2 truth refresh) — L0 kapanışının kendi kanıtı tarihsel
 olarak korunur; kanonik sıra ve durumlar aşağıdaki tabloda güncellenir.
 
 Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capability kimlikleriyle):
