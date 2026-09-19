@@ -59,6 +59,26 @@ Not: Bu bölüm ilk kez 2026-09-19 sabah taramasıyla yazıldı. Aşağıdaki de
 - Hijyen: LICENSE / SECURITY.md / CODEOWNERS yok; coverage eşiği yok;
   Dependabot / CodeQL / secret-scan yok (T5 kapsamı).
 
+**Truth refresh — 2026-09-19 akşam (PR #90 sonrası).** Yukarıdaki satırlar sabahki taramanın
+kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler şunlardır:
+
+- **Git:** `main` = `origin/main` = `2b80322623e80a7d056010bb947d152b4e69b7ec`; MERGED: #87 (B2A
+  migration convergence gate + shadow replay + disposable guard), #88 (BC1 + BC6 money/value
+  kontratı), #89 (BC2 + BC3 identity scope + domain evidence), #90 (BC4 lifecycle shipment
+  truth); açık PR yalnız #4.
+- **Migration:** **29** (fresh 29/29 · upgrade 28→29 · zero drift · convergence gate 11/11 PASS ·
+  ≤63 byte object-name politikası). `growth_db` bu çalışmada mutate edilmedi (3 migration).
+- **Test:** **33 API+web dosya / 236 test PASS** (fresh 29/29 DB'de); lint, typecheck, build,
+  `prisma validate/generate` temiz; `git diff --check` exit 0.
+- **Lifecycle:** policy **`customer-lifecycle-signals-v2`**; `REPEAT` artık operasyon sevkiyat
+  truth'una bağlıdır (pipeline etiketi tek başına yetmez) → **L6 shipment receipt bağımlılığı
+  AÇIK** (`signals.repeatEvidence.operationsShipmentSource = 'NOT_AVAILABLE'`). **BC5 (PORT/HOST
+  evidence tipi) PR-D1 kapsamına devredildi.**
+- **Sıradaki uygulama dilimi:** **PR-B2B** (DB-6 fingerprint + DIVERGED/UNKNOWN fail-closed,
+  DB-7 `db push --accept-data-loss` guard). Kanonik sıra değişmedi; TASKS.md DELTA aynası aynı gün
+  hizalandı.
+
+
 ## 3. Sıralama (bağlayıcı)
 
 | Katman | İçerik | Gerekçe | Blast radius | Ön koşul |
@@ -78,13 +98,16 @@ Not: Bu bölüm ilk kez 2026-09-19 sabah taramasıyla yazıldı. Aşağıdaki de
 **L0 KAPANDI (kanıtlı):** PR #82 MERGED · #81 CLOSED (superseded) · main = origin/main = 7840c35 ·
 `.env` + izole test DB'leri mevcut · lint/typecheck/test/build kanıtları alındı (CI + lokal).
 
+Güncel git truth: `main` = `2b80322` (§2 truth refresh) — L0 kapanışının kendi kanıtı tarihsel
+olarak korunur; kanonik sıra ve durumlar aşağıdaki tabloda güncellenir.
+
 Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capability kimlikleriyle):
 
 | Sıra | Dilim | Capability | Ön koşul | Bitiş kanıtı |
 |---|---|---|---|---|
 | 1 | **PR-C** (#85, MERGED) | DB-1, DB-9 | — | fresh 27/27 · upgrade 26→27 · zero drift · 226 test |
-| 2 | **PR-B2A** | DB-2, DB-3, DB-4, DB-5, DB-9 | PR-C | CI convergence gate PASS + drift fixture FAIL |
-| 3 | **PR-B2B** | DB-6, DB-7 | PR-B2A | fingerprint çıktısı + DIVERGED/UNKNOWN fail-closed testi |
+| 2 | **PR-B2A** (#87, MERGED) | DB-2, DB-3, DB-4, DB-5, DB-9 | PR-C | gate 11/11 PASS · fresh 29/29 · upgrade 28→29 · zero drift · bozuk drift fixture'ında FAIL |
+| 3 | **PR-B2B** (sıradaki dilim) | DB-6, DB-7 | PR-B2A (#87 MERGED) | fingerprint çıktısı + DIVERGED/UNKNOWN fail-closed testi |
 | 4 | **PR-D2** (Fastify security modernization) | SYS-6 (T9) | PR-C | full regression suite PASS |
 | 5 | **PR-D1** (Exposure/Proxy) | SYS-1, SYS-2 | PR-D2 | bind adresi + CIDR/forwarded header testleri |
 | 6 | **PR-D5** (Pool/Timeout + Readiness) | SYS-12 (T4), SYS-3 | PR-D2 | pool benchmark + `/ready` timeout testi |
@@ -395,6 +418,11 @@ B2B lojistiğe aktarım ayrı bir pilot ve ölçüm gerektirir.
 - Doküman statüsü: bu dosya repo'ya alındığında **canonical source-of-truth** sayılır; bu
   docs-only PR öncesinde "working canonical draft" idi. MASTER_PLAN.md'ye bu delta ile
   dokunulmadı (G4).
+- Bölüm 2 + 3.1 (2026-09-19 akşam, PR #90 sonrası): **truth refresh** — main `2b80322`, 29 migration,
+  33 dosya / 236 test, PR #87 (B2A) ve #88-#90 (BC integrity serisi) MERGED, sıradaki dilim **PR-B2B**;
+  BC5 (PORT/HOST) → PR-D1; lifecycle policy `customer-lifecycle-signals-v2` (REPEAT = operasyon
+  sevkiyat truth'u, L6 shipment receipt bağımlılığı açık). TASKS.md DELTA aynası aynı gün hizalandı
+  (DELTA-02 DONE, DELTA-03 sıradaki). Kanonik sıra değişmedi.
 
 ## 21. Capability & Revenue-Enabler Matrix (2026-09-19 delta)
 

@@ -1,11 +1,43 @@
 # STATUS — Kısa, güncel durum
 
-last_update: 2026-09-03T21:23:04+03:00
-last_actor: Codex (Issue #73 closure)
+last_update: 2026-09-19T19:22:13+03:00
+last_actor: Cline (docs truth refresh after PR #90)
 
 CURRENT PHASE: PHASE 8R READ-ONLY DAILY ACTION DASHBOARD — DONE (SAFE MODE)
 ACTIVE ISSUE: none
 ACTIVE BRANCH: `main` (merged from `codex/daily-dashboard-v1`)
+
+## 2026 program planı
+- Plan: `GROWTH_2026_PROGRAM_PLAN.md` · Politika: `OUTREACH_COMPLIANCE_POLICY.md` · Kural: `.cline/rules/20-koseoglu-growth-2026-gates.md`
+- L0 durumu (2026-09-19): PR #82 squash merge edildi (`5a9d569`), `main` ff-only olarak origin/main ile eşitlendi. PR-A (`chore/pr-a-runtime-fixes`) ve PR-B (`chore/pr-b-provenance-readiness`) yerelde uygulandı ve doğrulandı; **commit/push yok**. Doğrulama: prisma validate/generate PASS, fresh DB 26/26 migration PASS, lint/typecheck/build PASS, tam paket 31 dosya / 221 test PASS, `git diff --check` exit 0. Yerel `.env` oluşturuldu (gitignored, secret yok). Açık: PR #81 (superseded) ve PR #4 kararı; CRLF→LF normalizasyonu commit anında; migration drift (önceden var olan OutreachApproval FK + index adı farkı).
+- L8 harici blokları: İYS hesabı ve entegrasyon, onay ve aydınlatma metni, hedef ülke listesi, e-posta domaini ve DNS erişimi, WhatsApp Business hesabı, tarife/fiyat verisi, hukuk teyidi.
+
+
+### Truth refresh — 2026-09-19 (PR #90 sonrası)
+
+Yukarıdaki "L0 durumu" satırı 2026-09-19 öğleden önceki kayıttır ve tarihsel olarak korunur;
+aşağıdakiler kanonik güncel truth'tur.
+
+- **Git:** `main` = `origin/main` = `2b80322623e80a7d056010bb947d152b4e69b7ec` (ff-only).
+  MERGED: **#87** (B2A migration convergence gate + shadow replay + disposable guard) ·
+  **#88** (BC1 + BC6 money/value kontratı) · **#89** (BC2 + BC3 identity scope + domain evidence) ·
+  **#90** (BC4 lifecycle shipment truth). Açık PR: yalnız **#4** (karar bekliyor). Açık Issue yok.
+- **Migration:** **29** — fresh **29/29** · upgrade **28→29** · zero drift · convergence gate
+  **11/11 PASS** · ≤63 byte object-name politikası. `growth_db` bu çalışmada **mutate edilmedi**
+  (3 migration); disposable doğrulama DB'leri koşum sonrası düşürüldü (artefakt yok).
+- **Test (latest tam paket kanıtı):** **33 dosya / 236 test PASS** (fresh 29/29 DB'de). lint,
+  typecheck, build, `prisma validate`/`generate` temiz; `git diff --check` exit 0.
+- **Lifecycle policy:** `customer-lifecycle-signals-v2`. `REPEAT` yalnız **gerçek sevkiyat
+  truth'undan** türetilir; pipeline etiketi (`stage='WON'`) tek başına REPEAT iddia etmez.
+  **L6 shipment receipt bağımlılığı AÇIK**
+  (`signals.repeatEvidence.operationsShipmentSource = 'NOT_AVAILABLE'`).
+- **BC integrity serisi kapandı:** BC1/BC6 (#88) · BC2/BC3 (#89) · BC4 (#90).
+  **BC5 (PORT/HOST evidence tipi) → PR-D1'e devredildi.**
+- **Sıradaki uygulama dilimi:** **PR-B2B** (DB-6 fingerprint + DIVERGED/UNKNOWN fail-closed,
+  DB-7 `db push --accept-data-loss` guard).
+- **Kanonik order (değişmedi):** B2B → D2 → D1 → D5 → D3 → D4 → E2 → E1 → E3 → L6
+  (tek sahip: `GROWTH_2026_PROGRAM_PLAN.md` §3.1; TASKS.md DELTA aynası hizalı).
+
 
 ## Kalıcı GitHub yayın standardı
 
@@ -356,3 +388,5 @@ ACTIVE BRANCH: `main` (merged from `codex/daily-dashboard-v1`)
 
 Provider OAuth/publish ve gerçek e-posta/telefon iletişimi için seçili hesap, exact
 scope, secret-manager/sandbox sınırı ve açık kullanıcı onayı olmadan dış aksiyon yoktur.
+- Derin tarama raporu: `DEEP_SCAN_20260919.md` (F/G/P serileri, 11 dış iddia doğrulaması, yöntem ve sınırlar).
+- Plan bölümleri: 13 Toolchain (T0-T10) · 14 doğrulama kayıtları · 15 OWASP eşlemesi · 16 dış araştırma ve boşluklar · 17 UNKNOWN · 18 R fazı (R-1 - R-16) · 19 akademik kaynakça · 20 revizyon kaydı.
