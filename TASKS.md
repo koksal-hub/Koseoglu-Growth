@@ -551,6 +551,16 @@ GitHub Issue açılacak; o zamana kadar bu bölüm aynadır. Çelişki halinde G
 CI kanıtı esastır. (DB-HYGIENE-FORENSIC ayrı bir forensic hattıdır, execution dilimi değildir
 ve `growth_db` mutate edilmez.)
 
+NOT (2026-09-19 akşam, PR #90 sonrası): DELTA numaralandırması ve §3.1 aynası korunur; kanonik
+sıradaki dilim **DELTA-03 (PR-B2B)**. Bu arada kanonik tabloda yer almayan **BC integrity serisi**
+tamamlandı: **BC1+BC6 (PR #88)** money/value kontratı (signed brüt kâr + value/currency kontratı) ·
+**BC2+BC3 (PR #89)** identity scope + domain evidence (domain artık kimlik değil, vergi kimliği
+jurisdiction-scoped) · **BC4 (PR #90)** lifecycle shipment truth (REPEAT yalnız gerçek sevkiyat
+truth'undan; pipeline etiketi yetmez). **BC5 (PORT/HOST evidence tipi) PR-D1 kapsamına devredildi.**
+Güncel truth: main `2b80322`, 29 migration, 33 dosya / 236 test, lifecycle policy
+`customer-lifecycle-signals-v2`, `growth_db` mutate edilmedi.
+
+
 --- DELTA-01 — PR-C migration drift cleanup ---
 - Öncelik: HIGH / MUST / RISK A (DB truth)
 - Sorumlu: Cline
@@ -565,20 +575,22 @@ ve `growth_db` mutate edilmez.)
 --- DELTA-02 — PR-B2A migration convergence + shadow DB ---
 - Öncelik: HIGH / MUST / RISK A (DB truth) · Kapsam: DB-2, DB-3, DB-4, DB-5, DB-9
 - Sorumlu: Cline
-- Durum: TODO
+- Durum: DONE (PR #87 squash merge `e72769e`; CI PASS; local+remote branch silindi)
 - Bağımlılıklar: DELTA-01 (PR-C merge) + docs-only plan PR merge
 - Acceptance criteria:
-  - [ ] CI 5 katman: history integrity · fresh replay · upgrade replay · schema convergence · DB invariant
-  - [ ] Dedicated/disposable shadow DB + `shadowDatabaseUrl`; isim deseni uymazsa fail-closed
-  - [ ] Applied migration checksum/edit tespiti → FAIL (historical migration immutable)
-  - [ ] Kasten bozulmuş drift fixture'ında CI FAIL, main'de PASS
-  - [ ] ≤63 byte DB object name politikası ve testi
+  - [x] CI 5 katman: history integrity · fresh replay · upgrade replay · schema convergence · DB invariant
+  - [x] Dedicated/disposable shadow DB + `shadowDatabaseUrl`; isim deseni uymazsa fail-closed
+  - [x] Applied migration checksum/edit tespiti → FAIL (historical migration immutable)
+  - [x] Kasten bozulmuş drift fixture'ında FAIL, sağlam repoda PASS (gate 11/11)
+  - [x] ≤63 byte DB object name politikası ve testi (legacy istisna: 2, gerekçeli)
+  - [x] Kanıt (2026-09-19): fresh 29/29 · upgrade 28→29 · zero drift · kanonik `growth_db` reddi ·
+        prod-benzeri host reddi · disposable isim kabulü · bozuk fixture FAIL
 
 --- DELTA-03 — PR-B2B DB fingerprint + db push guard ---
 - Öncelik: HIGH / MUST / RISK A · Kapsam: DB-6, DB-7
 - Sorumlu: Cline
-- Durum: TODO
-- Bağımlılıklar: DELTA-02
+- Durum: TODO (sıradaki dilim — DELTA-02 DONE/`e72769e`; docs-governance PR merge edildikten sonra başlar)
+- Bağımlılıklar: DELTA-02 (DONE)
 - Acceptance criteria:
   - [ ] Salt-okunur fingerprint: host, DB adı, şema, env, repo/DB migration sayısı, latest repo/DB, missing/unknown, checksum durumu
   - [ ] Status enum: IN_SYNC / BEHIND / AHEAD / DIVERGED / UNKNOWN; DIVERGED ve prod-benzeri UNKNOWN → fail-closed
