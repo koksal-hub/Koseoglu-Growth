@@ -557,7 +557,7 @@ tamamlandı: **BC1+BC6 (PR #88)** money/value kontratı (signed brüt kâr + val
 **BC2+BC3 (PR #89)** identity scope + domain evidence (domain artık kimlik değil, vergi kimliği
 jurisdiction-scoped) · **BC4 (PR #90)** lifecycle shipment truth (REPEAT yalnız gerçek sevkiyat
 truth'undan; pipeline etiketi yetmez). **BC5 (PORT/HOST evidence tipi) PR-D1 kapsamına devredildi.**
-Güncel truth: main `5f5d6dc`, 29 migration, 33 dosya / 240 test, DB safety gate 25/25, lifecycle policy
+Güncel truth: latest code-bearing baseline `5f5d6dc` (current HEAD docs commit'leriyle ilerleyebilir), 29 migration, 33 dosya / 240 test, DB safety gate 25/25, lifecycle policy
 `customer-lifecycle-signals-v2`, `growth_db` mutate edilmedi. **PR #4 (Process + Architecture Review
 Gate) 2026-09-19'da superseded kapatıldı** (branch `chore/process-review-gate` tarihsel arşiv; kod/CI
 içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilinçli taşınmadı).

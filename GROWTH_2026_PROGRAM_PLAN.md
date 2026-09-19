@@ -62,7 +62,8 @@ Not: Bu bölüm ilk kez 2026-09-19 sabah taramasıyla yazıldı. Aşağıdaki de
 **Truth refresh — 2026-09-19 akşam (PR #90 sonrası).** Yukarıdaki satırlar sabahki taramanın
 kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler şunlardır:
 
-- **Git:** `main` = `origin/main` = `5f5d6dc226afdc2721db63daf59d4969d5a56db9`; MERGED: #87 (B2A
+- **Git:** latest code-bearing baseline = `5f5d6dc226afdc2721db63daf59d4969d5a56db9` (current
+  repository HEAD doküman commit'leriyle ilerleyebilir); MERGED: #87 (B2A
   migration convergence gate + shadow replay + disposable guard), #88 (BC1 + BC6 money/value
   kontratı), #89 (BC2 + BC3 identity scope + domain evidence), #90 (BC4 lifecycle shipment truth),
   #91 (docs truth refresh), #92 (PR #4 kapanış kaydı), #93 (PR-B2B DB-6 fingerprint + DB-7 db push
@@ -102,7 +103,7 @@ kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler
 **L0 KAPANDI (kanıtlı):** PR #82 MERGED · #81 CLOSED (superseded) · main = origin/main = 7840c35 ·
 `.env` + izole test DB'leri mevcut · lint/typecheck/test/build kanıtları alındı (CI + lokal).
 
-Güncel git truth: `main` = `5f5d6dc` (§2 truth refresh) — L0 kapanışının kendi kanıtı tarihsel
+Güncel git truth: latest code-bearing baseline = `5f5d6dc` (§2 truth refresh; current HEAD docs commit'leriyle ilerleyebilir) — L0 kapanışının kendi kanıtı tarihsel
 olarak korunur; kanonik sıra ve durumlar aşağıdaki tabloda güncellenir.
 
 Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capability kimlikleriyle):
@@ -203,6 +204,33 @@ Kural: paralel izler yalnız kendi dosyalarına dokunur; migration klasörleri a
 - pg-boss: SKIP. ADR-017 queue yapısı SKIP LOCKED + lease + backoff + dead-letter zaten
   kurulu; eksik olan cron, JobSchedule tablosu + tick ile çözülür.
 - graphile-worker: SKIP. Aynı gerekçe + ayrı şema ve migration sahipliği riski.
+- **Fastify 5 + @fastify/helmet 13 + @fastify/cors 11 + @fastify/rate-limit 11: UPGRADE (PR-D2).**
+  - `NEED`: API framework'ü ve güvenlik eklentileri desteklenen major hatta taşınmalı (SYS-6 / T9).
+  - `CURRENT_ALTERNATIVE`: yığın zaten Fastify'dır (fastify 4.29.1 + helmet 11.1.1 + cors 9.0.1 +
+    rate-limit 9.1.0). Standart kütüphane veya yerel ikame routing/hook/validation/güvenlik başlığı/
+    rate-limit işlevini karşılamaz.
+  - `WHY_EXISTING_STACK_INSUFFICIENT`: **Fastify v4 resmi destek penceresi 30 Haziran 2025'te kapandı**
+    (V5 migration guide, "Long Term Support Cycle" bölümü; kayıt 2026-09-19'da okundu) → v4 hattı
+    güvenlik/düzeltme almıyor; v4 uyumlu eklenti major'ları da aynı hatta bağlı.
+  - `PACKAGE` / `VERSION` / `DIRECT_OR_TRANSITIVE`: `fastify` 4.29.1 → **5.12.5** ·
+    `@fastify/helmet` 11.1.1 → **13.1.1** · `@fastify/cors` 9.0.1 → **11.3.0** ·
+    `@fastify/rate-limit` 9.1.0 → **11.2.0** — dördü de `apps/api` altında **doğrudan** bağımlılık.
+  - `LICENSE`: dördü de **MIT** (npm registry `latest` metadata, 2026-09-19).
+  - `MAINTENANCE_SIGNAL`: resmi Fastify org paketleri; v5 hattındaki dağıtımlar kendi
+    devDependency'lerinde `fastify ^5` taşır (helmet 13.1.1 · cors 11.3.0 · rate-limit 11.2.0).
+  - `SECURITY_SIGNAL`: güvenlik düzeltmeleri artık v5 hattında; bu dilim **yalnız sürüm yükseltir**,
+    güvenlik yapılandırmasını gevşetmez (helmet/cors/rate-limit davranışı testlerle aynı).
+  - `PLATFORM_COMPATIBILITY`: Fastify v5 **Node.js ≥ 20** ister; repo `.nvmrc` = 24, root engines
+    `^24.15.0 || >=26.0.0`, yerel ve CI runtime Node 24.19.0 ✓.
+  - `LOCK_IMPACT`: `pnpm-lock.yaml` güncellendi (fastify 4 ağacı düşer, v5 ağacı gelir; net +126/−169).
+    `pnpm install --frozen-lockfile` **exit 0** → lock tutarlı.
+  - `REPRODUCIBILITY_IMPACT`: sürümler `^` aralığıyla sabit ve lock commit edilir; CI frozen install
+    kullanır → deterministik kurulum.
+  - `ROLLBACK`: tek commit geri alma (package.json + lock) → 4.29.1 hattına dönüş; şema veya veri
+    etkisi yok.
+  - `DECISION`: **UPGRADE**. Kod değişikliği gerekmedi — kaldırılmış API taraması boş
+    (`request.connection`, `reply.getResponseTime`, `routerPath`, `reply.res`, `printRoutes`,
+    `app.use`) ve tam paket **33 dosya / 240 test PASS**; typecheck/lint/build exit 0.
 
 ## 7. ADR listesi (her dilimle birlikte yazılır)
 ADR-034 MCP salt-okunur sunucu · ADR-035 worker ve scheduler runtime · ADR-036 kimlik/rol/audit
