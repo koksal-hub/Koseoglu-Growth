@@ -539,3 +539,160 @@ NEW PROPOSAL — Phase 9A: Read-only Company Intelligence Timeline
   - [x] Action flags actualLeadCreated/actualOutreachCreated/actualSendPerformed false
   - [x] Crawler/provider/OAuth/send/canonical CRM write yok
   - [x] Regression, lint, typecheck, migration ve API/web build CI kanıtı
+
+================================================================
+PROGRAM DELTA AYNASI (2026-09-19)
+================================================================
+
+NOT: Aşağıdakiler henüz GitHub Issue DEĞİLDİR; kanonik kaynak
+GROWTH_2026_PROGRAM_PLAN.md §21 (capability matrisi) ve §3.1 (kanonik dilim sırası)'dır.
+docs-only plan PR'ı merge edildikten sonra yalnız **aktif/çok yakın** execution dilimleri için
+GitHub Issue açılacak; o zamana kadar bu bölüm aynadır. Çelişki halinde GitHub Issue ve güncel
+CI kanıtı esastır. (DB-HYGIENE-FORENSIC ayrı bir forensic hattıdır, execution dilimi değildir
+ve `growth_db` mutate edilmez.)
+
+--- DELTA-01 — PR-C migration drift cleanup ---
+- Öncelik: HIGH / MUST / RISK A (DB truth)
+- Sorumlu: Cline
+- Durum: DONE (PR #85 squash merge `7840c35`; CI PASS; local+remote branch silindi)
+- Bağımlılıklar: —
+- Acceptance criteria:
+  - [x] İki composite FK, mevcut DB constraint isimleriyle `map:` edilerek beyan edildi (DDL üretmez)
+  - [x] `rec_exposure_lookup_idx` adı sabitlendi; tek satır forward-only `ALTER INDEX ... RENAME`
+  - [x] DB invariant testleri (5 test) + mutation kanıtı (FK düşünce 2 FAIL, index adı değişince 1 FAIL)
+  - [x] fresh 27/27 · upgrade 26→27 · zero drift · 226 test · lint/typecheck/build
+
+--- DELTA-02 — PR-B2A migration convergence + shadow DB ---
+- Öncelik: HIGH / MUST / RISK A (DB truth) · Kapsam: DB-2, DB-3, DB-4, DB-5, DB-9
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-01 (PR-C merge) + docs-only plan PR merge
+- Acceptance criteria:
+  - [ ] CI 5 katman: history integrity · fresh replay · upgrade replay · schema convergence · DB invariant
+  - [ ] Dedicated/disposable shadow DB + `shadowDatabaseUrl`; isim deseni uymazsa fail-closed
+  - [ ] Applied migration checksum/edit tespiti → FAIL (historical migration immutable)
+  - [ ] Kasten bozulmuş drift fixture'ında CI FAIL, main'de PASS
+  - [ ] ≤63 byte DB object name politikası ve testi
+
+--- DELTA-03 — PR-B2B DB fingerprint + db push guard ---
+- Öncelik: HIGH / MUST / RISK A · Kapsam: DB-6, DB-7
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-02
+- Acceptance criteria:
+  - [ ] Salt-okunur fingerprint: host, DB adı, şema, env, repo/DB migration sayısı, latest repo/DB, missing/unknown, checksum durumu
+  - [ ] Status enum: IN_SYNC / BEHIND / AHEAD / DIVERGED / UNKNOWN; DIVERGED ve prod-benzeri UNKNOWN → fail-closed
+  - [ ] `db push --accept-data-loss` shared/staging/prod-benzeri ortamlarda reddedilir (negatif test)
+  - [ ] `growth_db` mutate edilmez (yalnız rapor)
+
+--- DELTA-04 — PR-D2 Fastify security modernization ---
+- Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-6 (T9)
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-01; T8 (zod 4) GEREKMEZ (type-provider kullanılmıyor — §13 düzeltmesi)
+- Acceptance criteria:
+  - [ ] fastify 5.12.5 + @fastify/helmet 13 + @fastify/cors 11 + @fastify/rate-limit 11 koordineli
+  - [ ] Full regression suite PASS (lint/typecheck/test/build) + davranış değişikliği yok kanıtı
+  - [ ] Dependency değişikliği dependency-gate kaydı ile
+
+--- DELTA-05 — PR-D1 Exposure Guard + Trusted Proxy ---
+- Öncelik: HIGH / MUST / RISK B (public exposure öncesi) · Kapsam: SYS-1, SYS-2
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-04
+- Acceptance criteria:
+  - [ ] Dev/test varsayılan bind `127.0.0.1`; `0.0.0.0` yalnız açık izin + aktif auth/security gate
+  - [ ] Prod-benzeri ortamda HOST/izin yoksa fail-closed
+  - [ ] `trustProxy` körlemesine açılmaz; güvenilen proxy CIDR allowlist + test
+  - [ ] Rate-limit / request IP / forwarded header davranışı test edilir
+
+--- DELTA-06 — PR-D5 Prisma Pool/Timeout + Bounded Readiness ---
+- Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-12 (T4), SYS-3
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-04
+- Acceptance criteria:
+  - [ ] Pool max / connection / idle / transaction / statement timeout / shutdown-drain explicit
+  - [ ] Değerler instance sayısı × pool kapasitesi hesabı + benchmark ile seçilir (tahmin yok)
+  - [ ] `/ready` açık timeout ile; DB yarı-erişilebilirken kısa sürede 503
+  - [ ] Process başına pool bütçesi (api / worker / mcp) kaydı
+
+--- DELTA-07 — PR-D3 Route Auth Metadata + endpoint rate limit ---
+- Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-4, SYS-5
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-05
+- Acceptance criteria:
+  - [ ] `request.url.split('?')[0]` tabanlı muafiyet kaldırılır; explicit metadata/encapsulation
+  - [ ] Business route default = AUTH REQUIRED; public yüzey yalnız health/ready/verified webhook
+  - [ ] Yeni auth'suz route eklenirse test kırılır
+  - [ ] webhook / expensive / internal / auth-sensitive endpoint limitleri ayrı ayrı tanımlı
+
+--- DELTA-08 — PR-D4 API Response Contract / PII Guard ---
+- Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-11
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-07
+- Acceptance criteria:
+  - [ ] `reply.send(await ...)` doğrudan dönen 6 route audit edilir (company-intelligence, customer-lifecycle, dashboard, research-missions)
+  - [ ] Explicit response schema/projection; internal alan sonradan library'ye eklenince API'ye sızmaz
+  - [ ] Şema dışı alan testi kırılır; PII/secret payload'a girmez
+  - [ ] Mevcut response alanları geriye uyumlu kalır
+
+--- DELTA-09 — PR-E2 PG error classifier + report query consolidation ---
+- Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-9, SYS-10
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-06
+- Acceptance criteria:
+  - [ ] Tek merkezde `classifyDbError`: 40001 / 40P01 / 23505 / 23503 / connection / unknown; driver-adapter wrapper tanınır
+  - [ ] 40001 ve 40P01 bounded retry; 23505 generic retry YOK; 23503 retry YOK; unknown throw; retry limiti test edilir
+  - [ ] Retry logu: error class, attempt, operation, elapsed, final result (PII/SQL param yok)
+  - [ ] `collectMetrics` baseline: query count + p95 ölçülür; groupBy/aggregate/kısa snapshot ile azaltılır; davranış değişmez
+
+--- DELTA-10 — PR-E1 Worker activation + lease/heartbeat/fencing ---
+- Öncelik: HIGH / MUST (canlı outbound öncesi) / RISK C · Kapsam: SYS-7, SYS-8, SYS-13
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-09 + L2 worker dilimi
+- Acceptance criteria:
+  - [ ] Worker durumu ölçülür: active / handler registered / last success tick / last failed tick / queue depth / oldest queued job age / dead-letter / stale lease
+  - [ ] Worker yoksa dashboard "çalışıyor" izlenimi vermez
+  - [ ] Lease aşan job ikinci worker tarafından tekrar uygulanmaz (heartbeat veya fencing token)
+  - [ ] External side effect = idempotency key zorunlu
+  - [ ] `onClose` sırası: scheduler → worker → in-flight politikası → DB disconnect
+
+--- DELTA-11 — PR-E3 Observability ---
+- Öncelik: MEDIUM / V1 / RISK C · Kapsam: OBS-1, DAT-3
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: DELTA-10
+- Acceptance criteria:
+  - [ ] request/workflow/recommendation/company/experiment/job id korelasyonu
+  - [ ] model/provider, latency, cost, retry, error class, human override, commercial outcome ölçülür
+  - [ ] PII/secret loglanmaz (redaction testleri); UNKNOWN ≠ ZERO etiket politikası uygulanır
+
+--- DELTA-12 — L6 Revenue Core ---
+- Öncelik: HIGH / MUST / RISK C · Kapsam: REV-1, RET-2, ACQ-8
+- Sorumlu: Cline
+- Durum: TODO
+- Bağımlılıklar: L2 + L3 + L4 gate'leri (plan §4); DELTA-01…DELTA-11
+- Acceptance criteria:
+  - [ ] Teklif motoru (J1) → Opportunity yazımı → teklif→kazanılan→gelir→maliyet→brüt kâr
+  - [ ] GP 30/60/90, ilk→ikinci sevkiyat, sonraki sevkiyat günü, repeat rate ölçülür
+  - [ ] lead→reply→qualified→quote→win→shipment ref→GP→repeat zinciri izlenebilir
+  - [ ] Kısa vadeli etkileşim ile uzun vadeli ekonomik değer ayrılır
+
+--- DELTA-13 — Closed-loop acquisition / retention / experimentation ---
+- Öncelik: MEDIUM / V1 (L6 sonrası) / RISK C · Kapsam: ACQ-1…ACQ-9, DSC-1…DSC-3, EXP-1, EXP-2, RET-1
+- Sorumlu: Cline
+- Durum: TODO (ACQ-1/2/3/6 için read-only MVP paralel hattı serbest; canlı outreach ve autonomous action YOK)
+- Bağımlılıklar: DELTA-12 (actual outcome verisi); EXP/ACQ-5 için L6+ outcome şart
+- Acceptance criteria:
+  - [ ] Opportunity/why-now radar, karar verici, evidence-backed ranking + reason receipt, grounded sales pack
+  - [ ] Experiment registry + baseline/challenger/holdout + exposure/rank log + versiyon kayıtları
+  - [ ] Incrementality/uplift (incremental brüt kâr) ölçüm hattı; personalization-backfire ve kalibrasyon
+  - [ ] İçerik/GEO ölçümü query→page→lead→quote→GP lineage ile bağlanır (vanity metric yok)
+  - [ ] Not: bu dilim için GitHub Issue'lar docs-only plan merge edildikten sonra açılır
+
+
