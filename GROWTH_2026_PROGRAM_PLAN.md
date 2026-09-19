@@ -63,7 +63,7 @@ Not: Bu bölüm ilk kez 2026-09-19 sabah taramasıyla yazıldı. Aşağıdaki de
 
 | Katman | İçerik | Gerekçe | Blast radius | Ön koşul |
 |---|---|---|---|---|
-| L0 | PR #82 merge, #81/#4 karar, main senkron, .env + izole test DB, 4 komut kanıtı | Tek doğruluk kaynağı | LOCAL | — |
+| L0 | PR #82 merge, #81 housekeeping, main senkron, .env + izole test DB, 4 komut kanıtı | Tek doğruluk kaynağı | LOCAL | — |
 | L1 | apps/mcp (stdio, salt-okunur 5 araç), llms.txt + .md yüzeyi, crawler kimliği + robots, CI sertleştirme | Sıfır schema/dış çağrı; mevcut projeksiyon desenini sarar | MODULE | L0 |
 | L2 | apps/worker + handler registry + JobSchedule (cron) + dead-letter alarmı + 08:00 rapor üretimi | Runtime keystone; scheduler olmadan otomasyon ölü kod | CROSS_MODULE + DATA_CONTRACT | L0 |
 | L3 | OIDC/SSO + roller (viewer/operator/approver/admin) + audit log | Yazma/gönderim "kim" kanıtı olmadan uyum üretilemez | CROSS_MODULE + DATA_CONTRACT | L2 |
@@ -105,10 +105,11 @@ autonomous action yok**; L6 sonrası actual quote/shipment/GP/repeat outcome ver
 ## 4. Katman detayları ve kabul kriterleri
 
 ### L0 — Gerçek senkronu
-Dilimler: T1 PR #82 incele + merge · T2 PR #81 kapat (superseded) · T3 PR #4 karar ·
-T4 main senkron (ff-only) · T5 .env + izole test DB (test/sandbox/ci segmentli) ·
-T6 lint/typecheck/test/build kanıtı · T7 STATUS.md güncelleme.
-Kabul: PR #82 MERGED; yerel main ile origin/main eşit; 4 komut PASS (NOT_RUN kalmadı).
+Dilimler: T1 PR #82 incele + merge · T2 PR #81 kapat (superseded) ·
+T3 main senkron (ff-only) · T4 .env + izole test DB (test/sandbox/ci segmentli) ·
+T5 lint/typecheck/test/build kanıtı · T6 STATUS.md güncelleme.
+Kabul: PR #82 MERGED; PR #81 housekeeping kapalı; yerel main ile origin/main eşit; 4 komut PASS (NOT_RUN kalmadı).
+Not: PR #4 açık bir süreç kararıdır ve L0 kapanışını bloklamaz; ayrı karar olarak takip edilir.
 
 ### L1 — Read yüzeyi, agent erişimi, kalite altyapısı
 Dilimler: apps/mcp iskeleti (kendi zod v4 bağımlılığı; API tarafındaki zod v3 değişmez) ·
@@ -235,12 +236,13 @@ actions checkout@v5 ve setup-node@v5 (her ikisi runs.using: node24).
 | T6 | ESLint 8 → 10 flat config + typed lint (projectService) | Orta | T3 |
 | T7 | Vitest 1 → 5 (+jsdom); projects ile api ve web ayrımı (F-09 çözümü) | Orta | T6 |
 | T8 | Zod 3 → 4 (iki adımlı: ^3.22.4 → ^3.25, zod/v4 alt yolu ile → ^4); ardından opsiyonel fastify-type-provider-zod ^7 ve @fastify/swagger 9 (API9 envanteri) | Orta-Yüksek | T7 |
-| T9 | Fastify 4 → 5.12.5 + helmet 13 + cors 11 + rate-limit 11 (koordineli yükseltme) | Orta-Yüksek | T8 |
+| T9 | Fastify 4 → 5.12.5 + helmet 13 + cors 11 + rate-limit 11 (koordineli yükseltme) | Orta-Yüksek | — (T8 yalnız type-provider/swagger benimsenirse ilişkili) |
 | T10 | React 18 → 19 (5 paket: react, react-dom, @types/react, @types/react-dom, @testing-library/react) · Prisma 7 → 8 (RC tamamlanınca) · pnpm 11 → 12 | Yüksek | T7 |
 
-Sıra gerekçesi: T0–T2 davranışı değiştirmeyen gürültü ve kalite işleridir; T8 (zod) T9 (fastify)
-dan önce zorunludur çünkü type-provider zinciri zod sürümüne bağlıdır; React 19, Prisma 8 ve
-pnpm 12 en sona bırakılır (ölçülmüş fayda şartı).
+Sıra gerekçesi: T0–T2 davranışı değiştirmeyen gürültü ve kalite işleridir; mevcut kodda
+`fastify-type-provider-zod` kullanılmadığı için T8 (zod) ile T9 (fastify) bağımsız ilerleyebilir.
+T8 yalnız type-provider/swagger benimsenirse T9 ile ilişkili ön koşul haline gelir; React 19,
+Prisma 8 ve pnpm 12 en sona bırakılır (ölçülmüş fayda şartı).
 
 **§21 cross-reference (capability ↔ T dilimi):**
 T3 ← SYS-14 (node runtime/types + min-runtime CI) · T4 ← SYS-12 + SYS-3 (pool/timeout + bounded readiness) ·
