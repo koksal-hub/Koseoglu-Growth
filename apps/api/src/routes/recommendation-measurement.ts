@@ -33,14 +33,28 @@ const outcomeSchema = z
     outcomeKey: keySchema,
     outcomeType: outcomeTypeSchema,
     occurredAt: z.coerce.date(),
-    valueMinor: z.number().int().min(0).max(2_000_000_000).optional(),
+    // Money contract (PR-BC1): GROSS_PROFIT is a signed economic fact (a
+    // shipment can lose money), every other outcome value is a magnitude and
+    // stays non-negative. The same rule is enforced in
+    // recordRecommendationOutcome and by a matching PostgreSQL CHECK, so the
+    // three layers cannot drift apart.
+    valueMinor: z.number().int().min(-2_000_000_000).max(2_000_000_000).optional(),
     currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).optional(),
     sourceRef: keySchema.optional(),
     sourceType: outcomeSourceTypeSchema.optional(),
     sourceId: keySchema.optional(),
     recordedBy: keySchema
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    if (value.valueMinor !== undefined && value.valueMinor < 0 && value.outcomeType !== 'GROSS_PROFIT') {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['valueMinor'],
+        message: 'valueMinor must be non-negative unless the outcome type is GROSS_PROFIT'
+      });
+    }
+  });
 const listSchema = z
   .object({
     limit: z.coerce.number().int().min(1).max(100).default(50),

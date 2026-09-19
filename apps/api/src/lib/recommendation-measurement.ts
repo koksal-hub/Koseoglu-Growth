@@ -299,6 +299,17 @@ export async function recordRecommendationOutcomeProvenanceReview(input: {
   }
 }
 
+/**
+ * Records one explicit commercial outcome for an exposure. Outcomes are never
+ * inferred from scores: a caller must state the outcome type, when it happened
+ * and who recorded it.
+ *
+ * Money contract (PR-BC1): GROSS_PROFIT may be negative (a shipment can lose
+ * money) and always carries valueMinor + currency; every other type is
+ * non-negative and an unknown amount stays NULL (UNKNOWN is not ZERO). A human
+ * note is not finance truth, so GROSS_PROFIT requires a commercial or
+ * operations record.
+ */
 export async function recordRecommendationOutcome(input: {
   exposureId: string;
   outcomeKey: string;
@@ -322,8 +333,22 @@ export async function recordRecommendationOutcome(input: {
   if ((input.sourceType === undefined) !== (input.sourceId === undefined)) {
     throw new RecommendationMeasurementError(400, 'sourceType and sourceId must be provided together');
   }
-  if (input.valueMinor !== undefined && (!Number.isInteger(input.valueMinor) || input.valueMinor < 0 || input.valueMinor > 2_000_000_000)) {
-    throw new RecommendationMeasurementError(400, 'valueMinor must be a non-negative integer within the supported range');
+  // Money contract (PR-BC1):
+  //  - GROSS_PROFIT is a signed economic fact: a shipment can lose money.
+  //  - Every other outcome value is a magnitude, so it stays non-negative.
+  //  - The bound keeps the value inside int4, so no storage change is needed.
+  //  - An unknown gross profit is expressed as *no outcome row*, never as 0.
+  const valueLimit = 2_000_000_000;
+  if (input.valueMinor !== undefined) {
+    if (!Number.isInteger(input.valueMinor) || Math.abs(input.valueMinor) > valueLimit) {
+      throw new RecommendationMeasurementError(400, 'valueMinor must be an integer within the supported range');
+    }
+    if (input.outcomeType !== 'GROSS_PROFIT' && input.valueMinor < 0) {
+      throw new RecommendationMeasurementError(
+        400,
+        'valueMinor must be non-negative unless the outcome type is GROSS_PROFIT'
+      );
+    }
   }
   const valueMinor = input.valueMinor ?? null;
   const currency = input.currency?.trim().toUpperCase() ?? null;
@@ -334,6 +359,15 @@ export async function recordRecommendationOutcome(input: {
   if (valueMinor !== null && currency === null) throw new RecommendationMeasurementError(400, 'valueMinor requires currency');
   if (input.outcomeType === 'GROSS_PROFIT' && (valueMinor === null || currency === null)) {
     throw new RecommendationMeasurementError(400, 'GROSS_PROFIT requires valueMinor and currency');
+  }
+  // Actual finance truth cannot come from a free-text human note; it needs a
+  // commercial or operations record (MYLojistik shipment receipts will arrive
+  // as OPERATIONS_RECORD in phase L6).
+  if (input.outcomeType === 'GROSS_PROFIT' && input.sourceType === 'HUMAN_NOTE') {
+    throw new RecommendationMeasurementError(
+      400,
+      'GROSS_PROFIT cannot be sourced from a human note; it requires a commercial or operations record'
+    );
   }
 
   const exposure = await prisma.recommendationExposure.findUnique({ where: { id: input.exposureId } });

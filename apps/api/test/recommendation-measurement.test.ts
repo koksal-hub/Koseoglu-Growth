@@ -156,6 +156,97 @@ describe('recommendation exposure and outcome measurement', () => {
     });
     expect(grossProfit.statusCode).toBe(201);
 
+    // PR-BC1: a real loss must be recordable, non-profit magnitudes stay
+    // non-negative, and finance truth cannot come from a human note.
+    const negativeGrossProfit = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
+      payload: {
+        outcomeKey: `${RUN_ID}-gross-profit-loss`,
+        outcomeType: 'GROSS_PROFIT',
+        occurredAt: new Date().toISOString(),
+        valueMinor: -450000,
+        currency: 'TRY',
+        sourceRef: `${RUN_ID}-operations-record`,
+        sourceType: 'OPERATIONS_RECORD',
+        sourceId: `${RUN_ID}-shipment-1`,
+        recordedBy: `${RUN_ID}-finance-reviewer`
+      }
+    });
+    expect(negativeGrossProfit.statusCode).toBe(201);
+    expect(
+      payload<{ outcome: { valueMinor: number; currency: string; outcomeType: string } }>(negativeGrossProfit.payload)
+        .outcome
+    ).toMatchObject({ valueMinor: -450000, currency: 'TRY', outcomeType: 'GROSS_PROFIT' });
+
+    const negativeHumanAction = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
+      payload: {
+        outcomeKey: `${RUN_ID}-negative-human-action`,
+        outcomeType: 'HUMAN_ACTION',
+        occurredAt: new Date().toISOString(),
+        valueMinor: -1,
+        currency: 'TRY',
+        sourceRef: `${RUN_ID}-note`,
+        sourceType: 'HUMAN_NOTE',
+        sourceId: `${RUN_ID}-note-negative`,
+        recordedBy: `${RUN_ID}-operator`
+      }
+    });
+    expect(negativeHumanAction.statusCode).toBe(400);
+
+    const grossProfitFromHumanNote = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
+      payload: {
+        outcomeKey: `${RUN_ID}-gross-profit-human-note`,
+        outcomeType: 'GROSS_PROFIT',
+        occurredAt: new Date().toISOString(),
+        valueMinor: 100000,
+        currency: 'TRY',
+        sourceRef: `${RUN_ID}-finance-note`,
+        sourceType: 'HUMAN_NOTE',
+        sourceId: `${RUN_ID}-note-gp`,
+        recordedBy: `${RUN_ID}-operator`
+      }
+    });
+    expect(grossProfitFromHumanNote.statusCode).toBe(400);
+
+    const outOfRangeValue = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
+      payload: {
+        outcomeKey: `${RUN_ID}-out-of-range-value`,
+        outcomeType: 'GROSS_PROFIT',
+        occurredAt: new Date().toISOString(),
+        valueMinor: 2000000001,
+        currency: 'TRY',
+        sourceRef: `${RUN_ID}-operations-record`,
+        sourceType: 'OPERATIONS_RECORD',
+        sourceId: `${RUN_ID}-shipment-2`,
+        recordedBy: `${RUN_ID}-finance-reviewer`
+      }
+    });
+    expect(outOfRangeValue.statusCode).toBe(400);
+
+    // Unknown is not zero: an outcome without a measured value stores NULL.
+    const unknownValue = await server.inject({
+      method: 'POST',
+      url: `/api/recommendation-exposures/${exposure.id}/outcomes`,
+      payload: {
+        outcomeKey: `${RUN_ID}-unknown-value`,
+        outcomeType: 'HUMAN_ACTION',
+        occurredAt: new Date().toISOString(),
+        sourceRef: `${RUN_ID}-operations-record`,
+        sourceType: 'OPERATIONS_RECORD',
+        sourceId: `${RUN_ID}-shipment-3`,
+        recordedBy: `${RUN_ID}-operator`
+      }
+    });
+    expect(unknownValue.statusCode).toBe(201);
+    expect(payload<{ outcome: { valueMinor: number | null } }>(unknownValue.payload).outcome.valueMinor).toBeNull();
+
     const event = await prisma.event.create({
       data: {
         type: 'LEAD_CREATED',
