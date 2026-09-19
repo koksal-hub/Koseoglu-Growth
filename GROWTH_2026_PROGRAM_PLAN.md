@@ -62,18 +62,19 @@ Not: Bu bölüm ilk kez 2026-09-19 sabah taramasıyla yazıldı. Aşağıdaki de
 **Truth refresh — 2026-09-19 akşam (PR #90 sonrası).** Yukarıdaki satırlar sabahki taramanın
 kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler şunlardır:
 
-- **Git:** latest code-bearing baseline = `5b0450bdeb72aafd995faba241b6e0f0b3683954` (current
+- **Git:** latest code-bearing baseline = `225776fffe098ef6a0a7fd71dbeda7f4c0f40bb2` (current
   repository HEAD doküman commit'leriyle ilerleyebilir); MERGED: #87 (B2A
   migration convergence gate + shadow replay + disposable guard), #88 (BC1 + BC6 money/value
   kontratı), #89 (BC2 + BC3 identity scope + domain evidence), #90 (BC4 lifecycle shipment truth),
   #91 (docs truth refresh), #92 (PR #4 kapanış kaydı), #93 (PR-B2B DB-6 fingerprint + DB-7 db push
-  guard), #95 (PR-D2 Fastify 5 + koordineli güvenlik eklentileri); açık PR **yok** (PR #4
+  guard), #95 (PR-D2 Fastify 5 + koordineli güvenlik eklentileri), #97 (PR-D1 fail-closed exposure +
+  trusted proxy + BC5 evidence); açık PR **yok** (PR #4
   2026-09-19'da superseded kapatıldı; branch
   `chore/process-review-gate` arşiv olarak korunuyor).
 - **Migration:** **29** (fresh 29/29 · upgrade 28→29 · zero drift · DB safety gate **25/25 PASS** ·
   ≤63 byte object-name politikası). `growth_db` bu çalışmada mutate edilmedi (3 migration, yalnız
   salt-okunur fingerprint).
-- **Test:** **33 API+web dosya / 240 test PASS** (fresh 29/29 DB'de); lint, typecheck, build,
+- **Test:** **35 API+web dosya / 258 test PASS** (fresh 29/29 DB'de); lint, typecheck, build,
   `prisma validate/generate` temiz; `git diff --check` exit 0.
 - **Lifecycle:** policy **`customer-lifecycle-signals-v2`**; `REPEAT` artık operasyon sevkiyat
   truth'una bağlıdır (pipeline etiketi tek başına yetmez) → **L6 shipment receipt bağımlılığı
@@ -87,8 +88,14 @@ kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler
   migration değişmedi. Merge sonrası frozen install + lint/typecheck/build tekrar PASS; yerel
   full suite, konfigüre disposable DB 25/29 BEHIND ve mutation yetkisi olmadığı için yeniden
   koşulmadı; fresh DB full-suite kapanış kanıtı GitHub CI'dır.
-- **Sıradaki uygulama dilimi:** **PR-D1** (Exposure Guard + Trusted Proxy + BC5 PORT/HOST;
-  SYS-1/SYS-2). Kanonik sıra değişmedi; TASKS.md DELTA aynası aynı gün hizalandı.
+- **DELTA-05 (PR-D1) DONE:** PR **#97** squash `225776f` · CI run **`35469382378` PASS**
+  (25/25 step) · **35 dosya / 258 test** · fail-closed exposure policy (`HOST` /
+  `ALLOW_EXTERNAL_BIND`; dev/test `127.0.0.1`; production'da açık `HOST` şartı; `PORT=0` yalnız
+  test) + trusted proxy CIDR allowlist (`trustProxy: true` ve hop sayımı yok; boş liste → forwarded
+  header kimlik sayılmaz) + BC5 startup/config evidence. Dependency/lockfile/migration/DB
+  değişikliği yok; yerel full suite DB oluşturma yetkisi olmadığı için NOT_RUN, kapanış kanıtı CI'dır.
+- **Sıradaki uygulama dilimi:** **PR-D5** (Prisma pool/timeout + bounded readiness; DELTA-06 /
+  SYS-12 / SYS-3). Kanonik sıra değişmedi; TASKS.md DELTA aynası aynı gün hizalandı.
 
 
 ## 3. Sıralama (bağlayıcı)
@@ -110,7 +117,7 @@ kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler
 **L0 KAPANDI (kanıtlı):** PR #82 MERGED · #81 CLOSED (superseded) · main = origin/main = 7840c35 ·
 `.env` + izole test DB'leri mevcut · lint/typecheck/test/build kanıtları alındı (CI + lokal).
 
-Güncel git truth: latest code-bearing baseline = `5b0450b` (§2 truth refresh; current HEAD docs commit'leriyle ilerleyebilir) — L0 kapanışının kendi kanıtı tarihsel
+Güncel git truth: latest code-bearing baseline = `225776f` (§2 truth refresh; current HEAD docs commit'leriyle ilerleyebilir) — L0 kapanışının kendi kanıtı tarihsel
 olarak korunur; kanonik sıra ve durumlar aşağıdaki tabloda güncellenir.
 
 Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capability kimlikleriyle):
@@ -121,7 +128,8 @@ Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capabilit
 | 2 | **PR-B2A** (#87, MERGED) | DB-2, DB-3, DB-4, DB-5, DB-9 | PR-C | gate 11/11 PASS · fresh 29/29 · upgrade 28→29 · zero drift · bozuk drift fixture'ında FAIL |
 | 3 | **PR-B2B** (#93, MERGED) | DB-6, DB-7 | PR-B2A (#87 MERGED) | gate 25/25 PASS (8 fingerprint + 6 db push kanıtı) · CI 25/25 step · full suite 33 dosya / 240 test |
 | 4 | **PR-D2** (#95, MERGED) | SYS-6 (T9) | PR-C | Fastify 5.12.5 + coordinated plugins · dependency gate · fresh 29/29 · 240 test · CI PASS |
-| 5 | **PR-D1** (Exposure/Proxy; sıradaki dilim) | SYS-1, SYS-2 | PR-D2 (#95 MERGED) | bind adresi + CIDR/forwarded header testleri |
+| 5 | **PR-D1** (#97, MERGED) | SYS-1, SYS-2 | PR-D2 (#95 MERGED) | gate 25/25 · CI 35 dosya / 258 test · exposure/proxy testleri + BC5 evidence |
+| 6 | **PR-D5** (Prisma Pool/Timeout + Bounded Readiness; sıradaki dilim) | SYS-12 (T4), SYS-3 | PR-D2 (#95 MERGED) | pool benchmark + `/ready` timeout testi |
 | 6 | **PR-D5** (Pool/Timeout + Readiness) | SYS-12 (T4), SYS-3 | PR-D2 | pool benchmark + `/ready` timeout testi |
 | 7 | **PR-D3** (Route Auth + Rate Limit) | SYS-4, SYS-5 | PR-D1 | auth metadata testi + endpoint bazlı limitler |
 | 8 | **PR-D4** (Response Contract / PII Guard) | SYS-11 | PR-D3 | şema dışı alan testinin kırılması |
@@ -470,6 +478,12 @@ B2B lojistiğe aktarım ayrı bir pilot ve ölçüm gerektirir.
   koordineli güvenlik eklentileri dependency-gate kaydıyla merge edildi (`5b0450b`); CI fresh
   29/29 + 33 dosya / 240 test + lint/typecheck/build PASS. Sıradaki dilim **PR-D1** (SYS-1/SYS-2,
   BC5 PORT/HOST). Latest code-bearing baseline etiketi `5b0450b` olarak ilerledi.
+- Bölüm 2 + 3.1 + 21 (2026-09-19, PR #97 sonrası): **DELTA-05 DONE** — fail-closed exposure policy
+  (`HOST`/`ALLOW_EXTERNAL_BIND`, dev/test `127.0.0.1`, production'da açık `HOST` şartı, `PORT=0`
+  yalnız test) + trusted proxy CIDR allowlist + BC5 startup/config evidence (#97, `225776f`, CI
+  35 dosya / 258 test, 25/25 step). **SYS-1 ve SYS-2 matriste DONE**; sıradaki dilim **PR-D5**.
+  Latest code-bearing baseline etiketi `225776f` olarak ilerledi. Yerel full suite DB oluşturma
+  yetkisi olmadığı için NOT_RUN; kapanış kanıtı GitHub CI'dır.
 
 ## 21. Capability & Revenue-Enabler Matrix (2026-09-19 delta)
 
@@ -490,8 +504,8 @@ Verdict dağılımı (**46 capability**): EXISTING 4 · PARTIAL 19 · MISSING 22
 
 | ID | Capability | Verdict | Pri | Dilim | Müşteri/gelir mekanizması | Kabul & KPI · Risk |
 |---|---|---|---|---|---|---|
-| SYS-1 | **Exposure Guard** — dev/test varsayılan `127.0.0.1`; `0.0.0.0` yalnız açık izin + aktif auth/security gate ile | MISSING | MUST | PR-D1 | Yanlış NODE_ENV/eksik auth ile API'nin LAN/internete açılmasını önler → müşteri verisi + servis kesintisi | K: dev bind `127.0.0.1`, prod'da HOST yoksa fail-closed · R: açık kalma; dep env şeması |
-| SYS-2 | **Trusted Proxy Policy** — Plesk/nginx arkasında gerçek client IP; kör `trustProxy` yok, güvenilen CIDR allowlist | MISSING | MUST | PR-D1 | Yanlış client IP → rate-limit/auth/audit kayıtları yanlış → abuse veya yanlış bloklama | K: forwarded header + `request.ip` testi · R: rate-limit bypass; dep SYS-1, SYS-5 |
+| SYS-1 | **Exposure Guard** — dev/test varsayılan `127.0.0.1`; `0.0.0.0` yalnız açık izin + aktif auth/security gate ile | DONE | MUST | PR-D1 (#97, `225776f`) | Yanlış NODE_ENV/eksik auth ile API'nin LAN/internete açılmasını önler → müşteri verisi + servis kesintisi | K: dev bind `127.0.0.1`, prod'da HOST yoksa fail-closed · R: açık kalma; dep env şeması |
+| SYS-2 | **Trusted Proxy Policy** — Plesk/nginx arkasında gerçek client IP; kör `trustProxy` yok, güvenilen CIDR allowlist | DONE | MUST | PR-D1 (#97, `225776f`) | Yanlış client IP → rate-limit/auth/audit kayıtları yanlış → abuse veya yanlış bloklama | K: forwarded header + `request.ip` testi · R: rate-limit bypass; dep SYS-1, SYS-5 |
 | SYS-3 | **Bounded Readiness** — `/ready` DB kontrolü açık timeout ile | MISSING | MUST | PR-D5 | DB yarı-erişilebilirken instance kısa sürede 503 döner → bozuk instance müşteri trafiği almaz | K: yavaş DB'de < N sn 503 · R: LB yanılgısı; dep SYS-12 |
 | SYS-4 | **Route Auth Metadata** — raw `request.url.split('?')[0]` kaldırılır; public/private explicit metadata/encapsulation; business route default DENY | MISSING | MUST | PR-D3 | Auth bypass → müşteri/veri sızıntısı; yeni route sessizce public olamaz | K: auth'suz yeni route testi kırar · R: sessiz public endpoint; dep L3 |
 | SYS-5 | **Rate-limit Policy** — webhook / expensive (ranking, research) / internal / auth ayrı limitler | MISSING | MUST | PR-D3 | Tek global limit → pahalı endpoint veya webhook seli tüm API'yi düşürür → teklif gecikir | K: endpoint bazlı limit testleri · R: flood; dep SYS-2 |

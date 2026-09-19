@@ -552,13 +552,14 @@ CI kanıtı esastır. (DB-HYGIENE-FORENSIC ayrı bir forensic hattıdır, execut
 ve `growth_db` mutate edilmez.)
 
 NOT (2026-09-19, PR #95 sonrası): DELTA numaralandırması ve §3.1 aynası korunur; **DELTA-03
-(PR-B2B) DONE** ve **DELTA-04 (PR-D2) DONE**, kanonik sıradaki dilim **DELTA-05 (PR-D1)**.
+(PR-B2B) DONE**, **DELTA-04 (PR-D2) DONE** ve **DELTA-05 (PR-D1) DONE**, kanonik sıradaki dilim
+**DELTA-06 (PR-D5)**.
 Bu arada kanonik tabloda yer almayan **BC integrity serisi**
 tamamlandı: **BC1+BC6 (PR #88)** money/value kontratı (signed brüt kâr + value/currency kontratı) ·
 **BC2+BC3 (PR #89)** identity scope + domain evidence (domain artık kimlik değil, vergi kimliği
 jurisdiction-scoped) · **BC4 (PR #90)** lifecycle shipment truth (REPEAT yalnız gerçek sevkiyat
 truth'undan; pipeline etiketi yetmez). **BC5 (PORT/HOST evidence tipi) PR-D1 kapsamına devredildi.**
-Güncel truth: latest code-bearing baseline `5b0450b` (current HEAD docs commit'leriyle ilerleyebilir), 29 migration, 33 dosya / 240 test, DB safety gate 25/25, lifecycle policy
+Güncel truth: latest code-bearing baseline `225776f` (current HEAD docs commit'leriyle ilerleyebilir), 29 migration, 35 dosya / 258 test, DB safety gate 25/25, lifecycle policy
 `customer-lifecycle-signals-v2`, `growth_db` mutate edilmedi. **PR #4 (Process + Architecture Review
 Gate) 2026-09-19'da superseded kapatıldı** (branch `chore/process-review-gate` tarihsel arşiv; kod/CI
 içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilinçli taşınmadı).
@@ -618,19 +619,21 @@ içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilin�
 --- DELTA-05 — PR-D1 Exposure Guard + Trusted Proxy ---
 - Öncelik: HIGH / MUST / RISK B (public exposure öncesi) · Kapsam: SYS-1, SYS-2
 - Sorumlu: Cline
-- Durum: IN REVIEW (kod hazır: exposure + trusted-proxy policy + BC5 startup evidence; focused
-  38/38, lint/typecheck/build PASS; CI ve merge bekleniyor — DONE kaydı ayrı docs PR'ında yazılır)
+- Durum: DONE (PR #97 squash merge `225776f`; CI run `35469382378` → 25/25 step success,
+  35 dosya / 258 test PASS; merged branch silindi)
 - Bağımlılıklar: DELTA-04
 - Acceptance criteria:
-  - [ ] Dev/test varsayılan bind `127.0.0.1`; `0.0.0.0` yalnız açık izin + aktif auth/security gate
-  - [ ] Prod-benzeri ortamda HOST/izin yoksa fail-closed
-  - [ ] `trustProxy` körlemesine açılmaz; güvenilen proxy CIDR allowlist + test
-  - [ ] Rate-limit / request IP / forwarded header davranışı test edilir
+  - [x] Dev/test varsayılan bind `127.0.0.1`; `0.0.0.0` yalnız açık izin + aktif auth/security gate
+  - [x] Prod-benzeri ortamda HOST/izin yoksa fail-closed
+  - [x] `trustProxy` körlemesine açılmaz; güvenilen proxy CIDR allowlist + test
+  - [x] Rate-limit / request IP / forwarded header davranışı test edilir
+  - [x] BC5 PORT/HOST evidence: typed, non-persistent, secret-free startup/config kaydı (migration/model uydurulmadı)
+  - [x] Kanıt (2026-09-19): focused 5 dosya / 38 test · CI 35 dosya / 258 test · lint/typecheck/build exit 0
 
 --- DELTA-06 — PR-D5 Prisma Pool/Timeout + Bounded Readiness ---
 - Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-12 (T4), SYS-3
 - Sorumlu: Cline
-- Durum: TODO
+- Durum: TODO (sıradaki dilim — DELTA-05 DONE/`225776f`)
 - Bağımlılıklar: DELTA-04
 - Acceptance criteria:
   - [ ] Pool max / connection / idle / transaction / statement timeout / shutdown-drain explicit

@@ -18,13 +18,14 @@ ACTIVE BRANCH: `main` (merged from `codex/daily-dashboard-v1`)
 Yukarıdaki "L0 durumu" satırı 2026-09-19 öğleden önceki kayıttır ve tarihsel olarak korunur;
 aşağıdakiler kanonik güncel truth'tur.
 
-- **Git:** latest code-bearing baseline = `5b0450bdeb72aafd995faba241b6e0f0b3683954` (son **kod**
+- **Git:** latest code-bearing baseline = `225776fffe098ef6a0a7fd71dbeda7f4c0f40bb2` (son **kod**
   taşıyan merge); current repository HEAD doküman commit'leriyle ilerleyebilir, bu yüzden her docs
   commit'inde SHA yeniden yazılmaz — etiket esastır. MERGED: **#87** (B2A migration convergence gate + shadow replay + disposable guard) ·
   **#88** (BC1 + BC6 money/value kontratı) · **#89** (BC2 + BC3 identity scope + domain evidence) ·
   **#90** (BC4 lifecycle shipment truth) · **#91** (docs truth refresh) · **#92** (PR #4 kapanış
   kaydı) · **#93** (PR-B2B: DB-6 fingerprint + DB-7 db push guard) · **#95** (PR-D2:
-  Fastify 5 + koordineli güvenlik eklentileri). Açık PR: **yok**
+  Fastify 5 + koordineli güvenlik eklentileri) · **#97** (PR-D1: fail-closed exposure + trusted
+  proxy policy + BC5 evidence). Açık PR: **yok**
   (PR #4 kapatıldı — aşağıdaki madde). Açık Issue yok.
 - **Migration:** **29** — fresh **29/29** · upgrade **28→29** · zero drift · DB safety gate
   **25/25 PASS** (B2A 11 + DB-6 fingerprint 8 + DB-7 db push 6 kanıtı) · ≤63 byte object-name
@@ -54,19 +55,21 @@ aşağıdakiler kanonik güncel truth'tur.
   `@fastify/cors` **11.3.0**, `@fastify/rate-limit` **11.2.0** · fresh 29/29,
   fingerprint `IN_SYNC`, DB safety kanıtları, **33 dosya / 240 test**, lint/typecheck/build PASS.
   Uygulama kaynak kodu ve migration değişmedi; dependency-gate kaydı plan §6'da.
-- **DELTA-05 (PR-D1) IN REVIEW — 2026-09-19:** fail-closed **exposure policy** (`HOST`,
-  `ALLOW_EXTERNAL_BIND`; dev/test varsayılanı `127.0.0.1`; production'da açık `HOST` şartı;
-  `PORT=0` yalnız test) + **trusted proxy policy** (`TRUST_PROXY_CIDRS` CIDR allowlist;
-  `trustProxy: true` ve hop sayımı yok; boş liste → forwarded header kimlik sayılmaz) + **BC5
-  startup/config evidence** (host, port, bindScope, externalBindExplicitlyAllowed,
-  trustProxyEnabled, trustedProxyCount, nodeEnv). Kod yazıldı: focused **38/38**, lint/typecheck/
-  build PASS, migration yok. CI ve merge bekleniyor — **DONE kaydı bu PR merge edildikten sonra
-  ayrı docs PR'ında yazılır.**
+- **DELTA-05 (PR-D1) DONE — 2026-09-19:** PR **#97** squash `225776f` · CI run **`35469382378`
+  PASS** (**25/25 step success**) · **35 dosya / 258 test PASS** (fresh 29/29 + fingerprint
+  `IN_SYNC` + negatif kanıtlar dahil) · focused **38/38** · lint/typecheck/build PASS.
+  İçerik: fail-closed **exposure policy** (`HOST`, `ALLOW_EXTERNAL_BIND`; dev/test varsayılanı
+  `127.0.0.1`; production'da açık `HOST` şartı; `PORT=0` yalnız test) + **trusted proxy policy**
+  (`TRUST_PROXY_CIDRS` CIDR allowlist; `trustProxy: true` ve hop sayımı yok; boş liste → forwarded
+  header kimlik sayılmaz) + **BC5 startup/config evidence** (host, port, bindScope,
+  externalBindExplicitlyAllowed, trustProxyEnabled, trustedProxyCount, nodeEnv).
+  **Dependency, lockfile, migration, CI ve DB değişikliği yok** (29 migration sabit; `growth_db`
+  = 3, bu dilimde hiç DB oluşturulmadı/silinmedi).
   Merge sonrası frozen install + lint/typecheck/build tekrar PASS; yerel full suite yeniden
   koşulmadı (konfigüre disposable DB salt-okunur kontrolde 25/29 BEHIND ve mutation yetkisi yoktu),
   bu nedenle full-suite kapanış kanıtı fresh DB kullanan GitHub CI'dır.
-- **Sıradaki uygulama dilimi:** **PR-D1** (Exposure Guard + Trusted Proxy + BC5 PORT/HOST;
-  DELTA-05 / SYS-1 / SYS-2).
+- **Sıradaki uygulama dilimi:** **PR-D5** (Prisma pool/timeout + bounded readiness;
+  DELTA-06 / SYS-12 / SYS-3).
 - **Kanonik order (değişmedi):** B2B → D2 → D1 → D5 → D3 → D4 → E2 → E1 → E3 → L6
   (tek sahip: `GROWTH_2026_PROGRAM_PLAN.md` §3.1; TASKS.md DELTA aynası hizalı).
 
