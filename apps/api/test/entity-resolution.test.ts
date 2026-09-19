@@ -4,6 +4,7 @@ import {
   findDuplicateCompany,
   isFreeEmailProvider,
   normalizeCompanyName,
+  normalizeCountryCode,
   normalizeDomain,
   normalizeEmail,
   normalizePhone,
@@ -129,6 +130,7 @@ describe('findDuplicateCompany', () => {
       normalizedName: normalizeCompanyName('Köseoğlu Lojistik'),
       taxNumber: '1234567890',
       domain: 'koseoglulojistik.com',
+      country: 'TR',
       phone: '+902125550000',
       emailDomain: 'koseoglulojistik.com',
       address: 'Atatürk Cad. No:1 İstanbul'
@@ -140,13 +142,37 @@ describe('findDuplicateCompany', () => {
       {
         name: 'Completely Different Name Ltd',
         taxNumber: '123-456-7890',
-        domain: 'other-domain.com'
+        domain: 'other-domain.com',
+        country: 'TR'
       },
       existing
     );
     expect(result?.reason).toBe('TAX_NUMBER');
     expect(result?.candidate.id).toBe('company-1');
     expect(result?.confidence).toBe(1);
+  });
+
+  it('does not claim tax identity when the jurisdiction differs or is unknown (BC3)', () => {
+    const differentCountry = findDuplicateCompany(
+      { name: 'Different Country GmbH', taxNumber: '1234567890', country: 'DE' },
+      existing
+    );
+    expect(differentCountry?.reason ?? null).not.toBe('TAX_NUMBER');
+
+    const unknownCountry = findDuplicateCompany(
+      { name: 'Unknown Jurisdiction', taxNumber: '123-456-7890' },
+      existing
+    );
+    expect(unknownCountry?.reason ?? null).not.toBe('TAX_NUMBER');
+  });
+
+  it('treats a domain match as evidence rather than identity (BC2)', () => {
+    const result = findDuplicateCompany(
+      { name: 'Sibling Legal Entity', domain: 'koseoglulojistik.com' },
+      existing
+    );
+    expect(result?.reason).toBe('DOMAIN');
+    expect(result?.confidence).toBeLessThan(1);
   });
 
   it('falls back to domain when tax number is absent', () => {
@@ -227,5 +253,16 @@ describe('findDuplicateCompany', () => {
       existing
     );
     expect(result).toBeNull();
+  });
+});
+
+describe('normalizeCountryCode', () => {
+  it('canonicalizes a 2-letter country code and refuses a malformed one (BC3)', () => {
+    expect(normalizeCountryCode(' tr ')).toBe('TR');
+    expect(normalizeCountryCode('de')).toBe('DE');
+    expect(normalizeCountryCode('Türkiye')).toBeNull();
+    expect(normalizeCountryCode('TUR')).toBeNull();
+    expect(normalizeCountryCode('')).toBeNull();
+    expect(normalizeCountryCode(null)).toBeNull();
   });
 });

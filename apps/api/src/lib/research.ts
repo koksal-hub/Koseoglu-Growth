@@ -3,6 +3,7 @@ import { prisma } from './prisma';
 import {
   findDuplicateCompany,
   normalizeCompanyName,
+  normalizeCountryCode,
   normalizeDomain,
   normalizePhone,
   normalizeTaxNumber
@@ -198,10 +199,16 @@ export async function addResearchCandidate(input: AddResearchCandidateInput) {
       domain: true,
       phone: true,
       emailDomain: true,
-      address: true
+      address: true,
+      country: true
     }
   });
-  const match = findDuplicateCompany(normalizedProposal, existingCompanies);
+  // BC3: identity claims need a canonical jurisdiction, so the matcher receives
+  // the normalized country code while the stored proposal keeps the raw value.
+  const match = findDuplicateCompany(
+    { ...normalizedProposal, country: normalizeCountryCode(normalizedProposal.country) },
+    existingCompanies
+  );
 
   return prisma.$transaction(async (tx) => {
     const candidate = await tx.researchCandidate.create({
