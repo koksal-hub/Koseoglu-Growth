@@ -694,5 +694,3 @@ ve `growth_db` mutate edilmez.)
   - [ ] Incrementality/uplift (incremental brüt kâr) ölçüm hattı; personalization-backfire ve kalibrasyon
   - [ ] İçerik/GEO ölçümü query→page→lead→quote→GP lineage ile bağlanır (vanity metric yok)
   - [ ] Not: bu dilim için GitHub Issue'lar docs-only plan merge edildikten sonra açılır
-
-
