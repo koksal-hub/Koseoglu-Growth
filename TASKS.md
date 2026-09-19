@@ -618,7 +618,8 @@ içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilin�
 --- DELTA-05 — PR-D1 Exposure Guard + Trusted Proxy ---
 - Öncelik: HIGH / MUST / RISK B (public exposure öncesi) · Kapsam: SYS-1, SYS-2
 - Sorumlu: Cline
-- Durum: TODO
+- Durum: IN REVIEW (kod hazır: exposure + trusted-proxy policy + BC5 startup evidence; focused
+  38/38, lint/typecheck/build PASS; CI ve merge bekleniyor — DONE kaydı ayrı docs PR'ında yazılır)
 - Bağımlılıklar: DELTA-04
 - Acceptance criteria:
   - [ ] Dev/test varsayılan bind `127.0.0.1`; `0.0.0.0` yalnız açık izin + aktif auth/security gate

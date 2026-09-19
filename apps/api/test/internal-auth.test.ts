@@ -38,8 +38,14 @@ describe('internal API authentication boundary', () => {
       /Environment validation failed/
     );
     expect(
-      validateEnv({ DATABASE_URL: 'postgresql://example.invalid/growth', NODE_ENV: 'production', GROWTH_INTERNAL_API_KEY: INTERNAL_KEY })
-    ).toMatchObject({ GROWTH_INTERNAL_API_KEY: INTERNAL_KEY });
+      validateEnv({
+        DATABASE_URL: 'postgresql://example.invalid/growth',
+        NODE_ENV: 'production',
+        // Production must name its bind address explicitly (PR-D1 exposure contract).
+        HOST: '127.0.0.1',
+        GROWTH_INTERNAL_API_KEY: INTERNAL_KEY
+      })
+    ).toMatchObject({ GROWTH_INTERNAL_API_KEY: INTERNAL_KEY, HOST: '127.0.0.1' });
   });
 
   it('rejects weak or unsafe production keys', () => {
