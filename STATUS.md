@@ -18,8 +18,9 @@ ACTIVE BRANCH: `main` (merged from `codex/daily-dashboard-v1`)
 Yukarıdaki "L0 durumu" satırı 2026-09-19 öğleden önceki kayıttır ve tarihsel olarak korunur;
 aşağıdakiler kanonik güncel truth'tur.
 
-- **Git:** `main` = `origin/main` = `5f5d6dc226afdc2721db63daf59d4969d5a56db9` (ff-only).
-  MERGED: **#87** (B2A migration convergence gate + shadow replay + disposable guard) ·
+- **Git:** latest code-bearing baseline = `5f5d6dc226afdc2721db63daf59d4969d5a56db9` (son **kod**
+  taşıyan merge); current repository HEAD doküman commit'leriyle ilerleyebilir, bu yüzden her docs
+  commit'inde SHA yeniden yazılmaz — etiket esastır. MERGED: **#87** (B2A migration convergence gate + shadow replay + disposable guard) ·
   **#88** (BC1 + BC6 money/value kontratı) · **#89** (BC2 + BC3 identity scope + domain evidence) ·
   **#90** (BC4 lifecycle shipment truth) · **#91** (docs truth refresh) · **#92** (PR #4 kapanış
   kaydı) · **#93** (PR-B2B: DB-6 fingerprint + DB-7 db push guard). Açık PR: **yok**
