@@ -87,6 +87,19 @@ export function normalizeTaxNumber(raw: string | null | undefined): string | nul
   return digits.length > 0 ? digits : null;
 }
 
+/**
+ * Canonical, uppercase ISO-3166 alpha-2-like country code.
+ * Returns null when the value is absent or malformed, because a jurisdiction we
+ * cannot identify must never be treated as a known one (BC3).
+ * NOTE: this only validates the shape; a full ISO-3166 table is deferred until a
+ * use case needs it.
+ */
+export function normalizeCountryCode(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const value = raw.trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(value) ? value : null;
+}
+
 /** Trimmed, lowercased email — the canonical form stored on Contact.email. */
 export function normalizeEmail(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -200,6 +213,8 @@ export type CompanyMatchCandidate = {
   phone?: string | null;
   emailDomain?: string | null;
   address?: string | null;
+  /** Jurisdiction of the tax number; identity needs it (BC3). */
+  country?: string | null;
 };
 
 export type CompanyMatchInput = {
@@ -209,6 +224,8 @@ export type CompanyMatchInput = {
   phone?: string | null;
   emailDomain?: string | null;
   address?: string | null;
+  /** Jurisdiction of the tax number; identity needs it (BC3). */
+  country?: string | null;
 };
 
 export type CompanyMatchReason =
@@ -228,8 +245,17 @@ export type CompanyMatchResult = {
 
 /**
  * Deterministic duplicate-company lookup, checked in priority order:
- * tax number -> domain -> email domain -> address -> phone ->
- * normalized name -> fuzzy name similarity -> (AI, not implemented here).
+ * tax number (scoped to a known jurisdiction) -> domain -> email domain ->
+ * address -> phone -> normalized name -> fuzzy name similarity -> (AI, not
+ * implemented here).
+ *
+ * Jurisdiction scoping (BC3): the tax number only decides identity when both
+ * sides carry the same canonical country code. A record whose jurisdiction is
+ * unknown never produces a confidence 1 claim.
+ *
+ * Domain semantics (BC2): the domain is strong evidence, not identity. Holdings
+ * and sibling legal entities share a domain, so a domain match always remains a
+ * proposal the human decision must confirm.
  *
  * EMAIL_DOMAIN matching is skipped for free/generic providers (gmail.com,
  * hotmail.com, ...) — those domains identify a person, not a company.
@@ -253,14 +279,25 @@ export function findDuplicateCompany(
   const emailDomain = normalizeDomain(input.emailDomain);
   const address = normalizeAddress(input.address);
 
-  if (taxNumber) {
-    const match = existing.find((c) => normalizeTaxNumber(c.taxNumber) === taxNumber);
+  // BC3: a tax/registration number is an identity only inside a known
+  // jurisdiction - the same digits exist in different countries. Without a
+  // usable country code on both sides we deliberately skip the hard claim and
+  // let the weaker, explainable signals below decide.
+  const country = normalizeCountryCode(input.country);
+  if (taxNumber && country) {
+    const match = existing.find(
+      (c) => normalizeTaxNumber(c.taxNumber) === taxNumber && normalizeCountryCode(c.country) === country
+    );
     if (match) return { candidate: match, reason: 'TAX_NUMBER', confidence: 1 };
   }
 
   if (domain) {
+    // BC2: a domain is a web property, not a legal entity - siblings and group
+    // companies legitimately share one - so a domain match is strong evidence for
+    // a human decision (below the confidence 1 identity of a scoped tax number),
+    // never an identity claim and never an automatic merge.
     const match = existing.find((c) => normalizeDomain(c.domain) === domain);
-    if (match) return { candidate: match, reason: 'DOMAIN', confidence: 0.95 };
+    if (match) return { candidate: match, reason: 'DOMAIN', confidence: 0.85 };
   }
 
   if (emailDomain && !isFreeEmailProvider(emailDomain)) {

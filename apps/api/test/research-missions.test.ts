@@ -426,7 +426,9 @@ describe('Research Mission API', () => {
     expect(candidate.companyId).toBeNull();
     expect(candidate.matchedCompanyId).toBe(canonical.id);
     expect(candidate.matchedBy).toBe('DOMAIN');
-    expect(candidate.matchConfidence).toBe(0.95);
+    // BC2: a domain is strong evidence (0.85), not an identity (1.0): sibling and
+    // group companies may share one, so a human decision is still required.
+    expect(candidate.matchConfidence).toBe(0.85);
 
     const secondEvidence = await addEvidence(candidate.id, `https://registry-${RUN_ID}.example.org/duplicate`);
     expect(secondEvidence.statusCode).toBe(201);

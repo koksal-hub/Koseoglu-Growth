@@ -402,4 +402,42 @@ describe('PostgreSQL migration invariants', () => {
 
     await expect(insertOpportunity('1000.00', 'TRY')).resolves.toBe(1);
   });
+
+  it('scopes company identity in PostgreSQL (domain is evidence, tax is jurisdictional)', async () => {
+    // BC2/BC3 at the database level: two legal entities may share a domain, while
+    // the same tax digits are only a conflict inside the same known country.
+    const marker = randomUUID().slice(0, 8);
+    const domain = `migration-invariant-${marker}.example.com`;
+    const taxNumber = `MI${marker}`;
+
+    const insertCompany = async (values: {
+      name: string;
+      domain: string;
+      taxNumber: string | null;
+      country: string | null;
+    }) => {
+      const id = `migration-invariant-company-${randomUUID()}`;
+      await prisma.$executeRaw`
+        INSERT INTO "Company" ("id", "name", "normalizedName", "domain", "taxNumber", "country", "updatedAt")
+        VALUES (${id}, ${values.name}, ${values.name.toUpperCase()}, ${values.domain},
+                ${values.taxNumber}, ${values.country}, ${new Date()})`;
+      companyIds.push(id);
+      return id;
+    };
+
+    await insertCompany({ name: `Sibling A ${marker}`, domain, taxNumber: null, country: null });
+    await insertCompany({ name: `Sibling B ${marker}`, domain, taxNumber: null, country: null });
+    expect(await prisma.company.count({ where: { domain } })).toBe(2);
+
+    await insertCompany({ name: `Tax TR A ${marker}`, domain: `${domain}-tr-a`, taxNumber, country: 'TR' });
+    const scopedConflict = await captureFailure(() =>
+      insertCompany({ name: `Tax TR B ${marker}`, domain: `${domain}-tr-b`, taxNumber, country: 'TR' })
+    );
+    expect(scopedConflict).toContain('Company_country_taxNumber_key');
+    expect(scopedConflict).toContain('23505');
+
+    await insertCompany({ name: `Tax DE ${marker}`, domain: `${domain}-de`, taxNumber, country: 'DE' });
+    await insertCompany({ name: `Tax Unknown ${marker}`, domain: `${domain}-unknown`, taxNumber, country: null });
+    expect(await prisma.company.count({ where: { taxNumber } })).toBe(3);
+  });
 });

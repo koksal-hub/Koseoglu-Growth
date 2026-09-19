@@ -444,8 +444,16 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([taxNumber])
-  @@unique([domain])
+  /// Identity contract (BC2/BC3):
+  /// - A domain is a *web property*, not a legal entity: sibling/group companies
+  ///   can share one, so `domain` is NOT unique and a domain match stays
+  ///   evidence for a human decision (never an automatic merge).
+  /// - A tax/registration number identifies a company only together with its
+  ///   jurisdiction; the same digits can exist in different countries. The
+  ///   scoped guard "Company_country_taxNumber_key" (country + taxNumber, both
+  ///   present) is created in 20260919170000_identity_scope_and_domain_evidence.
+  ///   Prisma cannot express a partial index, so it is intentionally absent here.
+  @@index([domain])
   @@index([normalizedName])
   @@index([emailDomain])
   @@index([status])

@@ -55,40 +55,62 @@ describe('Prisma data foundation models', () => {
     expect(company.createdAt).toBeInstanceOf(Date);
   });
 
-  it('enforces a unique constraint on Company.domain', async () => {
-    const domain = `dup-${RUN_ID}.example.com`;
-    await createTestCompany({
-      name: `Dup A ${RUN_ID}`,
-      normalizedName: `DUP A ${RUN_ID}`,
+  it('allows two legal entities to share a domain (BC2: domain is evidence, not identity)', async () => {
+    const domain = `sibling-${RUN_ID}.example.com`;
+    const first = await createTestCompany({
+      name: `Sibling A ${RUN_ID}`,
+      normalizedName: `SIBLING A ${RUN_ID}`,
+      domain
+    });
+    const second = await createTestCompany({
+      name: `Sibling B ${RUN_ID}`,
+      normalizedName: `SIBLING B ${RUN_ID}`,
       domain
     });
 
-    await expect(
-      createTestCompany({
-        name: `Dup B ${RUN_ID}`,
-        normalizedName: `DUP B ${RUN_ID}`,
-        domain
-      })
-    ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
+    expect(first.id).not.toBe(second.id);
+    expect(await prisma.company.count({ where: { domain } })).toBe(2);
   });
 
-  it('enforces a unique constraint on Company.taxNumber', async () => {
+  it('scopes the tax-number guard to a known jurisdiction (BC3)', async () => {
     const taxNumber = `TAX${RUN_ID}`;
     await createTestCompany({
       name: `Tax A ${RUN_ID}`,
       normalizedName: `TAX A ${RUN_ID}`,
       domain: `tax-a-${RUN_ID}.example.com`,
-      taxNumber
+      taxNumber,
+      country: 'TR'
     });
 
+    // same digits + same known country => the scoped unique index rejects it
     await expect(
       createTestCompany({
         name: `Tax B ${RUN_ID}`,
         normalizedName: `TAX B ${RUN_ID}`,
         domain: `tax-b-${RUN_ID}.example.com`,
-        taxNumber
+        taxNumber,
+        country: 'TR'
       })
     ).rejects.toThrow(Prisma.PrismaClientKnownRequestError);
+
+    // same digits in another country => a different legal entity is allowed
+    await createTestCompany({
+      name: `Tax DE ${RUN_ID}`,
+      normalizedName: `TAX DE ${RUN_ID}`,
+      domain: `tax-de-${RUN_ID}.example.com`,
+      taxNumber,
+      country: 'DE'
+    });
+
+    // digits without a jurisdiction are storable but deliberately unguarded
+    await createTestCompany({
+      name: `Tax Unknown ${RUN_ID}`,
+      normalizedName: `TAX UNKNOWN ${RUN_ID}`,
+      domain: `tax-unknown-${RUN_ID}.example.com`,
+      taxNumber
+    });
+
+    expect(await prisma.company.count({ where: { taxNumber } })).toBe(3);
   });
 
   it('links a Contact to its Company and prevents duplicate emails within the same company', async () => {
