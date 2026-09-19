@@ -18,8 +18,11 @@ import { dirname, join, resolve } from 'node:path';
 import pg from 'pg';
 import {
   DbSafetyError,
+  assertDbPushAllowed,
   assertDisposableTarget,
+  classifyFingerprint,
   classifyHistory,
+  describeTargetSafety,
   objectNameAudit,
   readAppliedMigrations,
   readRepoMigrations,
@@ -293,6 +296,94 @@ export function objectNameProof() {
   ];
 }
 
+/**
+ * PR-B2B DB-6 proofs. Deterministic and database-free: the repository's own
+ * migrations provide the applied history, so every status (and both fail-closed
+ * paths) is exercised without touching any database.
+ */
+export function fingerprintProof() {
+  const repo = readRepoMigrations(MIGRATIONS_DIR);
+  const finishedAt = '2026-09-19T00:00:00.000Z';
+  const applied = repo.map((row) => ({
+    name: row.name,
+    checksum: row.checksums.lf,
+    finishedAt,
+    rolledBackAt: null,
+  }));
+  const unknownRow = {
+    name: '20260101000000_b2b_unknown_fixture',
+    checksum: 'a'.repeat(64),
+    finishedAt,
+    rolledBackAt: null,
+  };
+  const disposableTarget = describeTargetSafety(
+    'postgresql://postgres:postgres@localhost:5432/growth_test_fingerprint_b2b?schema=public',
+    { env: { NODE_ENV: 'test' } }
+  );
+  const productionTarget = describeTargetSafety('postgresql://postgres:postgres@localhost:5432/growth_db?schema=public', {
+    env: { NODE_ENV: 'production' },
+  });
+  const cases = [
+    { label: 'repository history against itself', expected: 'IN_SYNC', expectOk: true, target: disposableTarget, rows: applied },
+    { label: 'last repository migration not applied', expected: 'BEHIND', expectOk: true, target: disposableTarget, rows: applied.slice(0, -1) },
+    { label: 'database ahead of the repository', expected: 'AHEAD', expectOk: true, target: disposableTarget, rows: [...applied, unknownRow] },
+    { label: 'unknown and missing in both directions', expected: 'DIVERGED', expectOk: false, target: disposableTarget, rows: [...applied.slice(0, -1), unknownRow] },
+    {
+      label: 'rewritten applied migration',
+      expected: 'DIVERGED',
+      expectOk: false,
+      target: disposableTarget,
+      rows: applied.map((row, index) => (index === 0 ? { ...row, checksum: 'b'.repeat(64) } : row)),
+    },
+    {
+      label: 'rolled-back applied migration',
+      expected: 'DIVERGED',
+      expectOk: false,
+      target: disposableTarget,
+      rows: applied.map((row, index) => (index === 0 ? { ...row, rolledBackAt: finishedAt } : row)),
+    },
+    { label: 'unreadable history on a disposable target', expected: 'UNKNOWN', expectOk: true, target: disposableTarget, error: 'connect failed (fixture)' },
+    { label: 'unreadable history on a production-like target', expected: 'UNKNOWN', expectOk: false, target: productionTarget, error: 'connect failed (fixture)' },
+  ];
+  return cases.map((entry) => {
+    const history = entry.error ? { rows: null, error: entry.error } : { rows: entry.rows, error: null };
+    const report = classifyFingerprint({ ...entry.target, history, repoMigrations: repo });
+    return {
+      name: `fingerprint: ${entry.label} -> ${entry.expected}`,
+      ok: report.status === entry.expected && report.ok === entry.expectOk,
+      detail: `status=${report.status} ok=${report.ok} (${report.reason})`,
+    };
+  });
+}
+
+/** PR-B2B DB-7 proofs: destructive schema pushes are refused on shared/production-like targets. */
+export function dbPushProof(baseInfo) {
+  const disposable = baseInfo.raw;
+  const cases = [
+    { label: '--accept-data-loss on a production-like target', url: urlWithDatabase(baseInfo, 'growth_prod'), env: { NODE_ENV: 'production' }, args: ['--accept-data-loss'], expectFail: true },
+    { label: 'db push without flags on a production-like host', url: urlWithHost(baseInfo, 'db.prod.example.com'), env: { NODE_ENV: 'development' }, args: [], expectFail: true },
+    { label: '--accept-data-loss on a shared local database', url: urlWithDatabase(baseInfo, 'growth_prod'), env: { NODE_ENV: 'development' }, args: ['--accept-data-loss'], expectFail: true },
+    { label: '--force-reset on a shared local database', url: urlWithDatabase(baseInfo, 'growth_features'), env: { NODE_ENV: 'development' }, args: ['--force-reset'], expectFail: true },
+    { label: '--accept-data-loss on a dedicated disposable target', url: disposable, env: { NODE_ENV: 'test' }, args: ['--accept-data-loss'], expectFail: false },
+    { label: 'db push without flags on a dedicated disposable target', url: disposable, env: { NODE_ENV: 'test' }, args: [], expectFail: false },
+  ];
+  return cases.map((entry) => {
+    let accepted = true;
+    let message = 'allowed';
+    try {
+      assertDbPushAllowed({ url: entry.url, args: entry.args, env: entry.env });
+    } catch (error) {
+      accepted = false;
+      message = error.message;
+    }
+    return {
+      name: `negative: db push guard ${entry.expectFail ? 'refuses' : 'allows'} ${entry.label}`,
+      ok: accepted !== entry.expectFail,
+      detail: entry.expectFail ? (accepted ? 'allowed (unexpected)' : 'refused (expected)') : message,
+    };
+  });
+}
+
 /** Replays migrations through a dedicated disposable shadow target, then compares to the schema. */
 export async function shadowProof(baseInfo) {
   const target = await createDisposableDatabase(baseInfo, 'shadow');
@@ -323,7 +414,14 @@ async function main() {
   if (command === 'upgrade') return printResults([await upgradeReplay(base)]);
   if (command === 'shadow') return printResults([await shadowProof(base)]);
   if (command === 'negative-proof') {
-    const results = [...guardProof(base), ...objectNameProof(), await driftProof(base), await checksumProof(base)];
+    const results = [
+      ...guardProof(base),
+      ...objectNameProof(),
+      ...fingerprintProof(),
+      ...dbPushProof(base),
+      await driftProof(base),
+      await checksumProof(base),
+    ];
     return printResults(results);
   }
   if (command === 'gate') {
@@ -333,6 +431,8 @@ async function main() {
       await shadowProof(base),
       ...guardProof(base),
       ...objectNameProof(),
+      ...fingerprintProof(),
+      ...dbPushProof(base),
       await driftProof(base),
       await checksumProof(base),
     ];

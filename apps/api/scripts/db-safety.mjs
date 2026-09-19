@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * PR-B2A database safety gate (DB-2/DB-3/DB-4/DB-5/DB-9).
+ * PR-B2A/PR-B2B database safety gate (DB-2…DB-7, DB-9).
  *
  * Design rules honoured by this module:
  *  - Every target must pass a fail-closed disposable-target guard BEFORE any
@@ -10,9 +10,21 @@
  *    prisma/migrations. Negative fixtures are built in temporary copies.
  *  - No new dependencies: `pg` is already an API dependency.
  *
+ * PR-B2B additions:
+ *  - Read-only fingerprint (DB-6): explains any database (including canonical and
+ *    production-like ones) against the repository migrations and reports
+ *    IN_SYNC / BEHIND / AHEAD / DIVERGED / UNKNOWN. DIVERGED always fails and
+ *    UNKNOWN fails on production-like targets (fail-closed). Reading is SELECT
+ *    only; nothing is ever written by the fingerprint.
+ *  - db push guard (DB-7): refuses destructive schema pushes
+ *    (`--accept-data-loss`, `--force-reset`) on shared/staging/production-like
+ *    targets, and refuses any `db push` on a production-like target.
+ *
  * CLI:
  *   node apps/api/scripts/db-safety.mjs guard --url <url> [--role shadow|test]
  *   node apps/api/scripts/db-safety.mjs history --url <url> [--migrations-dir dir]
+ *   node apps/api/scripts/db-safety.mjs fingerprint --url <url> [--applied-json path] [--env name]
+ *   node apps/api/scripts/db-safety.mjs db-push-guard --url <url> [--env name] -- [prisma args...]
  *   node apps/api/scripts/db-safety.mjs convergence --url <url> [--schema path]
  *   node apps/api/scripts/db-safety.mjs shadow-convergence [--schema path]
  *   node apps/api/scripts/db-safety.mjs object-names [--schema path]
@@ -102,6 +114,193 @@ export function assertDisposableTarget(raw, options = {}) {
     );
   }
   return info;
+}
+
+/** Environments in which a schema change must never bypass reviewed migrations. */
+export const PRODUCTION_LIKE_ENVS = new Set(['production', 'prod', 'staging', 'stage', 'preprod']);
+export const MIGRATION_STATUSES = ['IN_SYNC', 'BEHIND', 'AHEAD', 'DIVERGED', 'UNKNOWN'];
+/** Destructive Prisma flags that can silently drop columns or tables. */
+export const DESTRUCTIVE_DB_PUSH_FLAGS = ['--accept-data-loss', '--force-reset'];
+
+function allowedDbHosts() {
+  return new Set([
+    ...DEFAULT_SAFE_HOSTS,
+    ...(process.env.B2A_ALLOWED_DB_HOSTS ?? '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0),
+  ]);
+}
+
+/**
+ * Read-only description of a target (DB-6/DB-7 building block).
+ * Unlike assertDisposableTarget it never throws: it reports every reason why a
+ * target is not disposable, so a fingerprint can explain itself and a guard can
+ * quote the exact refusal reason.
+ */
+export function describeTargetSafety(raw, options = {}) {
+  const env = options.env ?? process.env;
+  const info = parseDatabaseUrl(raw);
+  const localHost = allowedDbHosts().has(info.host);
+  const reasons = [];
+  if (FORBIDDEN_DATABASE_NAMES.has(info.database.toLowerCase())) {
+    reasons.push(`canonical/maintenance database "${info.database}"`);
+  } else if (!DISPOSABLE_PATTERN.test(info.database)) {
+    reasons.push(`database "${info.database}" has no disposable segment (test/ci/sandbox/shadow/b2a)`);
+  }
+  if (!localHost && process.env.ALLOW_NON_LOCAL_DB_TARGET !== '1') {
+    reasons.push(`host "${info.host}" is not a known-local host`);
+  }
+  const environment = (env.NODE_ENV ?? env.APP_ENV ?? 'development').toLowerCase();
+  return {
+    info,
+    environment,
+    reasons,
+    disposable: reasons.length === 0,
+    productionLike: PRODUCTION_LIKE_ENVS.has(environment) || !localHost,
+  };
+}
+
+/**
+ * Read-only migration history for the fingerprint. This is the only reader that
+ * accepts canonical and production-like targets, because a fingerprint must be
+ * able to explain a database without touching it: only SELECT runs here, and a
+ * failure is returned as data (never swallowed) so the caller can fail closed.
+ */
+export async function readMigrationHistoryReadOnly(rawUrl) {
+  const info = parseDatabaseUrl(rawUrl);
+  const client = new pg.Client({ connectionString: info.raw });
+  try {
+    await client.connect();
+  } catch (error) {
+    return { info, rows: null, error: `connect failed (${error.message})` };
+  }
+  try {
+    const { rows } = await client.query(
+      `SELECT migration_name, checksum, finished_at, rolled_back_at
+         FROM "${info.schema}"."_prisma_migrations"
+        ORDER BY migration_name`
+    );
+    return {
+      info,
+      error: null,
+      rows: rows.map((row) => ({
+        name: row.migration_name,
+        checksum: row.checksum ?? null,
+        finishedAt: row.finished_at ?? null,
+        rolledBackAt: row.rolled_back_at ?? null,
+      })),
+    };
+  } catch (error) {
+    return { info, rows: null, error: `history not readable (${error.message})` };
+  } finally {
+    await client.end().catch(() => {});
+  }
+}
+
+/**
+ * DB-6 fingerprint: explains a database against the repository migrations.
+ *
+ *  IN_SYNC  repository and database agree (names, counts and checksums)
+ *  BEHIND   the database misses repository migrations (forward work pending)
+ *  AHEAD    the database has applied migrations the repository does not know
+ *  DIVERGED they cannot be reconciled: unknown *and* missing migrations, a
+ *           rewritten applied migration, or rolled-back history
+ *  UNKNOWN  history could not be read at all
+ *
+ * Fail-closed: DIVERGED always fails; UNKNOWN fails on a production-like target,
+ * because an unexplainable production database must never be reported healthy.
+ * AHEAD and BEHIND are explainable states and do not fail.
+ */
+export function classifyFingerprint(input) {
+  const { info, environment, productionLike, disposable, reasons, history, repoMigrations } = input;
+  const base = {
+    host: info.host,
+    port: info.port,
+    database: info.database,
+    schema: info.schema,
+    environment,
+    productionLike,
+    disposable,
+    reasons,
+    repoCount: repoMigrations.length,
+    latestRepo: repoMigrations.at(-1)?.name ?? null,
+  };
+
+  if (!history || history.error) {
+    return {
+      ...base,
+      status: 'UNKNOWN',
+      appliedCount: null,
+      latestApplied: null,
+      missing: [],
+      unknown: [],
+      checksumMismatch: [],
+      rolledBack: [],
+      reason: history?.error ?? 'history was not read',
+      ok: !productionLike,
+    };
+  }
+
+  const report = classifyHistory(history.rows, repoMigrations);
+  const rolledBack = history.rows.filter((row) => row.rolledBackAt !== null).map((row) => row.name);
+  const bothDirections = report.unknown.length > 0 && report.missing.length > 0;
+
+  let status = 'IN_SYNC';
+  let reason = 'repository and database agree';
+  if (report.checksumMismatch.length > 0) {
+    status = 'DIVERGED';
+    reason = `applied migration content was rewritten: ${report.checksumMismatch.map((row) => row.name).join(', ')}`;
+  } else if (rolledBack.length > 0) {
+    status = 'DIVERGED';
+    reason = `rolled-back history cannot be reconciled: ${rolledBack.join(', ')}`;
+  } else if (bothDirections) {
+    status = 'DIVERGED';
+    reason = `database and repository disagree in both directions (missing=${report.missing.length}, unknown=${report.unknown.length})`;
+  } else if (report.unknown.length > 0) {
+    status = 'AHEAD';
+    reason = `${report.unknown.length} applied migration(s) are unknown to the repository`;
+  } else if (report.missing.length > 0) {
+    status = 'BEHIND';
+    reason = `${report.missing.length} repository migration(s) are not applied`;
+  }
+
+  return {
+    ...base,
+    status,
+    appliedCount: report.appliedCount,
+    latestApplied: history.rows.at(-1)?.name ?? null,
+    missing: report.missing,
+    unknown: report.unknown,
+    checksumMismatch: report.checksumMismatch.map((row) => row.name),
+    rolledBack,
+    reason,
+    ok: status !== 'DIVERGED',
+  };
+}
+
+/**
+ * DB-7 guard: a destructive schema push is refused unless the target is a
+ * dedicated disposable database, and any `db push` is refused on a
+ * production-like target (schema there must go through reviewed migrations).
+ * Throws DbSafetyError (fail-closed); returns the target description plus the
+ * detected destructive flags when the operation is allowed.
+ */
+export function assertDbPushAllowed(options = {}) {
+  const args = options.args ?? [];
+  const safety = describeTargetSafety(options.url, { env: options.env });
+  const destructiveFlags = args.filter((arg) => DESTRUCTIVE_DB_PUSH_FLAGS.includes(arg));
+  if (safety.productionLike) {
+    throw new DbSafetyError(
+      `refusing db push on production-like target "${safety.info.database}"@${safety.info.host} (env=${safety.environment}): schema changes must go through reviewed migrations`
+    );
+  }
+  if (destructiveFlags.length > 0 && !safety.disposable) {
+    throw new DbSafetyError(
+      `refusing ${destructiveFlags.join(' ')} on "${safety.info.database}": ${safety.reasons.join('; ')}`
+    );
+  }
+  return { ...safety, destructiveFlags, allowed: true };
 }
 
 function sha256Hex(buffer) {
@@ -406,6 +605,52 @@ async function main() {
       console.log(report.ok ? 'HISTORY OK' : 'HISTORY FAIL');
       return report.ok ? 0 : 1;
     }
+    case 'fingerprint': {
+      const envName = argValue(args, '--env', null);
+      const env = envName ? { ...process.env, NODE_ENV: envName } : process.env;
+      const url = resolveTargetUrl(args);
+      const safety = describeTargetSafety(url, { env });
+      const appliedJson = argValue(args, '--applied-json', null);
+      const repo = readRepoMigrations(migrationsDir);
+      const history = appliedJson
+        ? { info: safety.info, rows: JSON.parse(readFileSync(appliedJson, 'utf8')), error: null }
+        : await readMigrationHistoryReadOnly(url);
+      if (appliedJson) console.log(`offline history fixture: ${appliedJson}`);
+      const report = classifyFingerprint({ ...safety, history, repoMigrations: repo });
+      console.log(
+        `fingerprint: host=${report.host}:${report.port} database=${report.database} schema=${report.schema} env=${report.environment} productionLike=${report.productionLike} disposable=${report.disposable}`
+      );
+      console.log(
+        `migrations: repo=${report.repoCount} applied=${report.appliedCount ?? 'unknown'} latestRepo=${report.latestRepo ?? 'none'} latestApplied=${report.latestApplied ?? 'none'}`
+      );
+      console.log(
+        `history: missing=${report.missing.length} unknown=${report.unknown.length} checksumMismatch=${report.checksumMismatch.length} rolledBack=${report.rolledBack.length}`
+      );
+      if (report.missing.length > 0) console.log(`MISSING (repo only): ${report.missing.join(', ')}`);
+      if (report.unknown.length > 0) console.log(`UNKNOWN (db only): ${report.unknown.join(', ')}`);
+      if (report.checksumMismatch.length > 0) console.log(`CHECKSUM MISMATCH: ${report.checksumMismatch.join(', ')}`);
+      if (report.rolledBack.length > 0) console.log(`ROLLED BACK: ${report.rolledBack.join(', ')}`);
+      console.log(`FINGERPRINT STATUS: ${report.status} - ${report.reason}`);
+      console.log(
+        report.ok
+          ? `FINGERPRINT OK${report.status === 'UNKNOWN' ? ' (report-only: non-production target)' : ''}`
+          : 'FINGERPRINT FAIL (fail-closed)'
+      );
+      return report.ok ? 0 : 1;
+    }
+    case 'db-push-guard': {
+      const separator = args.indexOf('--');
+      const pushArgs = separator >= 0 ? args.slice(separator + 1) : [];
+      const envName = argValue(args, '--env', null);
+      const env = envName ? { ...process.env, NODE_ENV: envName } : process.env;
+      const result = assertDbPushAllowed({ url: resolveTargetUrl(args), args: pushArgs, env });
+      console.log(
+        `DB PUSH ALLOWED target=${result.info.database}@${result.info.host} env=${result.environment} destructive=${
+          result.destructiveFlags.length > 0 ? result.destructiveFlags.join(',') : 'none'
+        }`
+      );
+      return 0;
+    }
     case 'convergence': {
       const drift = schemaDrift(resolveTargetUrl(args), schemaPath);
       console.log(`convergence: ${drift.ok ? 'OK' : 'FAIL'} (${drift.reason})`);
@@ -434,7 +679,7 @@ async function main() {
     }
     default:
       console.error(
-        'usage: db-safety.mjs <guard|history|convergence|shadow-convergence|object-names> [--url url] [--schema path] [--migrations-dir dir] [--role test|shadow|target]'
+        'usage: db-safety.mjs <guard|history|fingerprint|db-push-guard|convergence|shadow-convergence|object-names> [--url url] [--schema path] [--migrations-dir dir] [--role test|shadow|target] [--applied-json path] [--env name]'
       );
       return 2;
   }

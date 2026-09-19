@@ -45,6 +45,8 @@ jobs:
         run: node apps/api/scripts/db-safety.mjs guard --url "$TEST_DATABASE_URL" --role test
       - name: Migration gate - history and checksum integrity
         run: node apps/api/scripts/db-safety.mjs history --url "$TEST_DATABASE_URL"
+      - name: Migration gate - db fingerprint (read-only, fail-closed on DIVERGED/UNKNOWN)
+        run: node apps/api/scripts/db-safety.mjs fingerprint --url "$TEST_DATABASE_URL"
       - name: Migration gate - schema convergence (zero unexpected drift)
         run: node apps/api/scripts/db-safety.mjs convergence --url "$TEST_DATABASE_URL"
       - name: Migration gate - fresh replay (dedicated disposable database)
