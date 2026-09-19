@@ -62,22 +62,25 @@ Not: Bu bölüm ilk kez 2026-09-19 sabah taramasıyla yazıldı. Aşağıdaki de
 **Truth refresh — 2026-09-19 akşam (PR #90 sonrası).** Yukarıdaki satırlar sabahki taramanın
 kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler şunlardır:
 
-- **Git:** `main` = `origin/main` = `0da03cefbf87a490118113b9366ac2d3c37f1132`; MERGED: #87 (B2A
+- **Git:** `main` = `origin/main` = `5f5d6dc226afdc2721db63daf59d4969d5a56db9`; MERGED: #87 (B2A
   migration convergence gate + shadow replay + disposable guard), #88 (BC1 + BC6 money/value
   kontratı), #89 (BC2 + BC3 identity scope + domain evidence), #90 (BC4 lifecycle shipment truth),
-  #91 (docs truth refresh); açık PR **yok** (PR #4 2026-09-19'da superseded kapatıldı; branch
+  #91 (docs truth refresh), #92 (PR #4 kapanış kaydı), #93 (PR-B2B DB-6 fingerprint + DB-7 db push
+  guard); açık PR **yok** (PR #4 2026-09-19'da superseded kapatıldı; branch
   `chore/process-review-gate` arşiv olarak korunuyor).
-- **Migration:** **29** (fresh 29/29 · upgrade 28→29 · zero drift · convergence gate 11/11 PASS ·
-  ≤63 byte object-name politikası). `growth_db` bu çalışmada mutate edilmedi (3 migration).
-- **Test:** **33 API+web dosya / 236 test PASS** (fresh 29/29 DB'de); lint, typecheck, build,
+- **Migration:** **29** (fresh 29/29 · upgrade 28→29 · zero drift · DB safety gate **25/25 PASS** ·
+  ≤63 byte object-name politikası). `growth_db` bu çalışmada mutate edilmedi (3 migration, yalnız
+  salt-okunur fingerprint).
+- **Test:** **33 API+web dosya / 240 test PASS** (fresh 29/29 DB'de); lint, typecheck, build,
   `prisma validate/generate` temiz; `git diff --check` exit 0.
 - **Lifecycle:** policy **`customer-lifecycle-signals-v2`**; `REPEAT` artık operasyon sevkiyat
   truth'una bağlıdır (pipeline etiketi tek başına yetmez) → **L6 shipment receipt bağımlılığı
   AÇIK** (`signals.repeatEvidence.operationsShipmentSource = 'NOT_AVAILABLE'`). **BC5 (PORT/HOST
   evidence tipi) PR-D1 kapsamına devredildi.**
-- **Sıradaki uygulama dilimi:** **PR-B2B** (DB-6 fingerprint + DIVERGED/UNKNOWN fail-closed,
-  DB-7 `db push --accept-data-loss` guard). Kanonik sıra değişmedi; TASKS.md DELTA aynası aynı gün
-  hizalandı.
+- **DELTA-03 (PR-B2B) DONE:** PR **#93** squash `5f5d6dc` · CI **25/25 step success** (yeni
+  `db fingerprint (read-only, fail-closed on DIVERGED/UNKNOWN)` adımı dahil) · 4 dosya / +506−4.
+- **Sıradaki uygulama dilimi:** **PR-D2** (Fastify 5 + güvenlik modernizasyonu; SYS-6/T9).
+  Kanonik sıra değişmedi; TASKS.md DELTA aynası aynı gün hizalandı.
 
 
 ## 3. Sıralama (bağlayıcı)
@@ -99,7 +102,7 @@ kanıtıdır ve tarihsel kayıt olarak korunur; güncel doğrulanmış değerler
 **L0 KAPANDI (kanıtlı):** PR #82 MERGED · #81 CLOSED (superseded) · main = origin/main = 7840c35 ·
 `.env` + izole test DB'leri mevcut · lint/typecheck/test/build kanıtları alındı (CI + lokal).
 
-Güncel git truth: `main` = `0da03ce` (§2 truth refresh) — L0 kapanışının kendi kanıtı tarihsel
+Güncel git truth: `main` = `5f5d6dc` (§2 truth refresh) — L0 kapanışının kendi kanıtı tarihsel
 olarak korunur; kanonik sıra ve durumlar aşağıdaki tabloda güncellenir.
 
 Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capability kimlikleriyle):
@@ -108,8 +111,8 @@ Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capabilit
 |---|---|---|---|---|
 | 1 | **PR-C** (#85, MERGED) | DB-1, DB-9 | — | fresh 27/27 · upgrade 26→27 · zero drift · 226 test |
 | 2 | **PR-B2A** (#87, MERGED) | DB-2, DB-3, DB-4, DB-5, DB-9 | PR-C | gate 11/11 PASS · fresh 29/29 · upgrade 28→29 · zero drift · bozuk drift fixture'ında FAIL |
-| 3 | **PR-B2B** (sıradaki dilim) | DB-6, DB-7 | PR-B2A (#87 MERGED) | fingerprint çıktısı + DIVERGED/UNKNOWN fail-closed testi |
-| 4 | **PR-D2** (Fastify security modernization) | SYS-6 (T9) | PR-C | full regression suite PASS |
+| 3 | **PR-B2B** (#93, MERGED) | DB-6, DB-7 | PR-B2A (#87 MERGED) | gate 25/25 PASS (8 fingerprint + 6 db push kanıtı) · CI 25/25 step · full suite 33 dosya / 240 test |
+| 4 | **PR-D2** (Fastify security modernization; sıradaki dilim) | SYS-6 (T9) | PR-C | full regression suite PASS + dependency-gate kaydı |
 | 5 | **PR-D1** (Exposure/Proxy) | SYS-1, SYS-2 | PR-D2 | bind adresi + CIDR/forwarded header testleri |
 | 6 | **PR-D5** (Pool/Timeout + Readiness) | SYS-12 (T4), SYS-3 | PR-D2 | pool benchmark + `/ready` timeout testi |
 | 7 | **PR-D3** (Route Auth + Rate Limit) | SYS-4, SYS-5 | PR-D1 | auth metadata testi + endpoint bazlı limitler |
@@ -424,6 +427,10 @@ B2B lojistiğe aktarım ayrı bir pilot ve ölçüm gerektirir.
   BC5 (PORT/HOST) → PR-D1; lifecycle policy `customer-lifecycle-signals-v2` (REPEAT = operasyon
   sevkiyat truth'u, L6 shipment receipt bağımlılığı açık). TASKS.md DELTA aynası aynı gün hizalandı
   (DELTA-02 DONE, DELTA-03 sıradaki). Kanonik sıra değişmedi.
+- Bölüm 2 + 3.1 (2026-09-19, PR #93 sonrası): **truth refresh** — main `5f5d6dc`, 29 migration,
+  33 dosya / 240 test, DB safety gate **25/25**; **DELTA-03 (PR-B2B) DONE** (#93, CI 25/25 step) ve
+  sıradaki dilim **PR-D2**; PR #4 superseded kapatıldı (arşiv branch `73b84af`). TASKS.md DELTA
+  aynası aynı gün hizalandı (DELTA-03 DONE, DELTA-04 sıradaki).
 
 ## 21. Capability & Revenue-Enabler Matrix (2026-09-19 delta)
 
