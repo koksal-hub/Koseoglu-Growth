@@ -1,0 +1,21 @@
+-- PR-C: pin the recommendation exposure lookup index name.
+--
+-- 20260902030000 created this index as
+--   "RecommendationExposure_recommendationType_recommendationId_exposedAt_idx"
+-- which is 72 bytes. PostgreSQL truncates identifiers to 63 bytes, so every
+-- replayed database (fresh and upgrade alike) stores it as
+--   "RecommendationExposure_recommendationType_recommendationId_expo"
+-- while the Prisma schema expected a different generated name. That produced a
+-- name-only drift in `prisma migrate diff` that could never be fixed by editing
+-- history: applied migrations are immutable.
+--
+-- prisma/schema.prisma now pins the name explicitly with
+--   @@index([recommendationType, recommendationId, exposedAt], map: "rec_exposure_lookup_idx")
+-- so this single forward rename is the whole fix.
+--
+-- Metadata-only: the btree, its columns, its order, and its non-uniqueness are
+-- unchanged. No DROP INDEX, no CREATE INDEX, no data rewrite. If the index is
+-- not found under the recorded name the migration fails loudly on purpose
+-- instead of silently leaving the database drifted.
+ALTER INDEX "RecommendationExposure_recommendationType_recommendationId_expo"
+  RENAME TO "rec_exposure_lookup_idx";
