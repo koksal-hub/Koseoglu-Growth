@@ -18,15 +18,17 @@ ACTIVE BRANCH: `main` (merged from `codex/daily-dashboard-v1`)
 Yukarıdaki "L0 durumu" satırı 2026-09-19 öğleden önceki kayıttır ve tarihsel olarak korunur;
 aşağıdakiler kanonik güncel truth'tur.
 
-- **Git:** `main` = `origin/main` = `0da03cefbf87a490118113b9366ac2d3c37f1132` (ff-only).
+- **Git:** `main` = `origin/main` = `5f5d6dc226afdc2721db63daf59d4969d5a56db9` (ff-only).
   MERGED: **#87** (B2A migration convergence gate + shadow replay + disposable guard) ·
   **#88** (BC1 + BC6 money/value kontratı) · **#89** (BC2 + BC3 identity scope + domain evidence) ·
-  **#90** (BC4 lifecycle shipment truth) · **#91** (docs truth refresh). Açık PR: **yok**
+  **#90** (BC4 lifecycle shipment truth) · **#91** (docs truth refresh) · **#92** (PR #4 kapanış
+  kaydı) · **#93** (PR-B2B: DB-6 fingerprint + DB-7 db push guard). Açık PR: **yok**
   (PR #4 kapatıldı — aşağıdaki madde). Açık Issue yok.
-- **Migration:** **29** — fresh **29/29** · upgrade **28→29** · zero drift · convergence gate
-  **11/11 PASS** · ≤63 byte object-name politikası. `growth_db` bu çalışmada **mutate edilmedi**
-  (3 migration); disposable doğrulama DB'leri koşum sonrası düşürüldü (artefakt yok).
-- **Test (latest tam paket kanıtı):** **33 dosya / 236 test PASS** (fresh 29/29 DB'de). lint,
+- **Migration:** **29** — fresh **29/29** · upgrade **28→29** · zero drift · DB safety gate
+  **25/25 PASS** (B2A 11 + DB-6 fingerprint 8 + DB-7 db push 6 kanıtı) · ≤63 byte object-name
+  politikası. `growth_db` bu çalışmada **mutate edilmedi** (3 migration, yalnız salt-okunur
+  fingerprint); disposable doğrulama DB'leri koşum sonrası düşürüldü (artefakt yok).
+- **Test (latest tam paket kanıtı):** **33 dosya / 240 test PASS** (fresh 29/29 DB'de). lint,
   typecheck, build, `prisma validate`/`generate` temiz; `git diff --check` exit 0.
 - **Lifecycle policy:** `customer-lifecycle-signals-v2`. `REPEAT` yalnız **gerçek sevkiyat
   truth'undan** türetilir; pipeline etiketi (`stage='WON'`) tek başına REPEAT iddia etmez.
@@ -40,8 +42,13 @@ aşağıdakiler kanonik güncel truth'tur.
   **silinmedi → tarihsel arşiv** olarak korunuyor. `main`'de karşılığı olmayan 4 dosya (652 satırlık
   `AI-ENGINEERING-STANDARD.md`, `REVIEW-issue2.md`, `.env.test`, Ağustos migration'ı — etkisi BC2'de)
   bilinçli olarak taşınmadı: güncel yönetişimle rakip otorite riski. Açık Issue yok.
-- **Sıradaki uygulama dilimi:** **PR-B2B** (DB-6 fingerprint + DIVERGED/UNKNOWN fail-closed,
-  DB-7 `db push --accept-data-loss` guard).
+- **DELTA-03 (PR-B2B) DONE — 2026-09-19:** PR **#93** squash `5f5d6dc` · CI **25/25 step success**
+  (0 failure; yeni `Migration gate - db fingerprint (read-only, fail-closed on DIVERGED/UNKNOWN)`
+  adımı dahil) · 4 dosya / +506−4 · DB-6 salt-okunur fingerprint (`IN_SYNC`/`BEHIND`/`AHEAD`/
+  `DIVERGED`/`UNKNOWN`) + DB-7 `db push` guard (production env'de disposable isimli hedefte bile
+  red).
+- **Sıradaki uygulama dilimi:** **PR-D2** (Fastify 5 + güvenlik modernizasyonu; DELTA-04 / SYS-6,
+  T9) — dependency değişikliği dependency-gate kaydı ile.
 - **Kanonik order (değişmedi):** B2B → D2 → D1 → D5 → D3 → D4 → E2 → E1 → E3 → L6
   (tek sahip: `GROWTH_2026_PROGRAM_PLAN.md` §3.1; TASKS.md DELTA aynası hizalı).
 

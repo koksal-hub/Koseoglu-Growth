@@ -551,13 +551,13 @@ GitHub Issue açılacak; o zamana kadar bu bölüm aynadır. Çelişki halinde G
 CI kanıtı esastır. (DB-HYGIENE-FORENSIC ayrı bir forensic hattıdır, execution dilimi değildir
 ve `growth_db` mutate edilmez.)
 
-NOT (2026-09-19 akşam, PR #90 sonrası): DELTA numaralandırması ve §3.1 aynası korunur; kanonik
-sıradaki dilim **DELTA-03 (PR-B2B)**. Bu arada kanonik tabloda yer almayan **BC integrity serisi**
+NOT (2026-09-19, PR #93 sonrası): DELTA numaralandırması ve §3.1 aynası korunur; **DELTA-03
+(PR-B2B) DONE**, kanonik sıradaki dilim **DELTA-04 (PR-D2)**. Bu arada kanonik tabloda yer almayan **BC integrity serisi**
 tamamlandı: **BC1+BC6 (PR #88)** money/value kontratı (signed brüt kâr + value/currency kontratı) ·
 **BC2+BC3 (PR #89)** identity scope + domain evidence (domain artık kimlik değil, vergi kimliği
 jurisdiction-scoped) · **BC4 (PR #90)** lifecycle shipment truth (REPEAT yalnız gerçek sevkiyat
 truth'undan; pipeline etiketi yetmez). **BC5 (PORT/HOST evidence tipi) PR-D1 kapsamına devredildi.**
-Güncel truth: main `0da03ce`, 29 migration, 33 dosya / 236 test, lifecycle policy
+Güncel truth: main `5f5d6dc`, 29 migration, 33 dosya / 240 test, DB safety gate 25/25, lifecycle policy
 `customer-lifecycle-signals-v2`, `growth_db` mutate edilmedi. **PR #4 (Process + Architecture Review
 Gate) 2026-09-19'da superseded kapatıldı** (branch `chore/process-review-gate` tarihsel arşiv; kod/CI
 içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilinçli taşınmadı).
@@ -591,13 +591,16 @@ içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilin�
 --- DELTA-03 — PR-B2B DB fingerprint + db push guard ---
 - Öncelik: HIGH / MUST / RISK A · Kapsam: DB-6, DB-7
 - Sorumlu: Cline
-- Durum: TODO (sıradaki dilim — DELTA-02 DONE/`e72769e`; docs-governance PR merge edildikten sonra başlar)
+- Durum: DONE (PR #93 squash merge `5f5d6dc`; CI 25/25 step success; merged branch silindi)
 - Bağımlılıklar: DELTA-02 (DONE)
 - Acceptance criteria:
-  - [ ] Salt-okunur fingerprint: host, DB adı, şema, env, repo/DB migration sayısı, latest repo/DB, missing/unknown, checksum durumu
-  - [ ] Status enum: IN_SYNC / BEHIND / AHEAD / DIVERGED / UNKNOWN; DIVERGED ve prod-benzeri UNKNOWN → fail-closed
-  - [ ] `db push --accept-data-loss` shared/staging/prod-benzeri ortamlarda reddedilir (negatif test)
-  - [ ] `growth_db` mutate edilmez (yalnız rapor)
+  - [x] Salt-okunur fingerprint: host, DB adı, şema, env, repo/DB migration sayısı, latest repo/DB, missing/unknown, checksum durumu
+  - [x] Status enum: IN_SYNC / BEHIND / AHEAD / DIVERGED / UNKNOWN; DIVERGED ve prod-benzeri UNKNOWN → fail-closed
+  - [x] `db push --accept-data-loss` shared/staging/prod-benzeri ortamlarda reddedilir (negatif test)
+  - [x] `--force-reset` reddi + production env'de disposable isimli hedefte bile `db push` reddi (regresyon testi)
+  - [x] `growth_db` mutate edilmez (yalnız rapor; kanıt: 3 migration, salt-okunur fingerprint, artefakt DB yok)
+  - [x] Kanıt (2026-09-19): gate **25/25 PASS** · focused **8/8** · full suite **33 dosya / 240 test** ·
+        lint/typecheck/build exit 0 · temiz 29/29 DB'de fingerprint **IN_SYNC**
 
 --- DELTA-04 — PR-D2 Fastify security modernization ---
 - Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-6 (T9)
