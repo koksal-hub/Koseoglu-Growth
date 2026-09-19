@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 import { z } from 'zod';
 
 const webhookSecretSchema = z
@@ -17,6 +18,27 @@ export const envSchema = z
       z.coerce.number().int().min(0).default(3000)
     ),
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    /**
+     * Bind address. Syntax only: a literal IP address, never a hostname.
+     * The default (127.0.0.1 in development/test) and the production requirement
+     * are owned by exposure-policy.ts, which also decides whether a non-loopback
+     * bind is allowed at all.
+     */
+    HOST: z
+      .string()
+      .refine((value) => isIP(value) !== 0, { message: 'must be a literal IPv4 or IPv6 address' })
+      .optional(),
+    /** Explicit permission required before any non-loopback bind is accepted. */
+    ALLOW_EXTERNAL_BIND: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    /**
+     * Trusted reverse-proxy allowlist (comma separated IP/CIDR). Empty means no
+     * proxy is trusted, so X-Forwarded-* headers are never treated as client
+     * identity. Parsing and validation live in exposure-policy.ts.
+     */
+    TRUST_PROXY_CIDRS: z.string().default(''),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
@@ -43,6 +65,22 @@ export const envSchema = z
     EMAIL_FROM_ADDRESS: z.string().email().optional(),
   })
   .superRefine((value, context) => {
+    // Exposure contract (PR-D1): production must name its bind address
+    // explicitly, and an ephemeral port is a test-only convenience.
+    if (value.NODE_ENV === 'production' && !value.HOST) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['HOST'],
+        message: 'must be set explicitly in production',
+      });
+    }
+    if (value.PORT === 0 && value.NODE_ENV !== 'test') {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['PORT'],
+        message: 'must be greater than 0 outside the test environment',
+      });
+    }
     if (value.NODE_ENV === 'production' && !value.GROWTH_INTERNAL_API_KEY) {
       context.addIssue({
         code: z.ZodIssueCode.custom,

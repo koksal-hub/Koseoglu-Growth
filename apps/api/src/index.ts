@@ -7,6 +7,7 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { buildLogger, genReqId } from './plugins/logger';
 import { Env, validateEnv } from './plugins/env';
+import { resolveExposurePolicy, type ExposureEvidence } from './plugins/exposure-policy';
 import { registerErrorHandler } from './plugins/errorHandler';
 import { createInternalAuthHook } from './plugins/internal-auth';
 import { prisma } from './lib/prisma';
@@ -25,14 +26,19 @@ import customerLifecycleRoutes from './routes/customer-lifecycle';
 import dashboardRoutes from './routes/dashboard';
 import companyIntelligenceRoutes from './routes/company-intelligence';
 
-export function buildServer(): { server: FastifyInstance; env: Env } {
+export function buildServer(): { server: FastifyInstance; env: Env; exposure: ExposureEvidence } {
   // validate env on startup
   const env = validateEnv(process.env);
+  // Exposure contract: a non-loopback bind needs explicit permission, and a
+  // trusted-proxy allowlist is the only thing that may make X-Forwarded-* count
+  // as client identity. Both decisions fail closed here, before a socket opens.
+  const exposure = resolveExposurePolicy(env);
 
   const server: FastifyInstance = Fastify({
     logger: buildLogger(env.LOG_LEVEL),
     genReqId,
     disableRequestLogging: false,
+    trustProxy: exposure.trustProxy,
   });
 
   // expose the correlation id to clients so responses can be traced in logs
@@ -82,11 +88,11 @@ export function buildServer(): { server: FastifyInstance; env: Env } {
 
   // basic swagger/OpenAPI could be added here in the future
 
-  return { server, env };
+  return { server, env, exposure: exposure.evidence };
 }
 
 if (require.main === module) {
-  const { server, env } = buildServer();
+  const { server, exposure } = buildServer();
 
   let shuttingDown = false;
   const shutdown = async (signal: NodeJS.Signals) => {
@@ -116,9 +122,11 @@ if (require.main === module) {
   });
 
   server
-    .listen({ port: env.PORT, host: '0.0.0.0' })
+    .listen({ port: exposure.port, host: exposure.host })
     .then(() => {
-      server.log.info({ port: env.PORT }, 'API server listening');
+      // Startup evidence: where we listen and whether forwarded headers are
+      // trusted at all. No secrets and no CIDR list (only its size).
+      server.log.info({ ...exposure }, 'API server listening');
     })
     .catch((err) => {
       // startup errors should be visible

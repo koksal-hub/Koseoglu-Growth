@@ -54,6 +54,14 @@ aşağıdakiler kanonik güncel truth'tur.
   `@fastify/cors` **11.3.0**, `@fastify/rate-limit` **11.2.0** · fresh 29/29,
   fingerprint `IN_SYNC`, DB safety kanıtları, **33 dosya / 240 test**, lint/typecheck/build PASS.
   Uygulama kaynak kodu ve migration değişmedi; dependency-gate kaydı plan §6'da.
+- **DELTA-05 (PR-D1) IN REVIEW — 2026-09-19:** fail-closed **exposure policy** (`HOST`,
+  `ALLOW_EXTERNAL_BIND`; dev/test varsayılanı `127.0.0.1`; production'da açık `HOST` şartı;
+  `PORT=0` yalnız test) + **trusted proxy policy** (`TRUST_PROXY_CIDRS` CIDR allowlist;
+  `trustProxy: true` ve hop sayımı yok; boş liste → forwarded header kimlik sayılmaz) + **BC5
+  startup/config evidence** (host, port, bindScope, externalBindExplicitlyAllowed,
+  trustProxyEnabled, trustedProxyCount, nodeEnv). Kod yazıldı: focused **38/38**, lint/typecheck/
+  build PASS, migration yok. CI ve merge bekleniyor — **DONE kaydı bu PR merge edildikten sonra
+  ayrı docs PR'ında yazılır.**
   Merge sonrası frozen install + lint/typecheck/build tekrar PASS; yerel full suite yeniden
   koşulmadı (konfigüre disposable DB salt-okunur kontrolde 25/29 BEHIND ve mutation yetkisi yoktu),
   bu nedenle full-suite kapanış kanıtı fresh DB kullanan GitHub CI'dır.
