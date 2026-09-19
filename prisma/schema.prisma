@@ -696,7 +696,10 @@ model RecommendationExposure {
   outcomes             RecommendationOutcome[]
   createdAt            DateTime                     @default(now())
 
-  @@index([recommendationType, recommendationId, exposedAt])
+  /// Explicit name: the Prisma-generated name is 72 bytes, so PostgreSQL
+  /// truncated it to 63 bytes in every replayed database and the schema/DB
+  /// names disagreed. This name is stable and within the 63 byte limit.
+  @@index([recommendationType, recommendationId, exposedAt], map: "rec_exposure_lookup_idx")
   @@index([mode, exposedAt])
 }
 
@@ -796,6 +799,11 @@ model OutreachDraftRevision {
   createdAt      DateTime      @default(now())
 
   approval     OutreachApproval?
+  /// Reverse side of the two composite invariants declared on OutreachApproval
+  /// (draft-scoped revision + content-hash match). Explicit names are required
+  /// because more than one relation links these two models now.
+  revisionDraftApprovals   OutreachApproval[] @relation("OutreachApprovalRevisionDraft")
+  revisionContentApprovals OutreachApproval[] @relation("OutreachApprovalContentRevision")
   sendAttempts SendAttempt[]
 
   @@unique([draftId, revisionNumber])
@@ -812,6 +820,13 @@ model OutreachApproval {
   draft          OutreachDraft            @relation(fields: [draftId], references: [id])
   revisionId     String                   @unique
   revision       OutreachDraftRevision    @relation(fields: [revisionId], references: [id])
+  /// Security invariants that PostgreSQL already enforces. Prisma cannot model
+  /// them as one relation, so they are two explicitly named relations whose
+  /// `map` values are the existing constraint names: this declaration must not
+  /// emit DDL, it only stops `prisma migrate diff` / `migrate dev` from
+  /// proposing a silent DROP CONSTRAINT.
+  revisionDraftLink   OutreachDraftRevision @relation("OutreachApprovalRevisionDraft", fields: [revisionId, draftId], references: [id, draftId], onDelete: Restrict, onUpdate: Cascade, map: "OutreachApproval_revision_belongs_to_draft_fkey")
+  revisionContentLink OutreachDraftRevision @relation("OutreachApprovalContentRevision", fields: [revisionId, draftId, contentHash], references: [id, draftId, contentHash], onDelete: Restrict, onUpdate: Cascade, map: "OutreachApproval_content_matches_revision_fkey")
   decision       OutreachApprovalDecision
   decisionReason String
   reviewedBy     String
