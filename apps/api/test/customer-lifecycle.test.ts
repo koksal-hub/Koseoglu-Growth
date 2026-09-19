@@ -45,7 +45,7 @@ describe('read-only customer lifecycle projection', () => {
     });
   });
 
-  it('returns REPEAT for two won opportunities and does not invent high-value policy', async () => {
+  it('reports a won pipeline as DEVELOPING without claiming a shipped repeat', async () => {
     const created = await company('repeat');
     const lead = await prisma.lead.create({ data: { companyId: created.id, sourceDetail: 'lifecycle-test' } });
     leadIds.push(lead.id);
@@ -57,10 +57,53 @@ describe('read-only customer lifecycle projection', () => {
     }
     const response = await server.inject({ method: 'GET', url: `/api/companies/${created.id}/lifecycle` });
     expect(response.statusCode).toBe(200);
-    const body = JSON.parse(response.payload) as { state: string; signals: { wonOpportunityCount: number; highValue: { classification: string } } };
-    expect(body.state).toBe('REPEAT');
+    const body = JSON.parse(response.payload) as {
+      state: string;
+      signals: {
+        wonOpportunityCount: number;
+        repeatEvidence: { basis: string };
+        highValue: { classification: string };
+      };
+    };
+    // BC4: won opportunities stay visible as commercial signals, but they are a
+    // pipeline belief, so the state must not assert a shipped repeat.
+    expect(body.state).toBe('DEVELOPING');
     expect(body.signals.wonOpportunityCount).toBe(2);
+    expect(body.signals.repeatEvidence.basis).toBe('PIPELINE_ONLY_UNCONFIRMED');
     expect(body.signals.highValue.classification).toBe('NOT_CLASSIFIED');
+  });
+
+  it('does not claim REPEAT from pipeline labels alone (BC4: shipment truth is required)', async () => {
+    const created = await company('pipeline-repeat');
+    const lead = await prisma.lead.create({ data: { companyId: created.id, sourceDetail: 'lifecycle-test' } });
+    leadIds.push(lead.id);
+    for (let index = 0; index < 3; index += 1) {
+      const opportunity = await prisma.opportunity.create({
+        data: { companyId: created.id, leadId: lead.id, stage: 'WON', estimatedValue: '100000', currency: 'TRY' },
+      });
+      opportunityIds.push(opportunity.id);
+    }
+    const response = await server.inject({ method: 'GET', url: `/api/companies/${created.id}/lifecycle` });
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.payload) as {
+      policyVersion: string;
+      state: string;
+      signals: { wonOpportunityCount: number; repeatEvidence: Record<string, unknown> };
+      policy: { repeatRequiresShippedEvidence: boolean };
+    };
+    // A won opportunity is a CRM belief, not a delivery record: the old policy
+    // asserted REPEAT here, the v2 contract refuses that claim.
+    expect(body.policyVersion).toBe('customer-lifecycle-signals-v2');
+    expect(body.state).not.toBe('REPEAT');
+    expect(body.state).toBe('DEVELOPING');
+    expect(body.signals.wonOpportunityCount).toBe(3);
+    expect(body.signals.repeatEvidence).toMatchObject({
+      basis: 'PIPELINE_ONLY_UNCONFIRMED',
+      pipelineWonCount: 3,
+      pipelineWonThreshold: 2,
+      operationsShipmentSource: 'NOT_AVAILABLE'
+    });
+    expect(body.policy.repeatRequiresShippedEvidence).toBe(true);
   });
 
   it('detects REACTIVATED from a long gap followed by a recent activity', async () => {
