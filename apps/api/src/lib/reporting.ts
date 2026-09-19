@@ -169,9 +169,61 @@ async function countStatuses<T extends string>(
   return result;
 }
 
+/** Driver adapters (Prisma 7 + @prisma/adapter-pg) surface SQLSTATE in `code` or `cause.originalCode`. */
+function sqlStateOf(error: unknown): string | undefined {
+  const candidate = error as { code?: unknown; cause?: { originalCode?: unknown } } | null;
+  if (!candidate || typeof candidate !== 'object') return undefined;
+  if (typeof candidate.code === 'string') return candidate.code;
+  const original = candidate.cause?.originalCode;
+  return typeof original === 'string' ? original : undefined;
+}
+
+/** PostgreSQL serialization_failure (40001) or Prisma P2034. */
+function isSerializationFailure(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') return true;
+  return sqlStateOf(error) === '40001';
+}
+
+/** Unique violation (23505/P2002) or serialization failure: safe to re-read and reuse. */
+function isWriteConflict(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === 'P2002' || error.code === 'P2034';
+  }
+  const state = sqlStateOf(error);
+  return state === '23505' || state === '40001';
+}
+const MAX_SERIALIZABLE_RETRIES = 3;
+
+/**
+ * Run a SERIALIZABLE transaction with bounded retry on PostgreSQL
+ * serialization failures (Prisma P2034). Concurrent report reads/writes can
+ * abort each other; without retry the client sees a spurious 500. Backoff is
+ * deterministic (no jitter) so retries stay reproducible; metrics themselves
+ * are computed from committed data and remain deterministic.
+ */
+async function withSerializableRetry<T>(
+  fn: (tx: Prisma.TransactionClient) => Promise<T>
+): Promise<T> {
+  let attempt = 0;
+  for (;;) {
+    try {
+      return await prisma.$transaction(fn, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      });
+    } catch (error) {
+      const retriable =
+        isSerializationFailure(error);
+      attempt += 1;
+      if (!retriable || attempt >= MAX_SERIALIZABLE_RETRIES) throw error;
+      const delayMs = 50 * 2 ** (attempt - 1);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
 async function collectMetrics(window: ReportWindow): Promise<ManagementReportMetrics> {
   const { periodStart, periodEnd } = window;
-  return prisma.$transaction(async (tx) => {
+  return withSerializableRetry(async (tx) => {
     const [
       companiesCreated,
       leadsCreated,
@@ -324,7 +376,7 @@ async function collectMetrics(window: ReportWindow): Promise<ManagementReportMet
         unverifiedAiCalls: 0,
       },
     };
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
 }
 
 export async function recordUsageReceipt(input: {
@@ -413,24 +465,35 @@ export async function generateManagementReport(reportDate = getCurrentReportDate
   const existing = await prisma.managementReport.findUnique({ where: { reportKey } });
   if (existing?.inputHash === inputHash) return { report: existing, reused: true };
 
-  const report = await prisma.managementReport.upsert({
-    where: { reportKey },
-    create: {
-      reportKey,
-      reportDate: window.reportDate,
-      timezone: window.timezone,
-      periodStart: window.periodStart,
-      periodEnd: window.periodEnd,
-      inputHash,
-      metrics: metrics as unknown as Prisma.InputJsonValue,
-    },
-    update: {
-      periodStart: window.periodStart,
-      periodEnd: window.periodEnd,
-      inputHash,
-      metrics: metrics as unknown as Prisma.InputJsonValue,
-      generatedAt: new Date(),
-    },
-  });
-  return { report, reused: false };
+  try {
+    const report = await prisma.managementReport.upsert({
+      where: { reportKey },
+      create: {
+        reportKey,
+        reportDate: window.reportDate,
+        timezone: window.timezone,
+        periodStart: window.periodStart,
+        periodEnd: window.periodEnd,
+        inputHash,
+        metrics: metrics as unknown as Prisma.InputJsonValue,
+      },
+      update: {
+        periodStart: window.periodStart,
+        periodEnd: window.periodEnd,
+        inputHash,
+        metrics: metrics as unknown as Prisma.InputJsonValue,
+        generatedAt: new Date(),
+      },
+    });
+    return { report, reused: false };
+  } catch (error) {
+    if (!isWriteConflict(error)) throw error;
+    // A concurrent caller inserted the same snapshot first: reportKey is unique
+    // and so is [reportDate, timezone], which an ON CONFLICT upsert cannot
+    // cover. Re-read and reuse the committed snapshot instead of failing with a
+    // spurious 500.
+    const raced = await prisma.managementReport.findUnique({ where: { reportKey } });
+    if (!raced) throw error;
+    return { report: raced, reused: true };
+  }
 }

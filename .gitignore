@@ -10,3 +10,6 @@ dist/
 .pnpm-store/
 coverage/
 .nyc_output/
+
+# Local tool metadata (not part of the project).
+.freebuff/

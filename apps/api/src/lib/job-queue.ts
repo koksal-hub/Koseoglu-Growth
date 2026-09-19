@@ -263,7 +263,13 @@ export async function runWorkerTick(
 /** Start a bounded in-process scheduler. Stop the returned function on shutdown. */
 export function startJobScheduler(
   workerId: string,
-  options: { intervalMs?: number; leaseMs?: number; batchSize?: number } = {}
+  options: {
+    intervalMs?: number;
+    leaseMs?: number;
+    batchSize?: number;
+    /** Called when a tick throws; defaults to console.error so failures are visible. */
+    onTickError?: (error: unknown) => void;
+  } = {}
 ) {
   const intervalMs = options.intervalMs ?? 1_000;
   if (!Number.isInteger(intervalMs) || intervalMs < 10) throw new JobQueueError(400, 'Invalid intervalMs');
@@ -271,7 +277,16 @@ export function startJobScheduler(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const tick = async () => {
     if (stopped) return;
-    await runWorkerTick(workerId, options);
+    try {
+      await runWorkerTick(workerId, options);
+    } catch (error) {
+      // A failing tick (for example a transient database outage) must not
+      // escape as an unhandled rejection: the process-level handler exits(1)
+      // and would take the whole API down with it. Surface it, keep the
+      // scheduler alive, and let the in-flight claim/complete guards keep
+      // the jobs consistent for the next tick.
+      (options.onTickError ?? console.error)("Job worker tick failed", error);
+    }
     if (!stopped) timer = setTimeout(() => void tick(), intervalMs);
   };
   void tick();

@@ -1,19 +1,22 @@
 import { FastifyInstance, FastifyError } from 'fastify';
 
+const MIN_VALID_HTTP_STATUS = 400;
+const MAX_VALID_HTTP_STATUS = 599;
+
+function isSafeErrorStatusCode(value: number): boolean {
+  return Number.isInteger(value) && value >= MIN_VALID_HTTP_STATUS && value <= MAX_VALID_HTTP_STATUS;
+}
+
 export function registerErrorHandler(fastify: FastifyInstance) {
   fastify.setErrorHandler((error: FastifyError, request, reply) => {
-    // Use fastify's structured logger
+    // Use fastify structured logger
     fastify.log.error({ err: error }, 'Unhandled error');
 
-    let status = 500;
-    const maybeError: unknown = error;
-
-    if (typeof maybeError === 'object' && maybeError !== null && 'statusCode' in (maybeError as Record<string, unknown>)) {
-      const sc = (maybeError as Record<string, unknown>)['statusCode'];
-      if (typeof sc === 'number') {
-        status = sc;
-      }
-    }
+    // Never trust an arbitrary error property: only map well-formed 4xx/5xx
+    // status codes onto the response. Anything else (missing, out of range or
+    // non-numeric) stays 500 so library internals cannot dictate the status line.
+    const rawStatus = (error as { statusCode?: unknown }).statusCode;
+    const status = typeof rawStatus === 'number' && isSafeErrorStatusCode(rawStatus) ? rawStatus : 500;
 
     const body = {
       error: {
