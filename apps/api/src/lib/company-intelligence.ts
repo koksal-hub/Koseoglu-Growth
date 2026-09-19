@@ -5,6 +5,7 @@ export const MAX_COMPANY_INTELLIGENCE_LIMIT = 100;
 export const MAX_COMPANY_INTELLIGENCE_WINDOW_DAYS = 366;
 const DAY_MS = 86_400_000;
 const SAFE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:@/-]*$/;
+export type IntelligenceCategory = 'COMPANY' | 'MARKET' | 'SUPPLY_CHAIN';
 
 export class CompanyIntelligencePolicyError extends Error {
   constructor(readonly statusCode: number, message: string) {
@@ -119,6 +120,12 @@ export async function getCompanyIntelligenceTimeline(input: {
   };
 }
 
+export function classifyIntelligenceClaim(claimKey: string | null): IntelligenceCategory {
+  if (claimKey?.startsWith('market.')) return 'MARKET';
+  if (claimKey?.startsWith('supply_chain.')) return 'SUPPLY_CHAIN';
+  return 'COMPANY';
+}
+
 function safeSourceOrigin(sourceUrl: string) {
   try {
     const url = new URL(sourceUrl);
@@ -191,6 +198,97 @@ export async function getCompanyEvidenceBrief(input: {
       observedAt: item.observedAt?.toISOString() ?? null,
       accessedAt: item.accessedAt.toISOString(),
     })),
+    policy: {
+      maxLimit: MAX_COMPANY_INTELLIGENCE_LIMIT,
+      maxWindowDays: MAX_COMPANY_INTELLIGENCE_WINDOW_DAYS,
+      rawSourceUrlIncluded: false,
+      metadataIncluded: false,
+      writesPerformed: false,
+      externalCallsPerformed: false,
+    },
+  };
+}
+
+/**
+ * Classify existing evidence into explainable intelligence categories. The
+ * projection is bounded and returns whether the source set was truncated.
+ */
+export async function getCompanyIntelligenceInsights(input: {
+  companyId: string;
+  category?: IntelligenceCategory;
+  from?: Date;
+  to?: Date;
+  limit?: number;
+}) {
+  validateCompanyId(input.companyId);
+  const to = input.to ?? new Date();
+  const from = input.from ?? new Date(to.getTime() - 90 * DAY_MS);
+  const limit = input.limit ?? 50;
+  validateDate(from, 'from');
+  validateDate(to, 'to');
+  validateLimit(limit);
+  if (from.getTime() >= to.getTime()) {
+    throw new CompanyIntelligencePolicyError(400, 'from must be earlier than to');
+  }
+  if (to.getTime() - from.getTime() > MAX_COMPANY_INTELLIGENCE_WINDOW_DAYS * DAY_MS) {
+    throw new CompanyIntelligencePolicyError(400, `window cannot exceed ${MAX_COMPANY_INTELLIGENCE_WINDOW_DAYS} days`);
+  }
+
+  const company = await prisma.company.findUnique({ where: { id: input.companyId }, select: { id: true, name: true } });
+  if (!company) throw new CompanyIntelligencePolicyError(404, 'Company not found');
+  const where = { companyId: company.id, accessedAt: { gte: from, lt: to } } as const;
+  const [totalEvidence, rows] = await Promise.all([
+    prisma.evidence.count({ where }),
+    prisma.evidence.findMany({
+      where,
+      orderBy: [{ accessedAt: 'desc' }, { id: 'desc' }],
+      take: Math.min(limit, MAX_COMPANY_INTELLIGENCE_LIMIT),
+      select: {
+        id: true,
+        sourceUrl: true,
+        sourceName: true,
+        claimKey: true,
+        freshnessStatus: true,
+        confidence: true,
+        summary: true,
+        publishedAt: true,
+        observedAt: true,
+        accessedAt: true,
+      },
+    }),
+  ]);
+  const evidence = rows
+    .map((item) => ({
+      id: item.id,
+      category: classifyIntelligenceClaim(item.claimKey),
+      sourceOrigin: safeSourceOrigin(item.sourceUrl),
+      sourceName: item.sourceName,
+      claimKey: item.claimKey,
+      freshnessStatus: item.freshnessStatus,
+      confidence: item.confidence,
+      summary: item.summary,
+      summaryTrust: 'UNTRUSTED_SOURCE_TEXT' as const,
+      publishedAt: item.publishedAt?.toISOString() ?? null,
+      observedAt: item.observedAt?.toISOString() ?? null,
+      accessedAt: item.accessedAt.toISOString(),
+    }))
+    .filter((item) => !input.category || item.category === input.category)
+    .slice(0, limit);
+  const categoryCounts = Object.fromEntries(
+    (['COMPANY', 'MARKET', 'SUPPLY_CHAIN'] as const).map((category) => [category, evidence.filter((item) => item.category === category).length]),
+  );
+  return {
+    policyVersion: COMPANY_INTELLIGENCE_POLICY_VERSION,
+    company,
+    category: input.category ?? null,
+    window: { from: from.toISOString(), to: to.toISOString() },
+    summary: {
+      totalEvidence,
+      returnedEvidence: evidence.length,
+      truncated: totalEvidence > rows.length,
+      categoryCounts,
+    },
+    evidence,
     policy: {
       maxLimit: MAX_COMPANY_INTELLIGENCE_LIMIT,
       maxWindowDays: MAX_COMPANY_INTELLIGENCE_WINDOW_DAYS,

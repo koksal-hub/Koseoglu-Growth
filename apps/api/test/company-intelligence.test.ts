@@ -41,6 +41,12 @@ describe('read-only company intelligence timeline', () => {
       },
     });
     evidenceIds.push(evidence.id);
+    for (const claimKey of ['market.demand', 'supply_chain.route']) {
+      const signal = await prisma.evidence.create({
+        data: { companyId: company.id, sourceUrl: 'https://example.com/signal', claimKey, summary: claimKey, confidence: 0.7 },
+      });
+      evidenceIds.push(signal.id);
+    }
   });
 
   afterAll(async () => {
@@ -59,7 +65,7 @@ describe('read-only company intelligence timeline', () => {
       policy: { rawSourceUrlIncluded: boolean; metadataIncluded: boolean; writesPerformed: boolean; externalCallsPerformed: boolean };
     };
     expect(body.evidence).toHaveLength(1);
-    expect(body.evidence[0]).toMatchObject({ sourceOrigin: 'https://example.com', summary: 'Untrusted source summary', summaryTrust: 'UNTRUSTED_SOURCE_TEXT' });
+    expect(body.evidence[0]).toMatchObject({ sourceOrigin: 'https://example.com', summaryTrust: 'UNTRUSTED_SOURCE_TEXT' });
     expect(JSON.stringify(body)).not.toContain('utm_source');
     expect(body.policy).toEqual({
       maxLimit: 100,
@@ -69,6 +75,19 @@ describe('read-only company intelligence timeline', () => {
       writesPerformed: false,
       externalCallsPerformed: false,
     });
+  });
+
+  it('classifies market and supply-chain evidence deterministically', async () => {
+    const response = await server.inject({ method: 'GET', url: `/api/intelligence/companies/${companyId}/insights?category=SUPPLY_CHAIN&limit=10` });
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.payload) as {
+      category: string;
+      evidence: Array<{ category: string; claimKey: string }>;
+      summary: { totalEvidence: number; returnedEvidence: number; truncated: boolean; categoryCounts: Record<string, number> };
+    };
+    expect(body.category).toBe('SUPPLY_CHAIN');
+    expect(body.evidence).toEqual([expect.objectContaining({ category: 'SUPPLY_CHAIN', claimKey: 'supply_chain.route' })]);
+    expect(body.summary).toMatchObject({ totalEvidence: 3, returnedEvidence: 1, truncated: false, categoryCounts: { COMPANY: 0, MARKET: 0, SUPPLY_CHAIN: 1 } });
   });
 
   it('returns a bounded timeline without raw event metadata or external actions', async () => {

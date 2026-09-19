@@ -30,6 +30,8 @@ kontrollü bir API üzerinden gerekli veri paylaşılabilir. Detay: [DECISIONS.m
   bounded, salt-okunur şirket istihbaratı görünümü.
 - `GET /api/intelligence/companies/:id/evidence-brief` — kanıtları origin-only
   kaynak ve untrusted özet olarak bounded biçimde sunar.
+- `GET /api/intelligence/companies/:id/insights` — `claimKey` namespace’lerine
+  göre şirket, market ve tedarik zinciri sinyallerini sınıflandırır.
 - `apps/web` — React + Vite frontend.
 - `prisma/` — PostgreSQL şema ve migration'lar.
 - `docker/` — yerel geliştirme için Postgres.
