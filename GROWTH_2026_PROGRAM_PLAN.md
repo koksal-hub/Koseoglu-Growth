@@ -129,8 +129,7 @@ Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capabilit
 | 3 | **PR-B2B** (#93, MERGED) | DB-6, DB-7 | PR-B2A (#87 MERGED) | gate 25/25 PASS (8 fingerprint + 6 db push kanıtı) · CI 25/25 step · full suite 33 dosya / 240 test |
 | 4 | **PR-D2** (#95, MERGED) | SYS-6 (T9) | PR-C | Fastify 5.12.5 + coordinated plugins · dependency gate · fresh 29/29 · 240 test · CI PASS |
 | 5 | **PR-D1** (#97, MERGED) | SYS-1, SYS-2 | PR-D2 (#95 MERGED) | gate 25/25 · CI 35 dosya / 258 test · exposure/proxy testleri + BC5 evidence |
-| 6 | **PR-D5** (Prisma Pool/Timeout + Bounded Readiness; sıradaki dilim) | SYS-12 (T4), SYS-3 | PR-D2 (#95 MERGED) | pool benchmark + `/ready` timeout testi |
-| 6 | **PR-D5** (Pool/Timeout + Readiness) | SYS-12 (T4), SYS-3 | PR-D2 | pool benchmark + `/ready` timeout testi |
+| 6 | **PR-D5** (Prisma Pool/Timeout + Bounded Readiness; sıradaki dilim) | SYS-12 (T4), SYS-3 | PR-D2 (#95 MERGED) = DELTA-04 | pool benchmark + `/ready` timeout testi |
 | 7 | **PR-D3** (Route Auth + Rate Limit) | SYS-4, SYS-5 | PR-D1 | auth metadata testi + endpoint bazlı limitler |
 | 8 | **PR-D4** (Response Contract / PII Guard) | SYS-11 | PR-D3 | şema dışı alan testinin kırılması |
 | 9 | **PR-E2** (PG Error Classifier + Report Query) | SYS-9, SYS-10 | PR-D5 | 7 senaryo + latency/query baseline |
@@ -139,6 +138,12 @@ Kanonik dilim sırası (her dilim kendi kanıtını üretir; §21'deki capabilit
 | 12 | **L6 Revenue Core** | REV-1, RET-2, ACQ-8 | L2/L3/L4 | GP yazımı + 30/60/90 metrikleri |
 | 13 | **Closed-loop acquisition/retention/experimentation** | ACQ-1…ACQ-9, DSC, EXP, RET-1 | L6 actual outcome | incrementality/uplift hattı |
 | — | **DB-HYGIENE-FORENSIC** (ayrı hat) | DB-8 | kullanıcı kararı | forensic raporu; `growth_db` mutate edilmez |
+
+**Ön koşul kaydı (2026-09-20, PR-D1R doğruluk düzeltmesi):** PR-D5 / DELTA-06'nın ön koşulu
+**tamamlanmış PR-D2 (DELTA-04)**'tür; **L2 bu dilimin ön koşulu değildir** (L2 sıradaki adımdır).
+Worker ve MCP henüz etkin olmadığı için PR-D5 pool kapasite tablosunda ilgili satırlar
+**`0 / NOT_ACTIVE`** olarak kaydedilir ve **L2 worker etkinleştirilmeden önce worker'ın kendi pool
+bütçesi zorunlu kapıdır** (SYS-12 + SYS-7).
 
 **Paralel güvenli hat:** read-only / human-controlled acquisition MVP (ACQ-1, ACQ-2, ACQ-3, ACQ-6)
 L2 + DAT-1 + gerekli security/compliance gate'lerinden sonra başlayabilir; **canlı outreach ve
@@ -301,7 +306,7 @@ actions checkout@v5 ve setup-node@v5 (her ikisi runs.using: node24).
 | T1b | .github/dependabot.yml (npm + github-actions + docker; minor/patch gruplu, haftalık) | Çok düşük | — |
 | T2 | vite.config.ts ve vitest.config.ts dosyalarını .mts yap (Vite CJS uyarısı kapanır) | Çok düşük | — |
 | T3 | @types/node ^24; prettier 3 + format:check + CI adımı | Düşük | T0a |
-| T4 | Prisma pool: new PrismaPg ile açık bağlantı konfigürasyonu (connectionString, max, zaman aşımları) + process başına pool bütçesi (api, worker, mcp) + test | Düşük | L2 |
+| T4 | Prisma pool: new PrismaPg ile açık bağlantı konfigürasyonu (connectionString, max, zaman aşımları) + process başına pool bütçesi (api, worker, mcp) + test | Düşük | PR-D2 (DELTA-04) — **L2 değil** |
 | T5 | CI kalite kapıları: coverage eşiği, prisma validate, pnpm audit, secret-scan, CodeQL; SBOM adımında iki-dokümanlı lockfile uyarısına dikkat | Düşük | T0b |
 | T6 | ESLint 8 → 10 flat config + typed lint (projectService) | Orta | T3 |
 | T7 | Vitest 1 → 5 (+jsdom); projects ile api ve web ayrımı (F-09 çözümü) | Orta | T6 |
@@ -317,6 +322,8 @@ Prisma 8 ve pnpm 12 en sona bırakılır (ölçülmüş fayda şartı).
 **§21 cross-reference (capability ↔ T dilimi):**
 T3 ← SYS-14 (node runtime/types + min-runtime CI) · T4 ← SYS-12 + SYS-3 (pool/timeout + bounded readiness) ·
 T5 ← DB-2…DB-7 (CI migration convergence + fingerprint guard) · T9 ← SYS-6 (PR-D2 Fastify security modernization).
+T4'ün ön koşulu **PR-D2 (DELTA-04)**'tür, **L2 değildir**; L2 worker etkinleştirildiğinde worker'ın
+kendi pool bütçesi ayrı zorunlu kapıdır (2026-09-20 kararı).
 
 **Düzeltme (2026-09-19, PR-D2 planı):** T8 (zod 4) **T9 için zorunlu değildir**. Yukarıdaki
 "T8 T9'dan önce zorunludur" gerekçesi yalnız `fastify-type-provider-zod` benimsenirse geçerlidir;
@@ -515,7 +522,7 @@ Verdict dağılımı (**46 capability**): EXISTING 4 · PARTIAL 19 · MISSING 22
 | SYS-9 | **PG Error Classifier + Bounded Retry** — 40001/40P01 retry; 23505 generic retry yok; 23503 retry yok; unknown throw; driver-adapter wrapper tanınır | PARTIAL | MUST | PR-E2 | Blind retry = çift etki; retry'siz deadlock = spurious 500 → dashboard/teklif kesintisi | K: 7 senaryo testi + retry limiti · R: sonsuz retry; dep SYS-12 |
 | SYS-10 | **Report Query Consolidation** — groupBy/aggregate/kısa snapshot; davranış değişmeden önce baseline | MISSING | MUST (perf) | PR-E2 | Dashboard/rapor DB yükü → günlük fırsat penceresi kaçar (why-now bayatlar) | K: query count + p95 önce/sonra · R: uzun SERIALIZABLE tx; dep SYS-9 |
 | SYS-11 | **API Response Contract / PII Leak Guard** — explicit projection/schema | MISSING | MUST | PR-D4 | Internal alanın API'ye sonradan sessizce sızmasını engeller → müşteri/veri güvenliği | K: şema dışı alan testi kırar (6 direct-return route) · R: KVKK; dep SYS-4 |
-| SYS-12 | **Prisma Pool & Timeout Policy** — pool max / connect / idle / transaction / statement timeout / shutdown-drain | MISSING (=**T4**) | MUST | PR-D5 | Pool tükenmesi veya sessiz timeout → tüm API yavaşlar → müşteri kaçar | K: instance × pool kapasitesi benchmark · R: default'a kör güven; dep L2 |
+| SYS-12 | **Prisma Pool & Timeout Policy** — pool max / connect / idle / transaction / statement timeout / shutdown-drain | MISSING (=**T4**) | MUST | PR-D5 | Pool tükenmesi veya sessiz timeout → tüm API yavaşlar → müşteri kaçar | K: instance × pool kapasitesi benchmark (worker/MCP etkin değil → `0 / NOT_ACTIVE`) · R: default'a kör güven; dep **PR-D2 (#95, DELTA-04)**; L2 sonraki kapı |
 | SYS-13 | **Graceful Resource Lifecycle** — `onClose`: scheduler stop → worker stop → in-flight politikası → DB disconnect → gelecekteki crawler/agent temizliği | PARTIAL | V1 | L2 | Deploy sırasında kesilen in-flight iş → müşteri teması/teklif kaybı | K: shutdown sırası testi · R: yarım iş + kilit; dep SYS-7 |
 | SYS-14 | **Node Runtime/Types Alignment** — runtime 24.x ↔ `@types/node`; minimum supported Node CI job | PARTIAL (=**T3**) | V1 | T3 | Tip/runtime uyumsuzluğu → üretimde sürpriz hata → müşteri teması kesilir | K: ayrı min-Node CI job · R: v24 runtime vs `@types/node` ^20 |
 | SYS-15 | **Toolchain EOL modernizasyonu** (ESLint 8 vb. ayrı maintenance dilimi) | PARTIAL | V2 | T0–T10 | Bakımsız araç zinciri → yavaş teslim + güvenlik açığı | K: T dilimleri PASS · R: revenue-critical işi geciktirme |

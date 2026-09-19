@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { validateEnv } from '../src/plugins/env';
+import { captureEnvFailure } from './support/env-failure';
 
 const DATABASE_URL = 'postgresql://example.invalid/growth_test';
 
@@ -64,5 +65,32 @@ describe('environment parsing', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     expect(() => validateEnv({ DATABASE_URL, PORT: 'abc' })).toThrow('Environment validation failed');
     expect(spy).toHaveBeenCalled();
+  });
+
+  it('treats an empty or blank internal key as unset', () => {
+    // `GROWTH_INTERNAL_API_KEY=` in an env file, a compose `:-` default and an
+    // absent variable must all mean the same thing: not configured.
+    expect(
+      validateEnv({ DATABASE_URL, NODE_ENV: 'development', GROWTH_INTERNAL_API_KEY: '' })
+        .GROWTH_INTERNAL_API_KEY
+    ).toBeUndefined();
+    expect(
+      validateEnv({ DATABASE_URL, NODE_ENV: 'development', GROWTH_INTERNAL_API_KEY: '   ' })
+        .GROWTH_INTERNAL_API_KEY
+    ).toBeUndefined();
+    expect(validateEnv({ DATABASE_URL, NODE_ENV: 'development' }).GROWTH_INTERNAL_API_KEY).toBeUndefined();
+  });
+
+  it('keeps production fail-closed for an empty, blank or absent internal key', () => {
+    const production = { DATABASE_URL, NODE_ENV: 'production', HOST: '0.0.0.0' };
+    for (const key of ['', '   ']) {
+      expect(captureEnvFailure({ ...production, GROWTH_INTERNAL_API_KEY: key })).toContain(
+        'is required in production'
+      );
+    }
+    expect(captureEnvFailure(production)).toContain('is required in production');
+    expect(
+      validateEnv({ ...production, GROWTH_INTERNAL_API_KEY: 'A'.repeat(43) }).GROWTH_INTERNAL_API_KEY
+    ).toBe('A'.repeat(43));
   });
 });
