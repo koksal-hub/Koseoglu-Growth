@@ -386,6 +386,21 @@ enum ReplyClassification {
 /// A B2B company Growth has discovered, researched, or sold to.
 /// `domain`, `taxNumber` and `normalizedName` are expected to be normalized
 /// (see apps/api/src/lib/entity-resolution.ts) before being written here.
+/// Where an evidence record came from. UNKNOWN is an honest "not recorded"
+/// value for historical rows: it never means external, human or synthetic and
+/// never implies zero confidence.
+enum EvidenceDataOrigin {
+  UNKNOWN
+  HUMAN_OBSERVATION
+  CUSTOMER_BEHAVIOR
+  EXTERNAL_EVIDENCE
+  AI_INFERENCE
+  SYNTHETIC
+  AUGMENTED
+  AI_RECOMMENDATION
+  HUMAN_DECISION
+  ACTUAL_COMMERCIAL_OUTCOME
+}
 model Company {
   id             String         @id @default(cuid())
   name           String
@@ -1245,6 +1260,13 @@ model Evidence {
   accessedAt      DateTime                @default(now())
   observedAt      DateTime?
   claimKey        String?
+  /// When the fact became available to the system (point-in-time correctness).
+  /// NULL means "unknown historical availability"; never backfilled.
+  availableAt       DateTime?
+  dataOrigin        EvidenceDataOrigin @default(UNKNOWN)
+  /// Groups evidence derived from the same underlying source so it is not
+  /// double counted as two independent signals.
+  evidenceGroupKey  String?
   freshnessStatus EvidenceFreshnessStatus @default(UNKNOWN)
   legalNotes      String?
   summary         String
