@@ -1,3 +1,6 @@
+// Load the repository-root .env before any module reads process.env (dev/start only;
+// skipped under test runners - see env-loader.ts).
+import './env-loader';
 import Fastify, { FastifyInstance } from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';

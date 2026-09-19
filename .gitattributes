@@ -1,0 +1,5 @@
+# Normalize line endings so Windows and Linux checkouts stay byte-stable.
+* text=auto eol=lf
+
+# The lockfile must never be rewritten by autocrlf (see DEEP_SCAN G-11).
+pnpm-lock.yaml text eol=lf

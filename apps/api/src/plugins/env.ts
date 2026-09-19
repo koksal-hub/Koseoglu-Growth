@@ -10,7 +10,12 @@ const webhookSecretSchema = z
 export const envSchema = z
   .object({
     DATABASE_URL: z.string().nonempty(),
-    PORT: z.coerce.number().int().positive().default(3000),
+    // An empty PORT (e.g. PORT= in .env) must fall back to the default:
+    // z.coerce.number('') is 0, which would silently bind an ephemeral port.
+    PORT: z.preprocess(
+      (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+      z.coerce.number().int().min(0).default(3000)
+    ),
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
