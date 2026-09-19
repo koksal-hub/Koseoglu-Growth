@@ -43,6 +43,7 @@ const companyIds: string[] = [];
 const contactPointIds: string[] = [];
 const rankingReceiptIds: string[] = [];
 const draftIds: string[] = [];
+const exposureIds: string[] = [];
 
 function contentHashFor(label: string): string {
   return createHash('sha256').update(`${label}-${RUN_ID}`).digest('hex');
@@ -211,6 +212,9 @@ describe('PostgreSQL migration invariants', () => {
     await prisma.outreachDraftRevision.deleteMany({ where: { draftId: { in: draftIds } } });
     await prisma.outreachDraft.deleteMany({ where: { id: { in: draftIds } } });
     await prisma.companyRankingReceipt.deleteMany({ where: { id: { in: rankingReceiptIds } } });
+    await prisma.recommendationOutcome.deleteMany({ where: { exposureId: { in: exposureIds } } });
+    await prisma.recommendationExposure.deleteMany({ where: { id: { in: exposureIds } } });
+    await prisma.opportunity.deleteMany({ where: { companyId: { in: companyIds } } });
     await prisma.contactPoint.deleteMany({ where: { id: { in: contactPointIds } } });
     await prisma.company.deleteMany({ where: { id: { in: companyIds } } });
     await prisma.$disconnect();
@@ -325,5 +329,77 @@ describe('PostgreSQL migration invariants', () => {
     expect(indexes.map((row) => row.relname)).not.toContain(
       'RecommendationExposure_recommendationType_recommendationId_expo'
     );
+  });
+
+  it('enforces the money value contract in PostgreSQL', async () => {
+    // PR-BC1 (BC1 + BC6): a real loss must be storable as a negative
+    // GROSS_PROFIT, magnitudes stay non-negative, GROSS_PROFIT always carries
+    // value + currency, and Opportunity estimates are never negative and carry a
+    // canonical 3-letter currency. These are DB-level guarantees, so the writes
+    // below bypass the application layer on purpose.
+    const companyId = companyIds[0];
+    const exposureId = `migration-invariant-exposure-${randomUUID()}`;
+    await prisma.$executeRaw`
+      INSERT INTO "RecommendationExposure" (
+        "id", "exposureKey", "recommendationType", "recommendationId", "algorithmVersion",
+        "inputHash", "mode", "position", "actor", "exposedAt"
+      ) VALUES (
+        ${exposureId}, ${`key-${exposureId}`}, 'LEAD_RANKING'::"RecommendationType",
+        ${'migration-invariant-recommendation'}, ${'deterministic-ranking-v1'},
+        ${'a'.repeat(64)}, 'EXPLOITATION'::"RecommendationExposureMode", 1,
+        ${'migration-invariant-actor'}, ${new Date()}
+      )`;
+    exposureIds.push(exposureId);
+
+    const insertOutcome = (values: {
+      outcomeKey: string;
+      outcomeType: string;
+      valueMinor: number | null;
+      currency: string | null;
+    }) =>
+      prisma.$executeRaw`
+        INSERT INTO "RecommendationOutcome" (
+          "id", "exposureId", "outcomeKey", "outcomeType", "occurredAt", "valueMinor", "currency", "recordedBy"
+        ) VALUES (
+          ${`migration-invariant-outcome-${randomUUID()}`}, ${exposureId}, ${values.outcomeKey},
+          ${values.outcomeType}::"RecommendationOutcomeType", ${new Date()}, ${values.valueMinor},
+          ${values.currency}, ${'migration-invariant-recorder'}
+        )`;
+
+    const negativeMagnitude = await captureFailure(() =>
+      insertOutcome({ outcomeKey: 'negative-human-action', outcomeType: 'HUMAN_ACTION', valueMinor: -1, currency: 'TRY' })
+    );
+    expect(negativeMagnitude).toContain('RecommendationOutcome_value_by_type');
+    expect(negativeMagnitude).toContain('23514');
+
+    await expect(
+      insertOutcome({ outcomeKey: 'negative-gross-profit', outcomeType: 'GROSS_PROFIT', valueMinor: -450000, currency: 'TRY' })
+    ).resolves.toBe(1);
+
+    const unvaluedGrossProfit = await captureFailure(() =>
+      insertOutcome({ outcomeKey: 'gp-without-value', outcomeType: 'GROSS_PROFIT', valueMinor: null, currency: null })
+    );
+    expect(unvaluedGrossProfit).toContain('RecommendationOutcome_gross_profit_value_required');
+    expect(unvaluedGrossProfit).toContain('23514');
+
+    const insertOpportunity = (estimatedValue: string | null, currency: string | null) =>
+      prisma.$executeRaw`
+        INSERT INTO "Opportunity" ("id", "companyId", "stage", "estimatedValue", "currency", "createdAt", "updatedAt")
+        VALUES (
+          ${`migration-invariant-opportunity-${randomUUID()}`}, ${companyId},
+          'QUALIFICATION'::"OpportunityStage", ${estimatedValue}::decimal, ${currency}, ${new Date()}, ${new Date()}
+        )`;
+
+    const negativeEstimate = await captureFailure(() => insertOpportunity('-1.00', 'TRY'));
+    expect(negativeEstimate).toContain('Opportunity_estimated_value_nonnegative');
+    expect(negativeEstimate).toContain('23514');
+
+    const missingCurrency = await captureFailure(() => insertOpportunity('1000.00', null));
+    expect(missingCurrency).toContain('Opportunity_estimated_value_currency_shape');
+
+    const lowercaseCurrency = await captureFailure(() => insertOpportunity('1000.00', 'try'));
+    expect(lowercaseCurrency).toContain('Opportunity_estimated_value_currency_shape');
+
+    await expect(insertOpportunity('1000.00', 'TRY')).resolves.toBe(1);
   });
 });
