@@ -41,6 +41,20 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Apply database migrations
         run: pnpm exec prisma migrate deploy
+      - name: Migration gate - target guard (fail-closed)
+        run: node apps/api/scripts/db-safety.mjs guard --url "$TEST_DATABASE_URL" --role test
+      - name: Migration gate - history and checksum integrity
+        run: node apps/api/scripts/db-safety.mjs history --url "$TEST_DATABASE_URL"
+      - name: Migration gate - schema convergence (zero unexpected drift)
+        run: node apps/api/scripts/db-safety.mjs convergence --url "$TEST_DATABASE_URL"
+      - name: Migration gate - fresh replay (dedicated disposable database)
+        run: node apps/api/scripts/db-replay.mjs fresh
+      - name: Migration gate - upgrade replay (previous canonical state to latest)
+        run: node apps/api/scripts/db-replay.mjs upgrade
+      - name: Migration gate - shadow convergence (dedicated disposable shadow target)
+        run: node apps/api/scripts/db-replay.mjs shadow
+      - name: Migration gate - PostgreSQL object names (<=63 bytes)
+        run: node apps/api/scripts/db-safety.mjs object-names
       - name: Lint
         run: pnpm lint
       - name: Typecheck
@@ -49,3 +63,5 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      - name: Migration gate - negative proofs (drift, checksum, unsafe target, object names)
+        run: node apps/api/scripts/db-replay.mjs negative-proof
