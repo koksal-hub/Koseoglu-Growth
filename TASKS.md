@@ -551,15 +551,15 @@ GitHub Issue açılacak; o zamana kadar bu bölüm aynadır. Çelişki halinde G
 CI kanıtı esastır. (DB-HYGIENE-FORENSIC ayrı bir forensic hattıdır, execution dilimi değildir
 ve `growth_db` mutate edilmez.)
 
-NOT (2026-09-19, PR #95 sonrası): DELTA numaralandırması ve §3.1 aynası korunur; **DELTA-03
-(PR-B2B) DONE**, **DELTA-04 (PR-D2) DONE** ve **DELTA-05 (PR-D1) DONE**, kanonik sıradaki dilim
-**DELTA-06 (PR-D5)**.
+NOT (2026-09-20 güncel): DELTA numaralandırması ve §3.1 aynası korunur; **DELTA-03 (PR-B2B) DONE**,
+**DELTA-04 (PR-D2) DONE**, **DELTA-05 (PR-D1) DONE** ve **DELTA-05R (PR-D1R compose startup
+contract — PR #99/`ce0b6cd`) DONE**; kanonik sıradaki dilim **DELTA-06 (PR-D5)**.
 Bu arada kanonik tabloda yer almayan **BC integrity serisi**
 tamamlandı: **BC1+BC6 (PR #88)** money/value kontratı (signed brüt kâr + value/currency kontratı) ·
 **BC2+BC3 (PR #89)** identity scope + domain evidence (domain artık kimlik değil, vergi kimliği
 jurisdiction-scoped) · **BC4 (PR #90)** lifecycle shipment truth (REPEAT yalnız gerçek sevkiyat
 truth'undan; pipeline etiketi yetmez). **BC5 (PORT/HOST evidence tipi) PR-D1 kapsamına devredildi.**
-Güncel truth: latest code-bearing baseline `225776f` (current HEAD docs commit'leriyle ilerleyebilir), 29 migration, 35 dosya / 258 test, DB safety gate 25/25, lifecycle policy
+Güncel truth: latest code-bearing baseline `ce0b6cd` (current HEAD docs commit'leriyle ilerleyebilir), 29 migration, 36 dosya / 264 test, DB safety gate 25/25, lifecycle policy
 `customer-lifecycle-signals-v2`, `growth_db` mutate edilmedi. **PR #4 (Process + Architecture Review
 Gate) 2026-09-19'da superseded kapatıldı** (branch `chore/process-review-gate` tarihsel arşiv; kod/CI
 içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilinçli taşınmadı).
@@ -633,7 +633,8 @@ içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilin�
 --- DELTA-05R — PR-D1R Compose startup contract ---
 - Öncelik: HIGH / MUST / RISK A (startup'ta çalışmama) · Kapsam: SYS-1, SYS-2 container bağlantısı
 - Sorumlu: Cline
-- Durum: IN REVIEW (2026-09-20; DELTA-05 DONE/`225776f` sonrası düzeltici dilim)
+- Durum: DONE (PR #99 squash merge `ce0b6cd`; CI run `35477288333` → 36 dosya / 264 test PASS;
+  DELTA-05 DONE/`225776f` sonrası düzeltici dilim)
 - Bağımlılıklar: DELTA-05
 - Acceptance criteria:
   - [x] api servisi `HOST`, `ALLOW_EXTERNAL_BIND`, `TRUST_PROXY_CIDRS`, `GROWTH_INTERNAL_API_KEY` değerlerini aktarır
@@ -642,11 +643,14 @@ içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilin�
   - [x] yeni `compose-contract.test.ts` sözleşmeyi kilitler; düzeltme öncesi kompozda **FAIL** negatif kanıtı alındı
   - [x] README ve compose header aynı başlangıç sözleşmesini anlatır (tek kaynak: compose header)
   - [x] Plan doğruluğu: §3.1 çift PR-D5 satırı tek satır; §13 T4 + §21.1 SYS-12 ön koşulu PR-D2 (DELTA-04), L2 değil
+  - [x] İnceleme bulgusu düzeltildi: boş/blank `GROWTH_INTERNAL_API_KEY` env doğrulamasında `undefined`'a
+        normalize edilir (development PASS), production `is required in production` ile fail-closed kalır;
+        7 senaryo testi + 2 negatif kanıt (düzeltme öncesi compose ve env.ts)
 
 --- DELTA-06 — PR-D5 Prisma Pool/Timeout + Bounded Readiness ---
 - Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-12 (T4), SYS-3
 - Sorumlu: Cline
-- Durum: TODO (sıradaki dilim — DELTA-05 DONE/`225776f`)
+- Durum: TODO (sıradaki dilim — DELTA-05R DONE/`ce0b6cd`; NEXT = PR-D5)
 - Bağımlılıklar: DELTA-04 (DONE — PR #95/`5b0450b`). **L2 ön koşul DEĞİLDİR** (2026-09-20 kararı:
   L2 sırada PR-D5'ten sonra gelir; kanonik kayıt plan §3.1 + §13 T4 + §21.1 SYS-12).
 - Acceptance criteria:
