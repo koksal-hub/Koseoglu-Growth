@@ -650,16 +650,24 @@ içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilin�
 --- DELTA-06 — PR-D5 Prisma Pool/Timeout + Bounded Readiness ---
 - Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-12 (T4), SYS-3
 - Sorumlu: Cline
-- Durum: TODO (sıradaki dilim — DELTA-05R DONE/`ce0b6cd`; NEXT = PR-D5)
+- Durum: IN REVIEW (2026-09-20; PR açık, GitHub CI bekleniyor — yerel DB yok)
 - Bağımlılıklar: DELTA-04 (DONE — PR #95/`5b0450b`). **L2 ön koşul DEĞİLDİR** (2026-09-20 kararı:
   L2 sırada PR-D5'ten sonra gelir; kanonik kayıt plan §3.1 + §13 T4 + §21.1 SYS-12).
 - Acceptance criteria:
-  - [ ] Pool max / connection / idle / transaction / statement timeout / shutdown-drain explicit
-  - [ ] Değerler instance sayısı × pool kapasitesi hesabı + benchmark ile seçilir (tahmin yok)
-  - [ ] Kapasite tablosunda worker ve MCP henüz etkin olmadığı için `0 / NOT_ACTIVE` yazılır
-  - [ ] `/ready` açık timeout ile; DB yarı-erişilebilirken kısa sürede 503
-  - [ ] Process başına pool bütçesi (api / worker / mcp) kaydı
-  - [ ] L2 worker etkinleştirilmeden önce worker'ın kendi pool bütçesi zorunlu kapı olarak kaydedilir
+  - [x] Pool max / connection / idle / transaction / statement timeout / shutdown-drain explicit
+        (`lib/db-pools.ts` tek sahip; `new PrismaPg(pool, { disposeExternalPool: true })`;
+        `transactionOptions` 2000/5000 açıkça; ayrı readiness pool)
+  - [x] Kapasite: `API_INSTANCES × (DB_POOL_MAX + 1) ≤ GROWTH_DB_CONNECTION_BUDGET`; worker ve MCP
+        `0 / NOT_ACTIVE`; production'da üç değer zorunlu ve startup'ta eşitlik ihlali fail-closed
+  - [x] `/ready` ayrı pool (max 1) ile: connect 750 / server-side statement 1000 / client query 1250 ms,
+        budget 2000 ms, `default_transaction_read_only=on`; erişilemeyen DB'de bounded 503 (regresyon testi)
+  - [x] Process başına pool bütçesi: api (business + readiness); worker/mcp 0 (aktif değil)
+  - [x] Shutdown sırası: HTTP kabulü kapanır → Prisma/business pool → readiness pool (idempotent drain)
+  - [x] Salt-okunur benchmark script'i (`apps/api/scripts/pool-benchmark.mjs`): `SHOW max_connections` +
+        `SHOW superuser_reserved_connections`, aday pool ölçümü (throughput/p50/p95/p99/error/timeout),
+        disposable hedef guard'ı; CI'da fonksiyonel + kapasite **sert kapı**, latency **rapor-only**
+  - [ ] Benchmark seçim kanıtı (`DB_POOL_MAX`) CI raporundan teyit edilir
+  - [ ] Production kapasitesi **LIVE_UNVERIFIED**: canlı VDS'te `SHOW max_connections` ölçülmeden PASS yazılmaz
 
 --- DELTA-07 — PR-D3 Route Auth Metadata + endpoint rate limit ---
 - Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-4, SYS-5

@@ -90,7 +90,14 @@ describe('environment parsing', () => {
     }
     expect(captureEnvFailure(production)).toContain('is required in production');
     expect(
-      validateEnv({ ...production, GROWTH_INTERNAL_API_KEY: 'A'.repeat(43) }).GROWTH_INTERNAL_API_KEY
+      validateEnv({
+        ...production,
+        GROWTH_INTERNAL_API_KEY: 'A'.repeat(43),
+        // PR-D5: the capacity inputs are part of the production contract as well.
+        API_INSTANCES: '1',
+        DB_POOL_MAX: '5',
+        GROWTH_DB_CONNECTION_BUDGET: '12',
+      }).GROWTH_INTERNAL_API_KEY
     ).toBe('A'.repeat(43));
   });
 });

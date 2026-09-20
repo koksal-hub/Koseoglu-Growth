@@ -10,7 +10,8 @@ import { Env, validateEnv } from './plugins/env';
 import { resolveExposurePolicy, type ExposureEvidence } from './plugins/exposure-policy';
 import { registerErrorHandler } from './plugins/errorHandler';
 import { createInternalAuthHook } from './plugins/internal-auth';
-import { prisma } from './lib/prisma';
+import { capacityReport, disconnectDatabase } from './lib/prisma';
+import { drainReadinessPool } from './lib/db-pools';
 import healthRoutes from './routes/health';
 import researchMissionRoutes from './routes/research-missions';
 import contactPointRoutes from './routes/contact-points';
@@ -100,8 +101,11 @@ if (require.main === module) {
     shuttingDown = true;
     server.log.info({ signal }, 'Shutting down: closing server and database connections');
     try {
+      // Order matters: stop accepting HTTP first, then drain the Prisma business
+      // pool, then the dedicated readiness pool. Both drains are idempotent.
       await server.close();
-      await prisma.$disconnect();
+      await disconnectDatabase();
+      await drainReadinessPool();
       process.exit(0);
     } catch (err) {
       server.log.error({ err }, 'Error during graceful shutdown');
@@ -124,9 +128,10 @@ if (require.main === module) {
   server
     .listen({ port: exposure.port, host: exposure.host })
     .then(() => {
-      // Startup evidence: where we listen and whether forwarded headers are
-      // trusted at all. No secrets and no CIDR list (only its size).
-      server.log.info({ ...exposure }, 'API server listening');
+      // Startup evidence: where we listen, whether forwarded headers are
+      // trusted at all, and the connection budget verdict. No secrets, no CIDR
+      // list (only its size), no live production capacity claim.
+      server.log.info({ ...exposure, database: capacityReport }, 'API server listening');
     })
     .catch((err) => {
       // startup errors should be visible

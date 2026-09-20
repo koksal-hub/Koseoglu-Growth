@@ -71,6 +71,11 @@ services:
       # An empty value means "not configured": development starts without a key,
       # while the production default above stays fail-closed.
       GROWTH_INTERNAL_API_KEY: ${GROWTH_INTERNAL_API_KEY:-}
+      # PR-D5 (SYS-12): the capacity inputs must be explicit in production, so the
+      # container forwards them (single API service, reviewed pool default).
+      API_INSTANCES: ${API_INSTANCES:-1}
+      DB_POOL_MAX: ${DB_POOL_MAX:-5}
+      GROWTH_DB_CONNECTION_BUDGET: ${GROWTH_DB_CONNECTION_BUDGET:-20}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
     ports:
