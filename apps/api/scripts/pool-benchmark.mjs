@@ -24,9 +24,10 @@ import { Pool } from 'pg';
 import { assertDisposableTarget, describeTargetSafety } from './db-safety.mjs';
 
 const READINESS_POOL_MAX = 1; // mirrors apps/api/src/lib/db-pools.ts
-const DEFAULT_CANDIDATES = [1, 2, 3, 5, 8];
+const DEFAULT_CANDIDATES = [1, 2, 3, 4, 5, 8];
 const DEFAULT_QUERIES = 40;
 const DEFAULT_SLEEP_MS = 25;
+const DEFAULT_CONCURRENCY = 8;
 
 function parseArgs(argv) {
   const args = {};
@@ -74,7 +75,7 @@ async function readServerCapacity(url) {
   }
 }
 
-async function measureCandidate({ url, candidate, queries, sleepMs }) {
+async function measureCandidate({ url, candidate, queries, sleepMs, concurrency }) {
   const pool = new Pool({
     connectionString: url,
     max: candidate,
@@ -91,6 +92,9 @@ async function measureCandidate({ url, candidate, queries, sleepMs }) {
   let timeouts = 0;
   const started = Date.now();
 
+  // Concurrency is deliberately independent of the pool size: otherwise a bigger
+  // pool simply means more parallel callers and throughput always looks better,
+  // which cannot show at which size the workload is actually served.
   const worker = async (workerIndex) => {
     for (let round = 0; round < queries; round += 1) {
       const useSleep = (round + workerIndex) % 8 === 7;
@@ -104,22 +108,21 @@ async function measureCandidate({ url, candidate, queries, sleepMs }) {
         errors += 1;
         if (/timeout|terminating connection/i.test(String(error?.message ?? ''))) timeouts += 1;
       }
-
-
     }
   };
 
   try {
-    await Promise.all(Array.from({ length: candidate }, (_, index) => worker(index)));
+    await Promise.all(Array.from({ length: concurrency }, (_, index) => worker(index)));
   } finally {
     await pool.end();
   }
 
   const elapsedMs = Date.now() - started;
   const sorted = [...latencies].sort((a, b) => a - b);
-  const totalQueries = candidate * queries;
+  const totalQueries = concurrency * queries;
   return {
     candidate,
+    concurrency,
     totalQueries,
     elapsedMs,
     throughput: elapsedMs === 0 ? 0 : Number(((totalQueries / elapsedMs) * 1000).toFixed(1)),
@@ -178,6 +181,7 @@ async function main() {
     .filter((value) => value > 0);
   const queries = positiveInt(args.queries, DEFAULT_QUERIES);
   const sleepMs = positiveInt(args['sleep-ms'], DEFAULT_SLEEP_MS);
+  const concurrency = positiveInt(args.concurrency, DEFAULT_CONCURRENCY);
 
   const capacity = await readServerCapacity(url);
   console.log('pool-benchmark (read-only)');
@@ -187,11 +191,14 @@ async function main() {
   console.log(
     `server_max_connections=${capacity.maxConnections} superuser_reserved=${capacity.superuserReserved}`
   );
-  console.log(`candidates=${candidates.join(',')} queries_per_worker=${queries} sleep_ms=${sleepMs}`);
+  console.log(
+    `candidates=${candidates.join(',')} concurrency=${concurrency} (fixed, independent of pool size) ` +
+      `queries_per_worker=${queries} sleep_ms=${sleepMs}`
+  );
 
   const results = [];
   for (const candidate of candidates) {
-    const result = await measureCandidate({ url, candidate, queries, sleepMs });
+    const result = await measureCandidate({ url, candidate, queries, sleepMs, concurrency });
     results.push(result);
     console.log(
       `pool_max=${result.candidate} throughput_qps=${result.throughput} p50=${result.p50}ms p95=${result.p95}ms ` +
