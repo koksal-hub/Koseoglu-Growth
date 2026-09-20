@@ -630,16 +630,32 @@ içeriği #87 + #89 ile aşıldı; main'de karşılığı olmayan 4 dosya bilin�
   - [x] BC5 PORT/HOST evidence: typed, non-persistent, secret-free startup/config kaydı (migration/model uydurulmadı)
   - [x] Kanıt (2026-09-19): focused 5 dosya / 38 test · CI 35 dosya / 258 test · lint/typecheck/build exit 0
 
+--- DELTA-05R — PR-D1R Compose startup contract ---
+- Öncelik: HIGH / MUST / RISK A (startup'ta çalışmama) · Kapsam: SYS-1, SYS-2 container bağlantısı
+- Sorumlu: Cline
+- Durum: IN REVIEW (2026-09-20; DELTA-05 DONE/`225776f` sonrası düzeltici dilim)
+- Bağımlılıklar: DELTA-05
+- Acceptance criteria:
+  - [x] api servisi `HOST`, `ALLOW_EXTERNAL_BIND`, `TRUST_PROXY_CIDRS`, `GROWTH_INTERNAL_API_KEY` değerlerini aktarır
+  - [x] Production varsayılanı korunur; değer yoksa container başlamaz (fail-closed), uydurulmuş secret yok
+  - [x] Port yalnız `127.0.0.1` üzerinde yayınlanır (`docker compose config` ile doğrulandı)
+  - [x] yeni `compose-contract.test.ts` sözleşmeyi kilitler; düzeltme öncesi kompozda **FAIL** negatif kanıtı alındı
+  - [x] README ve compose header aynı başlangıç sözleşmesini anlatır (tek kaynak: compose header)
+  - [x] Plan doğruluğu: §3.1 çift PR-D5 satırı tek satır; §13 T4 + §21.1 SYS-12 ön koşulu PR-D2 (DELTA-04), L2 değil
+
 --- DELTA-06 — PR-D5 Prisma Pool/Timeout + Bounded Readiness ---
 - Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-12 (T4), SYS-3
 - Sorumlu: Cline
 - Durum: TODO (sıradaki dilim — DELTA-05 DONE/`225776f`)
-- Bağımlılıklar: DELTA-04
+- Bağımlılıklar: DELTA-04 (DONE — PR #95/`5b0450b`). **L2 ön koşul DEĞİLDİR** (2026-09-20 kararı:
+  L2 sırada PR-D5'ten sonra gelir; kanonik kayıt plan §3.1 + §13 T4 + §21.1 SYS-12).
 - Acceptance criteria:
   - [ ] Pool max / connection / idle / transaction / statement timeout / shutdown-drain explicit
   - [ ] Değerler instance sayısı × pool kapasitesi hesabı + benchmark ile seçilir (tahmin yok)
+  - [ ] Kapasite tablosunda worker ve MCP henüz etkin olmadığı için `0 / NOT_ACTIVE` yazılır
   - [ ] `/ready` açık timeout ile; DB yarı-erişilebilirken kısa sürede 503
   - [ ] Process başına pool bütçesi (api / worker / mcp) kaydı
+  - [ ] L2 worker etkinleştirilmeden önce worker'ın kendi pool bütçesi zorunlu kapı olarak kaydedilir
 
 --- DELTA-07 — PR-D3 Route Auth Metadata + endpoint rate limit ---
 - Öncelik: HIGH / MUST / RISK B · Kapsam: SYS-4, SYS-5

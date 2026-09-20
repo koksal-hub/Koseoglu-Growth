@@ -44,13 +44,23 @@ export const envSchema = z
       .default('info'),
     /** Comma-separated allowlist of origins allowed to call the API cross-origin. */
     CORS_ORIGINS: z.string().default(''),
-    /** Shared internal boundary for business routes; never log or return it. */
-    GROWTH_INTERNAL_API_KEY: z
-      .string()
-      .min(32)
-      .max(256)
-      .regex(/^[A-Za-z0-9._~+/=-]+$/)
-      .optional(),
+    /**
+     * Shared internal boundary for business routes; never log or return it.
+     * An empty value means "not configured", not "configured but invalid":
+     * `GROWTH_INTERNAL_API_KEY=` in an env file and a compose `:-` default both
+     * produce "" and would otherwise fail the length rule in every environment,
+     * including development. Production stays fail-closed through the
+     * superRefine check below.
+     */
+    GROWTH_INTERNAL_API_KEY: z.preprocess(
+      (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+      z
+        .string()
+        .min(32)
+        .max(256)
+        .regex(/^[A-Za-z0-9._~+/=-]+$/)
+        .optional()
+    ),
     /** Provider calls are disabled unless both this mode and the explicit gate are enabled. */
     EMAIL_PROVIDER_MODE: z.enum(['DISABLED', 'RESEND_TEST']).default('DISABLED'),
     OUTREACH_TEST_DISPATCH_ENABLED: z

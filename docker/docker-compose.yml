@@ -1,13 +1,24 @@
 # Local stack: Postgres + migrations + API.
 #
 # Setup: derive a real env file from the example first (the db service reads
-# it when present, but sane defaults below keep `docker compose up` working
+# it when present, but sane defaults below keep the database services working
 # without one):
 #   cp .env.example .env
 #
 # Usage (from the repository root):
-#   docker compose -f docker/docker-compose.yml up -d          # db + migrate + api
-#   docker compose -f docker/docker-compose.yml up -d db       # database only
+#   docker compose -f docker/docker-compose.yml up -d db migrate   # database + migrations
+#   docker compose -f docker/docker-compose.yml up -d              # db + migrate + api
+#
+# api startup contract (PR-D1R):
+#   - The api service runs NODE_ENV=production by default, so it needs an
+#     explicit HOST and a real GROWTH_INTERNAL_API_KEY. A missing value makes the
+#     container exit at startup (fail-closed) instead of starting half-configured.
+#   - Compose interpolation reads the shell environment, docker/.env, or a file
+#     passed with --env-file. The repository-root .env configures host-run
+#     processes and is NOT read here unless `--env-file .env` is passed.
+#   - The published port needs a non-loopback bind inside the container; that is
+#     granted explicitly by ALLOW_EXTERNAL_BIND below. The port itself is
+#     published on 127.0.0.1 only - widen it deliberately, never by default.
 services:
   db:
     image: postgres:15
@@ -51,10 +62,20 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-growth_db}?schema=public
       PORT: 3000
       NODE_ENV: ${NODE_ENV:-production}
+      # PR-D1 exposure contract (SYS-1/SYS-2) and the internal auth boundary
+      # (ADR-023). Forwarding these is what lets a production-mode container
+      # start instead of exiting before a socket opens.
+      HOST: ${HOST:-0.0.0.0}
+      ALLOW_EXTERNAL_BIND: ${ALLOW_EXTERNAL_BIND:-true}
+      TRUST_PROXY_CIDRS: ${TRUST_PROXY_CIDRS:-}
+      # An empty value means "not configured": development starts without a key,
+      # while the production default above stays fail-closed.
+      GROWTH_INTERNAL_API_KEY: ${GROWTH_INTERNAL_API_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
     ports:
-      - "3000:3000"
+      # Loopback publish: reachable from this host, not from the network.
+      - "127.0.0.1:3000:3000"
     depends_on:
       migrate:
         condition: service_completed_successfully

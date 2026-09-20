@@ -52,13 +52,23 @@ Tam roadmap için [MASTER_PLAN.md](MASTER_PLAN.md).
 
 ```
 pnpm install
-docker compose -f docker/docker-compose.yml up -d
+docker compose -f docker/docker-compose.yml up -d db migrate
 pnpm --filter @growth/api dev
 pnpm --filter @growth/web dev
 ```
 
 `.env.example` dosyasını `.env` olarak kopyalayın; gerçek secret'lar asla
 commit edilmez.
+
+`docker/docker-compose.yml` içindeki `api` servisi varsayılan olarak
+`NODE_ENV=production` çalışır: açık bir `HOST` ve gerçek bir
+`GROWTH_INTERNAL_API_KEY` verilmezse container başlamaz (fail-closed).
+`GROWTH_INTERNAL_API_KEY` için boş değer "ayarlanmamış" sayılır:
+`NODE_ENV=development` ile anahtarsız çalışır, production bu durumda yine
+reddeder. Yerel geliştirmede API'yi host üzerinde çalıştırın
+(`pnpm --filter @growth/api dev`); container'lı API için gerekli değerleri kabuk
+ortamından veya `--env-file .env` ile verin. Container API portu yalnız
+`127.0.0.1` üzerinde yayınlanır.
 
 ## Quality commands
 
