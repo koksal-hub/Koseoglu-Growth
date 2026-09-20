@@ -68,7 +68,9 @@ aşağıdakiler kanonik güncel truth'tur.
   Merge sonrası frozen install + lint/typecheck/build tekrar PASS; yerel full suite yeniden
   koşulmadı (konfigüre disposable DB salt-okunur kontrolde 25/29 BEHIND ve mutation yetkisi yoktu),
   bu nedenle full-suite kapanış kanıtı fresh DB kullanan GitHub CI'dır.
-- **PR-D1R (compose startup contract) — IN REVIEW, 2026-09-20:** `docker/docker-compose.yml` api servisi
+- **DELTA-05R (PR-D1R compose startup contract) DONE — 2026-09-20:** PR **#99** squash merge
+  **`ce0b6cd`** · CI run **`35477288333`** PASS (**36 dosya / 264 test**; migration `29/29 IN_SYNC`) ·
+  `docker/docker-compose.yml` api servisi
   artık `HOST`, `ALLOW_EXTERNAL_BIND`, `TRUST_PROXY_CIDRS` ve `GROWTH_INTERNAL_API_KEY` değerlerini
   container'a aktarıyor; port yalnız `127.0.0.1` üzerinde yayınlanıyor; production varsayılanında değer
   verilmezse container başlamaz (fail-closed; uydurulmuş secret yok). Forensic: `docker compose config`
@@ -76,12 +78,11 @@ aşağıdakiler kanonik güncel truth'tur.
   interpolasyona **girmiyordu** (proje dizini `docker/`; `NODE_ENV=development` → çözülen `production`).
   Kanıt: yeni `apps/api/test/compose-contract.test.ts` (6 test) + düzeltme öncesi kompozda **FAIL**
   negatif kanıtı · focused **5 dosya / 36 test PASS** · lint/typecheck/build exit 0 · `git diff --check` exit 0 ·
-  GitHub CI (tam paket + migration gate) **PASS** — koşu detayı PR gövdesinde, merge sonrası kapanış
-  PR'ında merge edilen SHA ile kaydedilir.
+  GitHub CI (tam paket + migration gate) **PASS** (yukarıdaki koşu).
   Plan doğruluğu (aynı PR): §3.1 çift PR-D5 satırı tek satıra indirildi; §13 T4 ve §21.1 SYS-12 ön koşulu
   **PR-D2 (DELTA-04)** olarak sabitlendi (**L2 değil**); L2 worker açılmadan önce kendi pool bütçesi
   zorunlu kapı olarak kaydedildi.
-- **İnceleme bulgusu ve düzeltmesi (2026-09-20):** compose'un `:-` boş varsayılanı
+  **İnceleme bulgusu ve düzeltmesi (aynı PR, 2026-09-20):** compose'un `:-` boş varsayılanı
   `GROWTH_INTERNAL_API_KEY=""` gönderiyordu; şema `min(32)` olduğu için bu değer **development'ta da**
   startup'ı düşürüyordu. Env doğrulaması artık boş/blank değeri **undefined** ("ayarlanmamış") olarak
   normalize eder (PORT ile aynı desen); production `superRefine` kontrolü değişmeden **fail-closed**
@@ -89,7 +90,7 @@ aşağıdakiler kanonik güncel truth'tur.
   `undefined`; production boş/blank/eksik → **FAIL `is required in production`**; production geçerli
   anahtar → PASS; compose development çözümlemesi → PASS; compose production çözümlemesi → FAIL.
   Loopback port sertleştirmesi **onaylandı** (`127.0.0.1:3000:3000` korunur).
-- **Sıradaki uygulama dilimi:** **PR-D5** (Prisma pool/timeout + bounded readiness;
+- **Sıradaki uygulama dilimi (NEXT = PR-D5):** **PR-D5** (Prisma pool/timeout + bounded readiness;
   DELTA-06 / SYS-12 / SYS-3) — PR-D1R merge edildikten sonra.
 - **Kanonik order (değişmedi):** B2B → D2 → D1 → D5 → D3 → D4 → E2 → E1 → E3 → L6
   (tek sahip: `GROWTH_2026_PROGRAM_PLAN.md` §3.1; TASKS.md DELTA aynası hizalı).
