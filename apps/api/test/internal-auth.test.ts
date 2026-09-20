@@ -43,7 +43,11 @@ describe('internal API authentication boundary', () => {
         NODE_ENV: 'production',
         // Production must name its bind address explicitly (PR-D1 exposure contract).
         HOST: '127.0.0.1',
-        GROWTH_INTERNAL_API_KEY: INTERNAL_KEY
+        GROWTH_INTERNAL_API_KEY: INTERNAL_KEY,
+        // PR-D5: production states the capacity inputs explicitly.
+        API_INSTANCES: '1',
+        DB_POOL_MAX: '5',
+        GROWTH_DB_CONNECTION_BUDGET: '12',
       })
     ).toMatchObject({ GROWTH_INTERNAL_API_KEY: INTERNAL_KEY, HOST: '127.0.0.1' });
   });

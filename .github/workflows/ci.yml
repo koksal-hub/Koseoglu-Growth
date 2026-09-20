@@ -65,5 +65,7 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+      - name: Pool benchmark (read-only, functional + capacity gate; latency is reported, not gated)
+        run: node apps/api/scripts/pool-benchmark.mjs --url "$TEST_DATABASE_URL" --candidates 1,2,3,4,5,8 --concurrency 8 --queries 40 --sleep-ms 25
       - name: Migration gate - negative proofs (drift, checksum, unsafe target, object names)
         run: node apps/api/scripts/db-replay.mjs negative-proof

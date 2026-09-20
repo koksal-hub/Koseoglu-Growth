@@ -90,8 +90,18 @@ aşağıdakiler kanonik güncel truth'tur.
   `undefined`; production boş/blank/eksik → **FAIL `is required in production`**; production geçerli
   anahtar → PASS; compose development çözümlemesi → PASS; compose production çözümlemesi → FAIL.
   Loopback port sertleştirmesi **onaylandı** (`127.0.0.1:3000:3000` korunur).
-- **Sıradaki uygulama dilimi (NEXT = PR-D5):** **PR-D5** (Prisma pool/timeout + bounded readiness;
-  DELTA-06 / SYS-12 / SYS-3) — PR-D1R merge edildikten sonra.
+- **DELTA-06 (PR-D5 pool/timeout + bounded readiness) — IN REVIEW, 2026-09-20:** `apps/api/src/lib/db-pools.ts`
+  tek sahip: explicit **business pool** (`pg.Pool`) + `new PrismaPg(pool, { disposeExternalPool: true })` +
+  açık `transactionOptions` (2000/5000); ayrı **readiness pool** (max 1 · connect 750 · server-side
+  statement 1000 · client query 1250 ms · budget 2000 ms · `default_transaction_read_only=on`). `/ready`
+  bounded 503 döner; shutdown sırası **HTTP → Prisma/business → readiness** (idempotent drain).
+  Kapasite: `API_INSTANCES × (DB_POOL_MAX + 1) ≤ GROWTH_DB_CONNECTION_BUDGET`; worker/MCP `0 / NOT_ACTIVE`;
+  production'da bu üç değer zorunlu (fail-closed). **Production kapasitesi LIVE_UNVERIFIED** — canlı VDS'te
+  `SHOW max_connections` ölçülmeden PASS yazılmaz. Kanıt (yerel): focused **7 dosya / 45 test PASS** ·
+  lint/typecheck/build exit 0 · `docker compose config` yeni üç değişkeni aktarıyor · benchmark fail-closed
+  4 senaryoda exit 1 (canonical DB / url yok / prod-benzeri host / erişilemez hedef). Yerel PostgreSQL yok →
+  tam paket + benchmark kanıtı **GitHub CI**'dan (fresh 29/29).
+- **Sıradaki uygulama dilimi:** **PR-D5** (IN REVIEW) → merge sonrası **PR-D3** (DELTA-07 / SYS-4, SYS-5).
 - **Kanonik order (değişmedi):** B2B → D2 → D1 → D5 → D3 → D4 → E2 → E1 → E3 → L6
   (tek sahip: `GROWTH_2026_PROGRAM_PLAN.md` §3.1; TASKS.md DELTA aynası hizalı).
 

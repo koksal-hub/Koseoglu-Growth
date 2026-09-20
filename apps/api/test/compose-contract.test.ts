@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { validateEnv } from '../src/plugins/env';
 import { resolveExposurePolicy } from '../src/plugins/exposure-policy';
+import { evaluateCapacity, resolveDbSettings } from '../src/lib/db-pools';
 import { captureEnvFailure } from './support/env-failure';
 
 // Regression suite for the docker compose startup contract (PR-D1R).
@@ -87,6 +88,9 @@ function containerEnvironment(apiKey: string): NodeJS.ProcessEnv {
     ALLOW_EXTERNAL_BIND: declaredDefault(apiEnvironment, 'ALLOW_EXTERNAL_BIND'),
     TRUST_PROXY_CIDRS: declaredDefault(apiEnvironment, 'TRUST_PROXY_CIDRS'),
     GROWTH_INTERNAL_API_KEY: apiKey,
+    API_INSTANCES: declaredDefault(apiEnvironment, 'API_INSTANCES'),
+    DB_POOL_MAX: declaredDefault(apiEnvironment, 'DB_POOL_MAX'),
+    GROWTH_DB_CONNECTION_BUDGET: declaredDefault(apiEnvironment, 'GROWTH_DB_CONNECTION_BUDGET'),
   };
 }
 
@@ -114,6 +118,20 @@ describe('docker compose api startup contract', () => {
     expect(declaredDefault(apiEnvironment, 'ALLOW_EXTERNAL_BIND')).toBe('true');
     // An empty allowlist means no forwarded header defines client identity.
     expect(declaredDefault(apiEnvironment, 'TRUST_PROXY_CIDRS')).toBe('');
+  });
+
+  it('forwards the PR-D5 capacity inputs and keeps the equation satisfied', () => {
+    // Production requires these explicitly (env.ts), so the container must pass
+    // them; the declared values must also fit the reviewed budget.
+    expect(declaredDefault(apiEnvironment, 'API_INSTANCES')).toBe('1');
+    expect(declaredDefault(apiEnvironment, 'DB_POOL_MAX')).toBe('5');
+    expect(declaredDefault(apiEnvironment, 'GROWTH_DB_CONNECTION_BUDGET')).toBe('20');
+
+    const settings = resolveDbSettings(validateEnv(containerEnvironment('A'.repeat(43))));
+    const report = evaluateCapacity(settings);
+    expect(report.required).toBe(6);
+    expect(report.verdict).toBe('PASS');
+    expect(report.liveVerified).toBe(false);
   });
 
   it('publishes the api port on the loopback interface only', () => {
